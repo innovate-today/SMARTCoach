@@ -39,7 +39,7 @@ Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Traini
 | Log Single Result | `#raceResultBtn` on dashboard or Training Calendar. |
 | Manage Meets | `#manageMeetsBtn` on dashboard or Training Calendar. |
 | Create Training Session | Existing Training Calendar workflow. |
-| Add Speed Result | Existing Speed Trak workflow; direct-entry URL/action needs confirmation. |
+| Add Speed Result | `/speed-trak.html#add-result` opens the existing Speed Trak result form after speed data and roster options load. |
 | Create Strength Workout / Set Up Rack | Quick Add opens the existing Power Trak workout builder with a new draft, or selects the existing Rack Setup tab. It does not save or start a rack automatically. |
 | New Field Practice | Quick Add opens the existing Field Practice form with a fresh practice. |
 | Add Athlete / Import Athletes | Existing Athletes page actions. |

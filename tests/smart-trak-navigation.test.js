@@ -293,6 +293,7 @@ assert.strictEqual(speedNav.children.find(child => child.textContent === 'Speed 
 assert.strictEqual(menuByName(speedNav, 'Training').children[1].children[0], speedNodes.trainingLink);
 assert.ok(menuByName(speedNav, 'Training').children[1].children.includes(speedNodes.fieldPracticeLink));
 assert.ok(menuByName(speedNav, 'Quick Add').children[1].children.includes(speedNodes.addResultBtn));
+assert.strictEqual(menuByName(nav, 'Quick Add').children[1].children.find(child => child.textContent === 'Add Speed Result').href, '/speed-trak.html#add-result');
 for (const id of ['shareSpeedBoardBtn', 'exportSpeedDataBtn', 'refreshBtn']) assert.ok(speedNav.children.includes(speedNodes[id]), id + ' remains visible');
 const speedStaff = menuByName(speedNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
 assert.strictEqual(speedStaff.hidden, true);
@@ -615,8 +616,9 @@ assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find
 assert.deepStrictEqual(overviewLinks('Meets & Results'), ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator']);
 assert.strictEqual(menuByName(overviewNav, 'Meets & Results').children[1].children.find(child => child.textContent === 'Results').href, '/meet-history.html?account=school-a#results-board');
 assert.deepStrictEqual(overviewLinks('Tools'), ['Keep Trak', 'Weather']);
-assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes', 'New Field Practice', 'Create Strength Workout', 'Set Up Rack']);
+assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes', 'New Field Practice', 'Add Speed Result', 'Create Strength Workout', 'Set Up Rack']);
 const overviewQuick = menuByName(overviewNav, 'Quick Add').children[1].children;
+assert.strictEqual(overviewQuick.find(child => child.textContent === 'Add Speed Result').href, '/speed-trak.html?account=school-a#add-result');
 assert.strictEqual(overviewQuick.find(child => child.textContent === 'New Field Practice').href, '/field-practice.html?account=school-a#new-practice');
 assert.strictEqual(overviewQuick.find(child => child.textContent === 'Create Strength Workout').href, '/power-trak.html?account=school-a#new-workout');
 assert.strictEqual(overviewQuick.find(child => child.textContent === 'Set Up Rack').href, '/power-trak.html?account=school-a#rack-setup');
@@ -644,6 +646,8 @@ assert.ok(meetSource.includes("location.hash==='#results-board'&&window.openMeet
 assert.ok(fieldSource.includes("if(location.hash==='#new-practice')newPractice()"));
 assert.ok(powerSource.includes("if(location.hash==='#new-workout')"));
 assert.ok(powerSource.includes("else if(location.hash==='#rack-setup')"));
+assert.ok(speedSource.includes("location.hash==='#add-result'"));
+assert.ok(speedSource.includes("return loadSpeedAthletes(seq).then(function()"), 'speed result deep link waits for athlete options');
 for (const fragment of ['/api/smart-trak/results-board-sharing?', '/api/smart-trak/results-board-link?', 'Copy Display Link', 'Turn Off Link', 'data-board-order']) {
   assert.ok(resultsSharingSource.includes(fragment), fragment + ' remains in Meet History Results Board');
 }

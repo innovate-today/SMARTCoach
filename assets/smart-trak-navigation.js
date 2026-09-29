@@ -269,6 +269,7 @@
     quick.appendChild(link('Import Athletes','/athletes.html#import-athletes'));
   }
   if(!fieldPage)quick.appendChild(link('New Field Practice','/field-practice.html#new-practice'));
+  if(!speedPage)quick.appendChild(link('Add Speed Result','/speed-trak.html#add-result'));
   if(powerPage){
     var newWorkout=document.createElement('button');
     newWorkout.type='button';
