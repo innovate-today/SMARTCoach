@@ -8,6 +8,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SMART Trak Athletes</title>
 <link rel="stylesheet" href="/assets/athlete-personal-bests.css">
+<link rel="stylesheet" href="/assets/athlete-profile.css">
 <style>
 :root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309;--bad:#b91c1c}
 *{box-sizing:border-box}
@@ -178,16 +179,6 @@ button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.util
         <button id="calendarEmailNextBtn" type="button">Open Next Draft</button>
       </div>
     </div>
-  </div>
-</section>
-
-<section id="personalBestsModal" class="modal" hidden>
-  <div class="modalpanel compact" role="dialog" aria-modal="true" aria-labelledby="personalBestsTitle">
-    <div class="modalhead">
-      <h2 id="personalBestsTitle">Personal Bests</h2>
-      <button id="closePersonalBestsBtn" class="secondary" type="button">Close</button>
-    </div>
-    <div id="personalBestsBody" class="modalbody"></div>
   </div>
 </section>
 
@@ -528,18 +519,31 @@ button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.util
 </section>
 
 <section id="detailModal" class="modal" hidden>
-  <div class="modalpanel wide">
+  <div class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
     <div class="modalhead">
-      <h2 id="detailTitle">Athlete Details</h2>
+      <div><h2 id="detailTitle">Athlete Details</h2><div id="detailSubtitle" class="athlete-profile-subtitle"></div></div>
       <button id="closeDetailBtn" class="secondary" type="button">Close</button>
     </div>
     <div class="modalbody">
-      <div id="detailBody" class="detailgrid"></div>
-      <div class="modalactions">
-        <div class="modalstatus">Details are pulled from the SMART Trak athlete record.</div>
-        <button id="detailEmailParentsBtn" class="utility" type="button" hidden>Email Parent</button>
-        <button id="detailEditBtn" type="button">Edit Athlete</button>
+      <div class="athlete-profile-tabs" role="tablist" aria-label="Athlete views">
+        <button id="detailOverviewTab" type="button" role="tab" aria-controls="detailOverviewView" aria-selected="true">Overview</button>
+        <button id="detailPersonalBestsTab" type="button" role="tab" aria-controls="detailPersonalBestsView" aria-selected="false">Personal Bests</button>
       </div>
+      <div id="detailOverviewView" role="tabpanel" aria-labelledby="detailOverviewTab">
+        <div class="athlete-profile-actions" aria-label="Roster tools">
+          <button id="detailDocuBtn" type="button">Docu Trak</button>
+          <button id="detailEquipmentBtn" type="button">Equipment Trak</button>
+          <button id="detailCalendarBtn" type="button">Calendar Link</button>
+          <div id="detailActionStatus" class="profile-status" aria-live="polite"></div>
+        </div>
+        <div id="detailBody" class="detailgrid"></div>
+      </div>
+      <div id="detailPersonalBestsView" role="tabpanel" aria-labelledby="detailPersonalBestsTab" hidden><div id="detailPersonalBestsBody"></div></div>
+    </div>
+    <div class="modalactions">
+      <div class="modalstatus">Athlete records and saved results</div>
+      <button id="detailEmailParentsBtn" class="utility" type="button" hidden>Email Parent</button>
+      <button id="detailEditBtn" type="button">Edit Athlete</button>
     </div>
   </div>
 </section>
@@ -617,8 +621,9 @@ function emailDetailParents(){if(!parentEmailToolsEnabled()){els.barStatus.textC
 function emailVisibleParents(){if(!parentEmailToolsEnabled()){els.barStatus.textContent='Parent email is not enabled for this coach.';return;}var emails=visibleParentEmails();var selected=selectedAthletes().length;if(!emails.length){els.barStatus.textContent=selected?'No parent emails saved for selected athletes.':'No parent emails in this view.';return;}window.location.href='mailto:?bcc='+encodeURIComponent(emails.join(','));els.barStatus.textContent='Opened email draft for '+emails.length+' parent email'+(emails.length===1?'':'s')+(selected?' from selected athletes.':'.');}
 function copyVisibleParentEmails(){if(!parentEmailToolsEnabled()){els.barStatus.textContent='Parent email is not enabled for this coach.';return;}var emails=visibleParentEmails();var selected=selectedAthletes().length;if(!emails.length){els.barStatus.textContent=selected?'No parent emails saved for selected athletes.':'No parent emails in this view.';return;}var text=emails.join(', ');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){els.barStatus.textContent='Copied '+emails.length+' parent email'+(emails.length===1?'':'s')+(selected?' from selected athletes.':'.');}).catch(function(){fallbackCopyParentEmails(text,emails.length);});return;}fallbackCopyParentEmails(text,emails.length);}
 function fallbackCopyParentEmails(text,count){var input=document.createElement('textarea');input.value=text;input.setAttribute('readonly','');input.style.position='fixed';input.style.left='-9999px';document.body.appendChild(input);input.select();try{document.execCommand('copy');els.barStatus.textContent='Copied '+count+' parent email'+(count===1?'':'s')+'.';}catch(e){els.barStatus.textContent='Copy was blocked. Select and copy: '+text;}document.body.removeChild(input);}
-function rowHtml(a){var parents=[parentLine(a.parentGuardianName,a.parentGuardianEmail,a.parentGuardianPhone),parentLine(a.parentGuardian2Name,a.parentGuardian2Email,a.parentGuardian2Phone)].filter(Boolean).join('<div class="muted"></div>')||'<span class="muted">No parent saved</span>';var groupList=athleteGroups(a);var setupNeeded=!a.smartcoachActive&&!a.smartcoachAthleteId;var statusText=setupNeeded?'Needs setup':(a.smartcoachActive?'Active':'Inactive');var statusClass=setupNeeded?'bad':(a.smartcoachActive?'good':'warn');var noteLine=a.coachNotes?'<div class="muted">Notes saved</div>':'';var name=a.name||'Unnamed';var selectCell=parentEmailToolsEnabled()?'<td><input type="checkbox" aria-label="Select '+escAttr(name)+'" data-athlete-select="'+escAttr(a.id)+'" '+(selectedAthleteIds[a.id]?'checked':'')+'></td>':'';var actions='<button class="secondary" type="button" data-athlete-id="'+escAttr(a.id)+'">'+(setupNeeded?'Set Up':'Edit')+'</button> <button class="utility" type="button" data-athlete-docu="'+escAttr(a.id)+'">Docu Trak</button> <button class="utility" type="button" data-athlete-equipment="'+escAttr(a.id)+'">Equipment Trak</button> <button class="utility" type="button" data-athlete-calendar-link="'+escAttr(a.id)+'">Calendar Link</button> <button class="utility" type="button" data-athlete-bests="'+escAttr(a.id)+'">Personal Bests</button>';return '<tr>'+selectCell+'<td><button class="namebtn" type="button" data-athlete-detail="'+escAttr(a.id)+'">'+esc(name)+'</button><div class="muted">'+esc(a.email||'')+'</div>'+noteLine+'</td><td>'+esc(a.gender||'--')+'</td><td>'+esc(a.grade||'--')+'</td><td>'+(groupList.length?groupList.map(function(g){return '<span class="pill">'+esc(g)+'</span>';}).join(' '):'<span class="muted">No group</span>')+'</td><td>'+parents+'</td><td><span class="pill '+statusClass+'">'+statusText+'</span>'+docuStatusHtml(a)+equipmentStatusHtml(a)+'</td><td>'+actions+'</td></tr>';}
-function copyAthleteCalendarLink(id){var athlete=findAthleteById(id);if(!athlete){els.barStatus.textContent='Athlete not found.';return;}els.barStatus.textContent='Creating athlete calendar link...';fetch(apiUrl('/api/smart-trak/athletes?action=calendarLink&athleteId='+encodeURIComponent(id)),{cache:'no-store',headers:smartCoachHeaders()}).then(jsonResult).then(function(data){var url=new URL(data.url,location.origin).toString();if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){els.barStatus.textContent='Copied calendar link for '+(athlete.name||'athlete')+'.';}).catch(function(){fallbackCopyText(url,'Calendar link ready: ');});return;}fallbackCopyText(url,'Calendar link ready: ');}).catch(function(error){els.barStatus.textContent='Could not create link: '+friendlyApiError(error);});}
+function rowHtml(a){var parents=[parentLine(a.parentGuardianName,a.parentGuardianEmail,a.parentGuardianPhone),parentLine(a.parentGuardian2Name,a.parentGuardian2Email,a.parentGuardian2Phone)].filter(Boolean).join('<div class="muted"></div>')||'<span class="muted">No parent saved</span>';var groupList=athleteGroups(a);var setupNeeded=!a.smartcoachActive&&!a.smartcoachAthleteId;var statusText=setupNeeded?'Needs setup':(a.smartcoachActive?'Active':'Inactive');var statusClass=setupNeeded?'bad':(a.smartcoachActive?'good':'warn');var noteLine=a.coachNotes?'<div class="muted">Notes saved</div>':'';var name=a.name||'Unnamed';var selectCell=parentEmailToolsEnabled()?'<td><input type="checkbox" aria-label="Select '+escAttr(name)+'" data-athlete-select="'+escAttr(a.id)+'" '+(selectedAthleteIds[a.id]?'checked':'')+'></td>':'';var actions='<button class="secondary" type="button" data-athlete-id="'+escAttr(a.id)+'">'+(setupNeeded?'Set Up':'Edit')+'</button>';return '<tr>'+selectCell+'<td><button class="namebtn" type="button" data-athlete-detail="'+escAttr(a.id)+'">'+esc(name)+'</button><div class="muted">'+esc(a.email||'')+'</div>'+noteLine+'</td><td>'+esc(a.gender||'--')+'</td><td>'+esc(a.grade||'--')+'</td><td>'+(groupList.length?groupList.map(function(g){return '<span class="pill">'+esc(g)+'</span>';}).join(' '):'<span class="muted">No group</span>')+'</td><td>'+parents+'</td><td><span class="pill '+statusClass+'">'+statusText+'</span>'+docuStatusHtml(a)+equipmentStatusHtml(a)+'</td><td>'+actions+'</td></tr>';}
+function setAthleteCalendarStatus(message){els.barStatus.textContent=message;var status=document.getElementById('detailActionStatus');if(status&&!els.detailModal.hidden)status.textContent=message;}
+function copyAthleteCalendarLink(id){var athlete=findAthleteById(id);if(!athlete){setAthleteCalendarStatus('Athlete not found.');return;}setAthleteCalendarStatus('Creating athlete calendar link...');fetch(apiUrl('/api/smart-trak/athletes?action=calendarLink&athleteId='+encodeURIComponent(id)),{cache:'no-store',headers:smartCoachHeaders()}).then(jsonResult).then(function(data){var url=new URL(data.url,location.origin).toString();if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){setAthleteCalendarStatus('Copied calendar link for '+(athlete.name||'athlete')+'.');}).catch(function(){fallbackCopyText(url,'Calendar link ready: ');setAthleteCalendarStatus(els.barStatus.textContent);});return;}fallbackCopyText(url,'Calendar link ready: ');setAthleteCalendarStatus(els.barStatus.textContent);}).catch(function(error){setAthleteCalendarStatus('Could not create link: '+friendlyApiError(error));});}
 var calendarEmailQueue=[],calendarEmailIndex=0;
 function calendarQuestionElements(){return{modal:document.getElementById('calendarQuestionsModal'),open:document.getElementById('calendarQuestionsBtn'),close:document.getElementById('closeCalendarQuestionsBtn'),rows:document.getElementById('calendarQuestionRows'),status:document.getElementById('calendarQuestionsStatus'),save:document.getElementById('saveCalendarQuestionsBtn')};}
 function blankCalendarQuestionRows(){return [0,1,2,3,4].map(function(index){return{id:'q'+(index+1),text:'',required:false,active:true};});}
@@ -662,14 +667,32 @@ function personalBestsRequest(path){
 function openPersonalBests(id){
   var athlete=findAthleteById(id);
   if(!athlete)return;
-  AthletePersonalBestsModal.open({athlete:Object.assign({},athlete,{graduationYear:athlete.graduationYear||athlete.grade}),modal:document.getElementById('personalBestsModal'),title:document.getElementById('personalBestsTitle'),body:document.getElementById('personalBestsBody'),request:personalBestsRequest});
+  var body=document.getElementById('detailPersonalBestsBody');
+  if(body.dataset.athleteId===id)return;
+  body.dataset.athleteId=id;
+  AthletePersonalBestsModal.open({athlete:Object.assign({},athlete,{graduationYear:athlete.graduationYear||athlete.grade}),body:body,request:personalBestsRequest});
 }
-function setupPersonalBests(){
-  document.getElementById('closePersonalBestsBtn').addEventListener('click',function(){document.getElementById('personalBestsModal').hidden=true});
-  els.rows.addEventListener('click',function(event){
-    var button=event.target.closest&&event.target.closest('[data-athlete-bests]');
-    if(button)openPersonalBests(button.getAttribute('data-athlete-bests'));
-  });
+function showAthleteProfileTab(tab){
+  var bests=tab==='bests';
+  document.getElementById('detailOverviewView').hidden=bests;
+  document.getElementById('detailPersonalBestsView').hidden=!bests;
+  document.getElementById('detailOverviewTab').setAttribute('aria-selected',String(!bests));
+  document.getElementById('detailPersonalBestsTab').setAttribute('aria-selected',String(bests));
+  if(bests)openPersonalBests(detailAthleteId);
+}
+function setupAthleteProfile(){
+  document.getElementById('detailOverviewTab').addEventListener('click',function(){showAthleteProfileTab('overview');});
+  document.getElementById('detailPersonalBestsTab').addEventListener('click',function(){showAthleteProfileTab('bests');});
+  document.getElementById('detailDocuBtn').addEventListener('click',function(){scrollAthleteProfileCard('docuTrakCard');});
+  document.getElementById('detailEquipmentBtn').addEventListener('click',function(){scrollAthleteProfileCard('equipmentTrakCard');});
+  document.getElementById('detailCalendarBtn').addEventListener('click',function(){copyAthleteCalendarLink(detailAthleteId);});
+  els.detailModal.addEventListener('click',function(event){if(event.target===els.detailModal)closeDetail();});
+  document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!els.detailModal.hidden)closeDetail();});
+}
+function scrollAthleteProfileCard(id){
+  showAthleteProfileTab('overview');
+  var card=document.getElementById(id);
+  if(card)card.scrollIntoView({block:'start',behavior:'smooth'});
 }
 function openAthleteDetail(id,target){var a=findAthleteById(id);if(!a)return;detailAthleteId=id;var groupList=athleteGroups(a);var docuSeason=activeDocuSeason();var docuTitle='Docu Trak'+(docuSeason&&docuSeason.name?' · '+docuSeason.name:'');els.detailTitle.textContent=a.name||'Athlete Details';els.detailEmailParentsBtn.disabled=!parentEmailsForAthlete(a).length;syncEmailToolVisibility();els.detailBody.innerHTML='<div class="detailcard"><h3>Roster</h3><b>'+esc(a.name||'Unnamed')+'</b><div class="detailline">'+esc([a.gender||'Gender not set',a.grade?('Class '+a.grade):'Class year not set'].join(' · '))+'</div><div class="detailline">'+esc(a.smartcoachActive?'Active athlete':'Inactive / setup needed')+'</div></div>'+'<div class="detailcard"><h3>Contact</h3><div class="detailline">'+esc(a.email||'No athlete email')+'</div></div>'+'<div class="detailcard"><h3>Groups</h3><div class="detailline">'+(groupList.length?groupList.map(function(g){return '<span class="pill">'+esc(g)+'</span>';}).join(' '):'No groups assigned')+'</div></div>'+'<div class="detailcard"><h3>Parent / Guardian</h3>'+detailParentHtml(a)+'</div>'+'<div class="detailcard full" id="docuTrakCard"><div class="detailcard-head"><h3>'+esc(docuTitle)+'</h3><button class="utility" type="button" data-docu-setup="1">Setup</button></div><div id="detailDocu" class="docu-list">'+renderDocuAthleteDetail(a)+'</div></div>'+'<div class="detailcard full" id="equipmentTrakCard"><div class="detailcard-head"><h3>Equipment Trak</h3></div><div id="detailEquipment" class="equipment-list">'+renderEquipmentAthleteDetail(a)+'</div></div>'+'<div class="detailcard full"><h3>Attendance</h3><div id="detailAttendance" class="detailline">Loading attendance...</div></div>'+'<div class="detailcard full"><h3>Coach Notes</h3><div class="detailnotes">'+esc(a.coachNotes||'No notes saved.')+'</div></div>';els.detailModal.hidden=false;if(target==='equipment'||target==='docu')setTimeout(function(){var card=document.getElementById(target==='equipment'?'equipmentTrakCard':'docuTrakCard');if(card)card.scrollIntoView({block:'start',behavior:'smooth'});},50);loadAthleteAttendanceDetail(a);}
 function defaultDocuItemsForView(){return[{id:'physical',name:'Physical',active:true,required:true},{id:'goals_form',name:'Goals Form',active:true,required:true},{id:'guidelines_expectations',name:'Guidelines / Expectations',active:true,required:true}];}
@@ -806,6 +829,18 @@ function saveEquipmentSetup(){var existingByName={};normalizeEquipmentItemsForVi
 function refreshEquipmentSetupViews(){render();renderEquipmentLookupItemFilter();renderEquipmentLookup();renderEquipmentInventory();if(!els.equipmentIssueSheetPane.hidden)renderEquipmentIssueSheet();if(!els.equipmentCoachPane.hidden)renderEquipmentCoachPane();var athlete=findAthleteById(detailAthleteId);var target=document.getElementById('detailEquipment');if(athlete&&target)target.innerHTML=renderEquipmentAthleteDetail(athlete);}
 function loadAthleteAttendanceDetail(a){var target=document.getElementById('detailAttendance');if(!target||!a)return;var path='/api/smart-trak/attendance?athleteId='+encodeURIComponent(a.id||'')+'&athleteName='+encodeURIComponent(a.name||'');fetch(apiUrl(path),{cache:'no-store',headers:smartCoachHeaders()}).then(jsonResult).then(function(data){var rows=data.attendance||[];if(!rows.length){target.innerHTML='No attendance results saved yet. <a href="'+escAttr(pageUrl('/attendance.html'))+'">Open Attendance Trak</a>';return;}var totals={present:0,late:0,absent:0,excused:0,checked_out:0};rows.forEach(function(row){if(totals[row.status]!==undefined)totals[row.status]++;});var counted=totals.present+totals.late+totals.absent+totals.excused+totals.checked_out;var accountable=totals.present+totals.late+totals.checked_out+totals.absent;var percent=accountable?Math.round(((totals.present+totals.late+totals.checked_out)/accountable)*100):100;target.innerHTML='<div class="attendance-summary"><div class="attendance-card"><b>'+totals.present+'</b><span>Present</span></div><div class="attendance-card"><b>'+totals.late+'</b><span>Late</span></div><div class="attendance-card"><b>'+totals.absent+'</b><span>Absent</span></div><div class="attendance-card"><b>'+totals.excused+'</b><span>Excused</span></div><div class="attendance-card"><b>'+totals.checked_out+'</b><span>Checked Out</span></div><div class="attendance-card"><b>'+percent+'%</b><span>Attendance</span></div></div><div class="detailline" style="margin-top:8px">'+counted+' attendance mark'+(counted===1?'':'s')+' saved. <a href="'+escAttr(pageUrl('/attendance.html'))+'">Open full attendance report</a></div>';}).catch(function(){target.textContent='Attendance could not be loaded.';});}
 function detailParentHtml(a){var rows=[parentLine(a.parentGuardianName,a.parentGuardianEmail,a.parentGuardianPhone),parentLine(a.parentGuardian2Name,a.parentGuardian2Email,a.parentGuardian2Phone)].filter(Boolean);return rows.length?rows.join('<div class="muted"></div>'):'<div class="detailline">No parent contact saved.</div>';}
+var renderAthleteDetail=openAthleteDetail;
+openAthleteDetail=function(id,target){
+  renderAthleteDetail(id,target);
+  var athlete=findAthleteById(id);
+  if(!athlete)return;
+  document.getElementById('detailSubtitle').textContent=[athlete.gender||'',athlete.grade?'Class '+athlete.grade:'',athlete.smartcoachActive?'Active':(athlete.smartcoachAthleteId?'Inactive':'Needs setup')].filter(Boolean).join(' · ');
+  document.getElementById('detailActionStatus').textContent='';
+  var body=document.getElementById('detailPersonalBestsBody');
+  body.dataset.athleteId='';
+  body.innerHTML='';
+  showAthleteProfileTab(target==='bests'?'bests':'overview');
+};
 function closeDetail(){els.detailModal.hidden=true;detailAthleteId='';}
 function openAthleteModalById(id){openAthleteModal(athletes.find(function(a){return a.id===id;})||null);}
 function openAthleteModal(a){els.modal.hidden=false;els.modalTitle.textContent=a?'Edit Athlete':'Add Athlete';els.modalStatus.textContent='';els.saveAthleteBtn.disabled=false;fill('contactId',a&&a.id);fill('firstName',a&&a.firstName);fill('lastName',a&&a.lastName);fill('gender',a&&a.gender);fill('grade',a&&a.grade);fill('email',a&&a.email);renderAthleteGroupOptions(a||{});els.smartcoachActive.checked=!a||!!a.smartcoachActive;els.athleteGroup.disabled=!els.smartcoachActive.checked;fill('parentGuardianName',a&&a.parentGuardianName);fill('parentGuardianEmail',a&&a.parentGuardianEmail);fill('parentGuardianPhone',a&&a.parentGuardianPhone);fill('parentGuardian2Name',a&&a.parentGuardian2Name);fill('parentGuardian2Email',a&&a.parentGuardian2Email);fill('parentGuardian2Phone',a&&a.parentGuardian2Phone);fill('coachNotes',a&&a.coachNotes);setTimeout(function(){els.firstName.focus();},50);}
@@ -879,7 +914,7 @@ function setupEquipmentInventoryShortcuts(){if(els.copyGirlsInventoryBtn)els.cop
 document.addEventListener('DOMContentLoaded',setupEquipmentInventoryShortcuts);
 document.addEventListener('DOMContentLoaded',setupCalendarQuestionTools);
 document.addEventListener('DOMContentLoaded',setupCalendarEmailTools);
-document.addEventListener('DOMContentLoaded',setupPersonalBests);
+document.addEventListener('DOMContentLoaded',setupAthleteProfile);
 document.addEventListener('DOMContentLoaded',init);
 </script>
 <script src="/assets/smart-trak-navigation.js"></script>

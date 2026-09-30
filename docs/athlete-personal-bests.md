@@ -3,8 +3,12 @@
 The Distance Trak roster shows Distance Details for athletes assigned to an XC
 or distance group, with XC training records, or with saved track-distance meet
 events. The dashboard season selector alone does not qualify an athlete.
-Personal Bests is available to everyone on Distance Trak and in every Athletes
-roster filter, including inactive and setup-needed rows. Clicking a distance
+Personal Bests is available to everyone on Distance Trak and from each athlete
+profile on the Athletes page, including inactive and setup-needed rows in every
+roster filter. Clicking an athlete's name on Athletes opens a profile drawer;
+the Overview tab holds roster, contact, Docu Trak, Equipment Trak, and personal
+calendar actions, while the Personal Bests tab shows all-time saved marks.
+Clicking a distance
 athlete's name opens Details; other names open Personal Bests. Details includes
 training, attendance, documents, and current-season meet results. It omits Speed Trak and Field Practice cards and the
 embedded Power Trak section, but retains Roster, Meet History, Speed Trak,

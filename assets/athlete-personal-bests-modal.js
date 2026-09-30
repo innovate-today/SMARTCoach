@@ -2,9 +2,9 @@
   function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function open(options){
     var athlete=options.athlete,modal=options.modal,title=options.title,body=options.body,request=options.request;
-    title.textContent=(athlete.name||'Athlete')+' Personal Bests';
+    if(title)title.textContent=(athlete.name||'Athlete')+' Personal Bests';
     body.innerHTML='<div class="athlete-pb"><div class="pb-sub">'+esc(athlete.graduationYear?'Class of '+athlete.graduationYear+' · ':'')+'All-time saved results</div>'+['Speed','Strength','Jumps & Throws','Meet Results'].map(function(label,index){return '<section data-pb-category="'+index+'"><div class="pb-heading"><h3>'+esc(label)+'</h3>'+(index===1?'<label class="pb-sub">Compare sets <select data-pb-reps aria-label="Strength rep basis" disabled><option>Loading...</option></select></label>':'')+'</div><div data-pb-section="'+index+'" aria-live="polite"><div class="pb-empty">Loading...</div></div></section>'}).join('')+'<div data-pb-empty class="pb-empty" hidden>No saved results yet.</div><div class="pb-footer"><span>SMART Trak · Personal Bests</span><button data-pb-retry class="quiet-action compact" type="button">Refresh</button></div></div>';
-    modal.hidden=false;
+    if(modal)modal.hidden=false;
     var targets=Array.from(body.querySelectorAll('[data-pb-section]'));
     var categories=Array.from(body.querySelectorAll('[data-pb-category]'));
     var repSelect=body.querySelector('[data-pb-reps]'),fieldRecords=[],powerRecords=[],fieldStatus='loading',powerStatus='loading';

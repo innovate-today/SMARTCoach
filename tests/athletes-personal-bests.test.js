@@ -34,9 +34,13 @@ for(const [filter,expected] of [
   const rows=context.filteredAthletes();
   assert.strictEqual(rows.length,expected,filter);
   for(const athlete of rows){
-    assert(context.rowHtml(athlete).includes('data-athlete-bests="'+athlete.id+'">Personal Bests</button>'),filter+' '+athlete.id);
+    const row=context.rowHtml(athlete);
+    assert(row.includes('data-athlete-detail="'+athlete.id+'"'),filter+' '+athlete.id);
+    assert(!row.includes('data-athlete-bests='),filter+' '+athlete.id);
   }
 }
 assert(html.includes("function openPersonalBests(id)"));
 assert(html.includes("AthletePersonalBestsModal.open({athlete:Object.assign({},athlete,{graduationYear:athlete.graduationYear||athlete.grade})"));
-console.log('Athletes Personal Bests action is available in every roster filter.');
+assert(html.includes('id="detailPersonalBestsTab"'));
+assert(html.includes("showAthleteProfileTab(target==='bests'?'bests':'overview')"));
+console.log('Athlete profile and Personal Bests tab are available in every roster filter.');

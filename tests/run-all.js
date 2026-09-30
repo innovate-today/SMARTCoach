@@ -3232,7 +3232,7 @@ function checkDashboardWhatsNew() {
     "smartcoachWhatsNewSeen_",
     "Team Overview now shows active athletes, distance activity, recent meet results, and workspace links.",
     "Shared navigation groups Athletes, Training, Distance Trak, Speed Trak, Power Trak, Meets & Results, Tools, and Quick Add.",
-    "Personal Bests is available from every athlete row and shows all-time saved marks.",
+    "Open an athlete from the Athletes roster. The profile has Overview and Personal Bests tabs; Personal Bests shows all-time saved marks for every athlete.",
     "Distance Details appears for XC and track-distance runners, with current-season meet results.",
     "Rack Mode stays on the selected athlete after Complete Set; the next athlete chooses their own name.",
     "All optional Distance Trak tools are visible again.",

@@ -1,0 +1,17 @@
+#detailModal{justify-content:flex-end;padding:0}
+#detailModal .modalpanel{width:min(760px,100%);height:100%;max-height:none;border-radius:0;box-shadow:-20px 0 45px rgba(15,23,42,.2)}
+#detailModal .modalhead{align-items:flex-start;padding:18px 22px 12px}
+#detailModal .modalhead h2{font-size:23px;line-height:1.15}
+#detailModal .modalbody{flex:1;padding:0 22px 24px}
+.athlete-profile-subtitle{color:var(--muted);font-size:13px;margin-top:5px}
+.athlete-profile-tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.athlete-profile-tabs button{min-height:40px;border:0;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--muted);padding:8px 1px;font-weight:800}
+.athlete-profile-tabs button[aria-selected="true"]{border-color:var(--blue);color:#173891}
+.athlete-profile-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.athlete-profile-actions button{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
+.athlete-profile-actions .profile-status{width:100%;min-height:0;color:var(--muted);font-size:12px;font-weight:700}
+#detailModal .detailgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+#detailModal .detailcard{background:#fff}
+#detailModal .modalactions{margin:0;padding:12px 22px;border-top:1px solid var(--line)}
+#detailPersonalBestsView[hidden],#detailOverviewView[hidden]{display:none}
+@media(max-width:600px){#detailModal .modalhead{padding:14px 16px 10px}#detailModal .modalbody{padding:0 16px 20px}#detailModal .modalactions{padding:12px 16px}#detailModal .detailgrid{grid-template-columns:1fr}}
