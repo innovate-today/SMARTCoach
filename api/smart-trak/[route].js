@@ -6725,7 +6725,6 @@ async function ghlLocationCreateWebhook(req, res) {
     if (!buyerLocationId) throw httpError(422, "LocationCreate event is missing the new buyer location ID.");
     if (buyerLocationId === SMARTCOACH_SELLER_LOCATION_ID) throw httpError(422, "Buyer location must be distinct from the selling location.");
     if (!email) throw httpError(422, "LocationCreate event is missing a valid buyer email.");
-    if (!stripeProductId) throw httpError(422, "LocationCreate event is missing the SaaS Stripe product ID.");
 
     const pendingKey = pendingCheckoutKey(email);
     const pendingResult = await loadAccountScopedRecord(pendingKey, PENDING_CHECKOUT_NAMESPACE);
@@ -6780,7 +6779,7 @@ async function ghlLocationCreateWebhook(req, res) {
         companyId: cleanSetupText(payload.companyId),
         name: cleanSetupText(payload.name),
         email,
-        stripeProductId,
+        stripeProductId: stripeProductId || "",
         receivedAt: now,
       },
     };

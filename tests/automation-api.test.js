@@ -422,7 +422,7 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
           companyId: "agency-company",
           name: "North Track Club",
           email: pendingEmail,
-          stripeProductId: "prod_smartcoach_pro_200",
+          stripeProductId: null,
         },
       }, res);
 
@@ -447,6 +447,7 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
       assert.ok(savedPending);
       assert.strictEqual(savedPending.status, "matched_location");
       assert.strictEqual(savedPending.lastMatchedLocationId, "buyer-location");
+      assert.strictEqual(savedPending.lastLocationCreateEvent.stripeProductId, "");
       assert.strictEqual(JSON.stringify(res.body).includes("registry-token"), false);
       assert.strictEqual(JSON.stringify(res.body).includes("automation-secret"), false);
     });
