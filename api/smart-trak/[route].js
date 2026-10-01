@@ -67,6 +67,12 @@ const ATHLETE_CALENDAR_QUESTIONS_NAMESPACE = "athletecalendarquestions";
 const WEATHER_LOCATIONS_NAMESPACE = "weatherlocations";
 const SIMULATOR_FIELDS_NAMESPACE = "simulatorfields";
 const PENDING_CHECKOUT_NAMESPACE = "pendingcheckout";
+const SMARTCOACH_SELLER_LOCATION_ID = "QxwjWekSyUf7sDOFHPB4";
+const GHL_LOCATION_CREATE_PUBLIC_KEY = [
+  "-----BEGIN PUBLIC KEY-----",
+  "MCowBQYDK2VwAyEAi2HR1srL4o18O8BRa7gVJY7G7bupbN3H9AwJrHCDiOg=",
+  "-----END PUBLIC KEY-----",
+].join("\n");
 const PRO_SAAS_SALE_LINKS = {
   pro25: {
     monthly: "https://link.fastpaydirect.com/payment-link/6a1b37c203b17c94f5713b61",
@@ -144,6 +150,10 @@ module.exports = async function handler(req, res) {
 
   if (route === "pending-checkout") {
     return pendingCheckout(req, res);
+  }
+
+  if (route === "ghl-location-create") {
+    return ghlLocationCreateWebhook(req, res);
   }
 
   if (route === "account-stripe-webhook") {
@@ -433,7 +443,7 @@ async function runSmartTrakRouteWithAudit(req, res, route, work) {
   } finally {
     if (route === "api-usage") return;
     const method = cleanSetupText(req.method || "GET").toUpperCase();
-    const unauthenticatedIntegrationRoute = ["account-automation", "account-stripe-webhook", "pending-checkout"].includes(cleanSetupText(route));
+    const unauthenticatedIntegrationRoute = ["account-automation", "account-stripe-webhook", "pending-checkout", "ghl-location-create"].includes(cleanSetupText(route));
     if (!["GET", "HEAD", "OPTIONS"].includes(method) && !unauthenticatedIntegrationRoute) {
       const { accountKey } = getGhlContext(req);
       const session = coachSessionFromRequest(req, accountKey);
@@ -6678,6 +6688,109 @@ async function pendingCheckout(req, res) {
   }
 }
 
+async function ghlLocationCreateWebhook(req, res) {
+  setAutomationHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const rawBody = await requestBodyText(req);
+    const verification = verifyGhlLocationCreateRequest(req, rawBody);
+    const payload = JSON.parse(rawBody || "{}");
+    const eventType = cleanSetupText(payload.type);
+    if (eventType !== "LocationCreate") throw httpError(400, "Only LocationCreate events are supported.");
+
+    const buyerLocationId = cleanSetupText(payload.id);
+    const email = cleanEmail(payload.email);
+    if (!buyerLocationId) throw httpError(422, "LocationCreate event is missing the new buyer location ID.");
+    if (buyerLocationId === SMARTCOACH_SELLER_LOCATION_ID) throw httpError(422, "Buyer location must be distinct from the selling location.");
+    if (!email) throw httpError(422, "LocationCreate event is missing a valid buyer email.");
+
+    const pendingKey = pendingCheckoutKey(email);
+    const pendingResult = await loadAccountScopedRecord(pendingKey, PENDING_CHECKOUT_NAMESPACE);
+    const pending = pendingResult && pendingResult.record || null;
+    if (!pending) {
+      res.status(200).json({
+        success: true,
+        eventType,
+        ghlLocationCreateVerified: verification.signatureVerified,
+        automationSecretFallback: verification.automationSecretFallback,
+        buyerLocationId,
+        pendingCheckoutMatched: false,
+        provisioned: false,
+        reason: "No pending SMARTCoach checkout onboarding record matched this buyer email.",
+      });
+      return;
+    }
+
+    const productName = cleanSetupText(pending.productName);
+    if (!parseCheckoutProductName(productName)) throw httpError(422, "Matched pending checkout record does not have an exact checkout product name.");
+
+    const now = new Date().toISOString();
+    const provisioningPayload = {
+      accountKey: `sc-${buyerLocationId}`,
+      locationId: buyerLocationId,
+      accountOwnerEmail: pending.coachEmail,
+      accountOwnerPhone: pending.coachPhone,
+      accountOwnerName: pending.coachName,
+      schoolName: pending.schoolName,
+      subscriptionStatus: "active",
+      customData: {
+        eventType: "ghl_saas_subscription_created",
+        source: "ghl_saas_workflow",
+        sellerLocationId: SMARTCOACH_SELLER_LOCATION_ID,
+        buyerLocationId,
+        locationId: buyerLocationId,
+        accountKey: `sc-${buyerLocationId}`,
+        productName,
+        plan: pending.plan,
+        billingCadence: pending.cadence,
+        stripeProductId: cleanSetupText(payload.stripeProductId),
+      },
+    };
+    const result = await saveAutomationAccount(provisioningPayload, { source: "automation" });
+    const updatedPending = {
+      ...pending,
+      status: "matched_location",
+      matchedAt: now,
+      lastMatchedLocationId: buyerLocationId,
+      lastLocationCreateEvent: {
+        id: buyerLocationId,
+        companyId: cleanSetupText(payload.companyId),
+        name: cleanSetupText(payload.name),
+        email,
+        stripeProductId: cleanSetupText(payload.stripeProductId),
+        receivedAt: now,
+      },
+    };
+    const pendingRegistry = await saveAccountScopedRecord(pendingKey, PENDING_CHECKOUT_NAMESPACE, updatedPending);
+
+    res.status(200).json({
+      success: true,
+      eventType,
+      ghlLocationCreateVerified: verification.signatureVerified,
+      automationSecretFallback: verification.automationSecretFallback,
+      buyerLocationId,
+      accountKey: result.accountKey,
+      productName,
+      pendingCheckoutMatched: true,
+      pendingCheckoutUpdated: !!pendingRegistry.saved,
+      provisioned: !!(result.registry && result.registry.saved),
+      ...result,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not process LocationCreate webhook." });
+  }
+}
+
 async function saveAutomationAccount(payload, options = {}) {
   validateSaasWorkflowProvisioning(payload);
   const accountKey = automationAccountKey(payload);
@@ -8475,7 +8588,7 @@ function requestBodyObject(req) {
 function setAutomationHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Stripe-Signature, X-SMARTCoach-Automation-Secret");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Stripe-Signature, X-GHL-Signature, X-SMARTCoach-Automation-Secret");
 }
 
 function setSessionHeaders(res) {
@@ -8626,6 +8739,27 @@ function verifyStripeSignature(rawBody, signatureHeader, secret) {
   if (!signatures.some((signature) => safeEqual(signature, expected))) {
     throw httpError(401, "Stripe signature could not be verified.");
   }
+}
+
+function verifyGhlLocationCreateRequest(req, rawBody) {
+  const signature = headerValue(req, "x-ghl-signature");
+  if (signature) {
+    let verified = false;
+    try {
+      verified = crypto.verify(
+        null,
+        Buffer.from(rawBody || "", "utf8"),
+        GHL_LOCATION_CREATE_PUBLIC_KEY,
+        Buffer.from(String(signature), "base64")
+      );
+    } catch (error) {
+      verified = false;
+    }
+    if (!verified) throw httpError(401, "GHL LocationCreate signature could not be verified.");
+    return { signatureVerified: true, automationSecretFallback: false };
+  }
+  if (automationAllowed(req)) return { signatureVerified: false, automationSecretFallback: true };
+  throw httpError(401, "GHL LocationCreate signature is required.");
 }
 
 function stripeSignatureParts(header) {

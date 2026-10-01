@@ -343,6 +343,198 @@ async function testPendingCheckoutValidatesRequiredFields() {
   }
 }
 
+async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation() {
+  const previousFetch = global.fetch;
+  const pendingEmail = "taylor.coach@example.com";
+  const pendingKey = `checkout-${crypto.createHash("sha256").update(pendingEmail).digest("hex").slice(0, 32)}`;
+  const pendingRecord = {
+    id: "pending_test",
+    source: "smartcoach-precheckout",
+    status: "pending_payment",
+    plan: "pro200",
+    cadence: "monthly",
+    productName: "SMARTCoach Pro 200 - Monthly",
+    redirectUrl: "https://link.fastpaydirect.com/payment-link/6a1b383c71d2406ac8cf9ebd",
+    schoolName: "North Track Club",
+    coachName: "Taylor Coach",
+    coachEmail: pendingEmail,
+    coachPhone: "5551234567",
+    teamType: "Track & Field",
+    createdAt: "2026-10-01T00:00:00.000Z",
+    lastMatchedLocationId: "",
+  };
+  let savedAccount = null;
+  let savedPending = null;
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/get/")) {
+      const key = decodeURIComponent(text.split("/get/")[1]);
+      if (key === `smartcoach:account:${pendingKey}:pendingcheckout`) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({ result: JSON.stringify(pendingRecord) }),
+        };
+      }
+      if (key === "smartcoach:account:sc-buyer-location") {
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({ result: "" }),
+        };
+      }
+      throw new Error(`Unexpected registry get key: ${key}`);
+    }
+    if (text.includes("/set/")) {
+      const parts = text.split("/set/")[1].split("/");
+      const key = decodeURIComponent(parts[0]);
+      const payload = JSON.parse(decodeURIComponent(parts.slice(1).join("/")));
+      if (key === "smartcoach:account:sc-buyer-location") {
+        savedAccount = payload;
+      } else if (key === `smartcoach:account:${pendingKey}:pendingcheckout`) {
+        savedPending = payload;
+      } else {
+        throw new Error(`Unexpected registry set key: ${key}`);
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "OK" }),
+      };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "ghl-location-create" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          type: "LocationCreate",
+          id: "buyer-location",
+          companyId: "agency-company",
+          name: "North Track Club",
+          email: pendingEmail,
+          stripeProductId: "prod_smartcoach_pro_200",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.automationSecretFallback, true);
+      assert.strictEqual(res.body.pendingCheckoutMatched, true);
+      assert.strictEqual(res.body.provisioned, true);
+      assert.strictEqual(res.body.buyerLocationId, "buyer-location");
+      assert.strictEqual(res.body.accountKey, "sc-buyer-location");
+      assert.strictEqual(res.body.productPlan, "pro200");
+      assert.strictEqual(res.body.subscription.amount, "39.00");
+      assert.strictEqual(res.body.accessReady, false);
+      assert.ok(savedAccount);
+      assert.strictEqual(savedAccount.accountKey, "sc-buyer-location");
+      assert.strictEqual(savedAccount.locationId, "buyer-location");
+      assert.strictEqual(savedAccount.accountOwnerEmail, pendingEmail);
+      assert.strictEqual(savedAccount.accountOwnerName, "Taylor Coach");
+      assert.strictEqual(savedAccount.subscription.billingCadence, "monthly");
+      assert.strictEqual(savedAccount.subscription.amount, "39.00");
+      assert.strictEqual(savedAccount.lastAutomationEvent.source, "ghl_saas_workflow");
+      assert.ok(savedPending);
+      assert.strictEqual(savedPending.status, "matched_location");
+      assert.strictEqual(savedPending.lastMatchedLocationId, "buyer-location");
+      assert.strictEqual(JSON.stringify(res.body).includes("registry-token"), false);
+      assert.strictEqual(JSON.stringify(res.body).includes("automation-secret"), false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
+async function testGhlLocationCreateWithoutMatchDoesNotProvision() {
+  const previousFetch = global.fetch;
+  let saveCalled = false;
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/get/")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "" }),
+      };
+    }
+    if (text.includes("/set/")) saveCalled = true;
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "ghl-location-create" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          type: "LocationCreate",
+          id: "unmatched-buyer-location",
+          email: "unmatched@example.com",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.pendingCheckoutMatched, false);
+      assert.strictEqual(res.body.provisioned, false);
+      assert.strictEqual(saveCalled, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
+async function testGhlLocationCreateRequiresSignatureOrSecret() {
+  const previousFetch = global.fetch;
+  let fetchCalled = false;
+  global.fetch = async () => {
+    fetchCalled = true;
+    throw new Error("Unauthorized LocationCreate webhook should not touch the registry.");
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "ghl-location-create" },
+        headers: {},
+        body: {
+          type: "LocationCreate",
+          id: "buyer-location",
+          email: "buyer@example.com",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 401);
+      assert.match(res.body.error, /signature is required/);
+      assert.strictEqual(fetchCalled, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAccountSetupCodeProtection() {
   await withEnv({
     SMARTCOACH_ADMIN_SETUP_CODE: "setup-secret",
@@ -1632,6 +1824,9 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
   await testSaasWorkflowRequiresRealBuyerLocationAndProduct();
   await testPendingCheckoutStoresOnboardingAndReturnsSaleLink();
   await testPendingCheckoutValidatesRequiredFields();
+  await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation();
+  await testGhlLocationCreateWithoutMatchDoesNotProvision();
+  await testGhlLocationCreateRequiresSignatureOrSecret();
   await testAccountSetupCodeProtection();
   await testAutomationSecretRequiredBeforeRegistry();
   await testAutomationDoesNotGenerateCoachCodes();
