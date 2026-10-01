@@ -420,7 +420,7 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
           type: "LocationCreate",
           id: "buyer-location",
           companyId: "agency-company",
-          name: "North Track Club",
+          name: "Taylor Coach's Account",
           email: pendingEmail,
           stripeProductId: null,
         },
@@ -439,6 +439,8 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
       assert.ok(savedAccount);
       assert.strictEqual(savedAccount.accountKey, "sc-buyer-location");
       assert.strictEqual(savedAccount.locationId, "buyer-location");
+      assert.strictEqual(savedAccount.schoolName, "North Track Club");
+      assert.strictEqual(savedAccount.ghlLocationName, "Taylor Coach's Account");
       assert.strictEqual(savedAccount.accountOwnerEmail, pendingEmail);
       assert.strictEqual(savedAccount.accountOwnerName, "Taylor Coach");
       assert.strictEqual(savedAccount.subscription.billingCadence, "monthly");

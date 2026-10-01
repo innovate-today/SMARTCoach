@@ -6750,6 +6750,7 @@ async function ghlLocationCreateWebhook(req, res) {
     const provisioningPayload = {
       accountKey: `sc-${buyerLocationId}`,
       locationId: buyerLocationId,
+      ghlLocationName: cleanSetupText(payload.name),
       accountOwnerEmail: pending.coachEmail,
       accountOwnerPhone: pending.coachPhone,
       accountOwnerName: pending.coachName,
@@ -7939,6 +7940,8 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const ownerPhoneValue = firstAutomationValue(payload, ["accountOwnerPhone", "ownerPhone", "headCoachPhone", "coachPhone", "phone"]);
   const ownerNameValue = firstAutomationValue(payload, ["accountOwnerName", "ownerName", "headCoachName", "coachName", "name"]);
   const ownerContactIdValue = firstAutomationValue(payload, ["accountOwnerContactId", "ownerContactId", "headCoachContactId", "coachContactId"]);
+  const schoolNameValue = firstAutomationValue(payload, ["schoolName", "programName", "teamName", "organizationName"]);
+  const ghlLocationNameValue = firstAutomationValue(payload, ["ghlLocationName", "buyerLocationName"]);
   const requireCoachAccessValue = firstAutomationValue(payload, ["requireCoachAccess", "coachAccessRequired", "requireAccessCode"]);
   const requireCoachAccess = normalizeSetupBoolean(requireCoachAccessValue, existing.requireCoachAccess !== undefined ? existing.requireCoachAccess : true);
   const event = automationEventSummary(payload, options);
@@ -7963,6 +7966,8 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     accountOwnerPhone: cleanPhone(ownerPhoneValue || existing.accountOwnerPhone),
     accountOwnerName: cleanSetupText(ownerNameValue || existing.accountOwnerName),
     accountOwnerContactId: cleanSetupText(ownerContactIdValue || existing.accountOwnerContactId),
+    schoolName: cleanSetupText(schoolNameValue || existing.schoolName),
+    ghlLocationName: cleanSetupText(ghlLocationNameValue || existing.ghlLocationName),
     coachCodeRecovery: existing.coachCodeRecovery || null,
     coachStaff: normalizeCoachStaff(existing.coachStaff),
     lastStaffSync: existing.lastStaffSync || null,
