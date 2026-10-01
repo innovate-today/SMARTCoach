@@ -166,6 +166,77 @@ async function testCheckoutProductCorrectsExistingFallbackAmount() {
   }
 }
 
+async function testSaasWorkflowRequiresRealBuyerLocationAndProduct() {
+  const previousFetch = global.fetch;
+  let fetchCalled = false;
+  global.fetch = async () => {
+    fetchCalled = true;
+    throw new Error("Invalid SaaS provisioning must not access the registry.");
+  };
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: undefined,
+      SMARTCOACH_REGISTRY_REST_TOKEN: undefined,
+    }, async () => {
+      const base = {
+        accountKey: "sc-seller-location",
+        customData: {
+          source: "ghl_saas_workflow",
+          sellerLocationId: "seller-location",
+          locationId: "seller-location",
+          plan: "pro",
+          billingCadence: "monthly",
+          productName: "SMARTCoach Pro 25 - Monthly",
+        },
+      };
+      for (const customData of [
+        base.customData,
+        { ...base.customData, buyerLocationId: "seller-location" },
+        { ...base.customData, buyerLocationId: "buyer-location" },
+      ]) {
+        const res = mockRes();
+        await handler({
+          method: "POST",
+          query: { route: "account-automation-dry-run" },
+          headers: { "x-smartcoach-automation-secret": "automation-secret" },
+          body: { ...base, customData },
+        }, res);
+        assert.strictEqual(res.statusCode, 422);
+        assert.match(res.body.error, /buyer location/);
+      }
+      const missingVariant = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation-dry-run" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          accountKey: "sc-buyer-location",
+          customData: { ...base.customData, buyerLocationId: "buyer-location", locationId: "buyer-location", productName: "SMARTCoach Pro 25" },
+        },
+      }, missingVariant);
+      assert.strictEqual(missingVariant.statusCode, 422);
+      assert.match(missingVariant.body.error, /checkout product name/);
+      const valid = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation-dry-run" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          accountKey: "sc-buyer-location",
+          customData: { ...base.customData, buyerLocationId: "buyer-location", locationId: "buyer-location" },
+        },
+      }, valid);
+      assert.strictEqual(valid.statusCode, 200);
+      assert.strictEqual(valid.body.productPlan, "pro25");
+      assert.strictEqual(valid.body.subscription.amount, "19.00");
+      assert.strictEqual(fetchCalled, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAccountSetupCodeProtection() {
   await withEnv({
     SMARTCOACH_ADMIN_SETUP_CODE: "setup-secret",
@@ -1452,6 +1523,7 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
   await testAutomationDryRunDoesNotSave();
   await testCheckoutProductOverridesLegacyWorkflowFields();
   await testCheckoutProductCorrectsExistingFallbackAmount();
+  await testSaasWorkflowRequiresRealBuyerLocationAndProduct();
   await testAccountSetupCodeProtection();
   await testAutomationSecretRequiredBeforeRegistry();
   await testAutomationDoesNotGenerateCoachCodes();

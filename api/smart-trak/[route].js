@@ -6593,6 +6593,7 @@ async function accountStripeWebhook(req, res) {
 }
 
 async function saveAutomationAccount(payload, options = {}) {
+  validateSaasWorkflowProvisioning(payload);
   const accountKey = automationAccountKey(payload);
   if (!accountKey) throw httpError(400, "Account key is required.");
   const existing = await loadExistingAccountRecord(accountKey);
@@ -6762,6 +6763,7 @@ function customValueSyncSkipped(reason) {
 }
 
 async function previewAutomationAccount(payload, options = {}) {
+  validateSaasWorkflowProvisioning(payload);
   const accountKey = automationAccountKey(payload);
   if (!accountKey) throw httpError(400, "Account key is required.");
   const existing = await loadExistingAccountRecord(accountKey);
@@ -7921,6 +7923,23 @@ function automationAccountKey(payload) {
       "clientReferenceId",
     ])
   );
+}
+
+function validateSaasWorkflowProvisioning(payload) {
+  const customData = payload && (payload.customData || payload.custom_data) || {};
+  if (cleanSetupText(customData.source).toLowerCase() !== "ghl_saas_workflow") return;
+  const sellerLocationId = cleanSetupText(customData.sellerLocationId);
+  const buyerLocationId = cleanSetupText(customData.buyerLocationId);
+  const locationId = cleanSetupText(firstAutomationValue(payload, ["locationId", "ghlLocationId"]));
+  if (!sellerLocationId || !buyerLocationId || sellerLocationId === buyerLocationId || locationId !== buyerLocationId) {
+    throw httpError(422, "SaaS provisioning requires a buyer location distinct from the selling location.");
+  }
+  if (automationAccountKey(payload) !== normalizeSetupAccountKey(`sc-${buyerLocationId}`)) {
+    throw httpError(422, "SaaS account key must match the buyer location.");
+  }
+  if (!parseCheckoutProductName(firstAutomationValue(payload, ["productName", "subscriptionProductName"]))) {
+    throw httpError(422, "SaaS provisioning requires an exact checkout product name with monthly or annual cadence.");
+  }
 }
 
 function automationEventSummary(payload, options = {}) {
