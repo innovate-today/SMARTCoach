@@ -536,6 +536,50 @@ async function testGhlLocationCreateRequiresSignatureOrSecret() {
   }
 }
 
+async function testGhlInstallWebhookAcknowledgesWithoutProvisioning() {
+  const previousFetch = global.fetch;
+  let fetchCalled = false;
+  global.fetch = async () => {
+    fetchCalled = true;
+    throw new Error("Install webhook should not touch the registry.");
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "ghl-location-create" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          type: "INSTALL",
+          appId: "6abed80821f5efd8466abccb",
+          versionId: "6abed80821f5efd8466abccb",
+          installType: "Company",
+          companyId: "agency-company",
+          userId: "agency-user",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.eventType, "INSTALL");
+      assert.strictEqual(res.body.acknowledged, true);
+      assert.strictEqual(res.body.provisioned, false);
+      assert.strictEqual(res.body.automationSecretFallback, true);
+      assert.strictEqual(fetchCalled, false);
+      assert.strictEqual(JSON.stringify(res.body).includes("automation-secret"), false);
+      assert.strictEqual(JSON.stringify(res.body).includes("registry-token"), false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAccountSetupCodeProtection() {
   await withEnv({
     SMARTCOACH_ADMIN_SETUP_CODE: "setup-secret",
@@ -1828,6 +1872,7 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
   await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation();
   await testGhlLocationCreateWithoutMatchDoesNotProvision();
   await testGhlLocationCreateRequiresSignatureOrSecret();
+  await testGhlInstallWebhookAcknowledgesWithoutProvisioning();
   await testAccountSetupCodeProtection();
   await testAutomationSecretRequiredBeforeRegistry();
   await testAutomationDoesNotGenerateCoachCodes();

@@ -6706,6 +6706,17 @@ async function ghlLocationCreateWebhook(req, res) {
     const verification = verifyGhlLocationCreateRequest(req, rawBody);
     const payload = JSON.parse(rawBody || "{}");
     const eventType = cleanSetupText(payload.type);
+    if (eventType === "INSTALL") {
+      res.status(200).json({
+        success: true,
+        eventType,
+        acknowledged: true,
+        provisioned: false,
+        ghlLocationCreateVerified: verification.signatureVerified,
+        automationSecretFallback: verification.automationSecretFallback,
+      });
+      return;
+    }
     if (eventType !== "LocationCreate") throw httpError(400, "Only LocationCreate events are supported.");
 
     const buyerLocationId = cleanSetupText(payload.id);
