@@ -98,6 +98,74 @@ async function testAutomationDryRunDoesNotSave() {
   }
 }
 
+async function testCheckoutProductOverridesLegacyWorkflowFields() {
+  await withEnv({
+    SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+    SMARTCOACH_REGISTRY_REST_URL: undefined,
+    SMARTCOACH_REGISTRY_REST_TOKEN: undefined,
+  }, async () => {
+    for (const [productName, plan, cadence, amount] of [
+      ["SMARTCoach Pro 25 - Monthly", "pro25", "monthly", "19.00"],
+      ["SMARTCoach Pro 100 - Annual", "pro100", "annual", "299.00"],
+      ["SMARTCoach Pro 200 - Monthly", "pro200", "monthly", "39.00"],
+    ]) {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation-dry-run" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          accountKey: "checkout-test-school",
+          customData: { plan: "pro", billingCadence: "monthly", productName },
+        },
+      }, res);
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.productPlan, plan);
+      assert.strictEqual(res.body.subscription.billingCadence, cadence);
+      assert.strictEqual(res.body.subscription.amount, amount);
+    }
+  });
+}
+
+async function testCheckoutProductCorrectsExistingFallbackAmount() {
+  const previousFetch = global.fetch;
+  global.fetch = async (url) => {
+    if (!String(url).includes("/get/")) throw new Error(`Unexpected registry call: ${url}`);
+    return {
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ result: JSON.stringify({
+        accountKey: "checkout-test-school",
+        productPlan: "pro25",
+        subscription: { status: "active", billingCadence: "monthly", amount: "29.99" },
+      }) }),
+    };
+  };
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation-dry-run" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          accountKey: "checkout-test-school",
+          customData: { plan: "pro", billingCadence: "monthly", productName: "SMARTCoach Pro 25 - Monthly" },
+        },
+      }, res);
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.subscription.amount, "19.00");
+      assert.strictEqual(res.body.registry.saved, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAccountSetupCodeProtection() {
   await withEnv({
     SMARTCOACH_ADMIN_SETUP_CODE: "setup-secret",
@@ -1382,6 +1450,8 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
 
 (async () => {
   await testAutomationDryRunDoesNotSave();
+  await testCheckoutProductOverridesLegacyWorkflowFields();
+  await testCheckoutProductCorrectsExistingFallbackAmount();
   await testAccountSetupCodeProtection();
   await testAutomationSecretRequiredBeforeRegistry();
   await testAutomationDoesNotGenerateCoachCodes();

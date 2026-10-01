@@ -7679,8 +7679,11 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const existingSubscription = existing.subscription || {};
   const accountKey = automationAccountKey(payload);
   if (!accountKey) throw httpError(400, "Account key is required.");
+  const checkoutProduct = (options.source === "automation" || options.source === "automation-dry-run")
+    ? parseCheckoutProductName(firstAutomationValue(payload, ["productName", "subscriptionProductName"]))
+    : null;
   const productPlanValue = firstAutomationValue(payload, ["productPlan", "plan", "subscriptionPlan"]);
-  const productPlan = productPlanValue ? normalizeSetupProductPlan(productPlanValue) : normalizeSetupProductPlan(existing.productPlan || "pro");
+  const productPlan = checkoutProduct ? checkoutProduct.plan : productPlanValue ? normalizeSetupProductPlan(productPlanValue) : normalizeSetupProductPlan(existing.productPlan || "pro");
   const coachSeatsValue = firstAutomationValue(payload, ["coachSeats", "coaches", "seats"]);
   const coachSeats = coachSeatsValue ? normalizeSetupCoachSeats(coachSeatsValue, productPlan) : normalizeSetupCoachSeats(existing.coachSeats || 1, productPlan);
   const statusValue = firstAutomationValue(payload, ["subscriptionStatus", "status"]);
@@ -7695,11 +7698,11 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const accessReasonValue = firstAutomationValue(payload, ["accessReason", "accountAccessReason"]);
   const betaExpiresAtProvided = automationPayloadHasAnyKey(payload, ["betaExpiresAt", "betaAccessExpiresAt"]);
   const betaExpiresAtValue = firstAutomationValue(payload, ["betaExpiresAt", "betaAccessExpiresAt"]);
-  const billingCadence = billingValue ? normalizeSetupBillingCadence(billingValue) : existingSubscription.billingCadence || "monthly";
+  const billingCadence = checkoutProduct ? checkoutProduct.cadence : billingValue ? normalizeSetupBillingCadence(billingValue) : existingSubscription.billingCadence || "monthly";
   const subscription = {
     status: statusValue ? normalizeSetupSubscriptionStatus(statusValue) : existingSubscription.status || "active",
     billingCadence,
-    amount: normalizeSetupSubscriptionAmount(productPlan, billingCadence, amountValue ? normalizeMoneyAmount(amountValue) : existingSubscription.amount),
+    amount: normalizeSetupSubscriptionAmount(productPlan, billingCadence, amountValue ? normalizeMoneyAmount(amountValue) : checkoutProduct ? suggestedSubscriptionAmount(productPlan, null, billingCadence) : existingSubscription.amount),
     renewalDate: renewalValue ? normalizeDateValue(renewalValue) : existingSubscription.renewalDate || "",
     stripeCustomerId: cleanSetupText(stripeCustomerValue || existingSubscription.stripeCustomerId),
     stripeSubscriptionId: cleanSetupText(stripeSubscriptionValue || existingSubscription.stripeSubscriptionId),
@@ -7756,6 +7759,13 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     lastAutomationEvent: event,
     automationEventHistory,
   };
+}
+
+function parseCheckoutProductName(value) {
+  const name = cleanSetupText(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const match = /^smartcoach (essential|pro (?:25|100|200)) (monthly|annual)$/.exec(name);
+  if (!match) return null;
+  return { plan: normalizeSetupProductPlan(match[1]), cadence: match[2] };
 }
 
 const ACCOUNT_CLEANUP_OPTIONS = {
