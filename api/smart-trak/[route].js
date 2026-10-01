@@ -66,6 +66,21 @@ const XC_RECORDS_SHARING_NAMESPACE = "xcrecordssharing";
 const ATHLETE_CALENDAR_QUESTIONS_NAMESPACE = "athletecalendarquestions";
 const WEATHER_LOCATIONS_NAMESPACE = "weatherlocations";
 const SIMULATOR_FIELDS_NAMESPACE = "simulatorfields";
+const PENDING_CHECKOUT_NAMESPACE = "pendingcheckout";
+const PRO_SAAS_SALE_LINKS = {
+  pro25: {
+    monthly: "https://link.fastpaydirect.com/payment-link/6a1b37c203b17c94f5713b61",
+    annual: "https://link.fastpaydirect.com/payment-link/6a1b37e503b17c94f5713b63",
+  },
+  pro100: {
+    monthly: "https://link.fastpaydirect.com/payment-link/6a1b380671d2406ac8cf9ebc",
+    annual: "https://link.fastpaydirect.com/payment-link/6a1b382203b17c94f5713b65",
+  },
+  pro200: {
+    monthly: "https://link.fastpaydirect.com/payment-link/6a1b383c71d2406ac8cf9ebd",
+    annual: "https://link.fastpaydirect.com/payment-link/6a1b384971d2406ac8cf9ebe",
+  },
+};
 const ACCOUNT_STATUS_CACHE_TTL_MS = 30000;
 const accountStatusCache = new Map();
 
@@ -125,6 +140,10 @@ module.exports = async function handler(req, res) {
 
   if (route === "account-automation-health") {
     return accountAutomationHealth(req, res);
+  }
+
+  if (route === "pending-checkout") {
+    return pendingCheckout(req, res);
   }
 
   if (route === "account-stripe-webhook") {
@@ -414,7 +433,7 @@ async function runSmartTrakRouteWithAudit(req, res, route, work) {
   } finally {
     if (route === "api-usage") return;
     const method = cleanSetupText(req.method || "GET").toUpperCase();
-    const unauthenticatedIntegrationRoute = ["account-automation", "account-stripe-webhook"].includes(cleanSetupText(route));
+    const unauthenticatedIntegrationRoute = ["account-automation", "account-stripe-webhook", "pending-checkout"].includes(cleanSetupText(route));
     if (!["GET", "HEAD", "OPTIONS"].includes(method) && !unauthenticatedIntegrationRoute) {
       const { accountKey } = getGhlContext(req);
       const session = coachSessionFromRequest(req, accountKey);
@@ -6592,6 +6611,73 @@ async function accountStripeWebhook(req, res) {
   }
 }
 
+async function pendingCheckout(req, res) {
+  setAutomationHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const payload = requestBodyObject(req);
+    const plan = normalizeSetupProductPlan(firstPayloadValue(payload, ["plan", "productPlan"]));
+    const cadence = normalizeSetupBillingCadence(firstPayloadValue(payload, ["cadence", "billingCadence"]));
+    const redirectUrl = checkoutRedirectUrl(plan, cadence);
+    if (!redirectUrl) throw httpError(400, "Choose a valid SMARTCoach Pro plan and billing cadence.");
+
+    const email = cleanEmail(firstPayloadValue(payload, ["email", "coachEmail", "accountOwnerEmail"]));
+    const firstName = cleanSetupText(firstPayloadValue(payload, ["firstName", "coachFirstName"])).slice(0, 80);
+    const lastName = cleanSetupText(firstPayloadValue(payload, ["lastName", "coachLastName"])).slice(0, 80);
+    const schoolName = cleanSetupText(firstPayloadValue(payload, ["schoolName", "programName", "companyName", "teamName"])).slice(0, 140);
+    const phone = cleanPhone(firstPayloadValue(payload, ["phone", "coachPhone", "accountOwnerPhone"]));
+    const teamType = cleanSetupText(firstPayloadValue(payload, ["teamType", "sport", "programType"])).slice(0, 80);
+    if (!schoolName) throw httpError(400, "School or program name is required.");
+    if (!firstName || !lastName) throw httpError(400, "Coach first and last name are required.");
+    if (!email) throw httpError(400, "A valid coach email is required.");
+
+    const now = new Date().toISOString();
+    const pendingKey = pendingCheckoutKey(email);
+    const record = {
+      id: `pending_${crypto.createHash("sha256").update(`${email}:${plan}:${cadence}:${now}`).digest("hex").slice(0, 16)}`,
+      source: "smartcoach-precheckout",
+      status: "pending_payment",
+      plan,
+      cadence,
+      productName: checkoutProductName(plan, cadence),
+      redirectUrl,
+      schoolName,
+      coachFirstName: firstName,
+      coachLastName: lastName,
+      coachName: `${firstName} ${lastName}`.trim(),
+      coachEmail: email,
+      coachPhone: phone,
+      teamType,
+      createdAt: now,
+      lastMatchedLocationId: "",
+    };
+    const registry = await saveAccountScopedRecord(pendingKey, PENDING_CHECKOUT_NAMESPACE, record);
+    if (!registry.saved) throw httpError(503, registry.reason || "Pending checkout could not be saved.");
+    res.status(200).json({
+      success: true,
+      pendingCheckoutSaved: true,
+      pendingCheckoutKey: pendingKey,
+      plan,
+      cadence,
+      productName: record.productName,
+      redirectUrl,
+      registry: { saved: true, configured: true },
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not start checkout." });
+  }
+}
+
 async function saveAutomationAccount(payload, options = {}) {
   validateSaasWorkflowProvisioning(payload);
   const accountKey = automationAccountKey(payload);
@@ -7768,6 +7854,23 @@ function parseCheckoutProductName(value) {
   const match = /^smartcoach (essential|pro (?:25|100|200)) (monthly|annual)$/.exec(name);
   if (!match) return null;
   return { plan: normalizeSetupProductPlan(match[1]), cadence: match[2] };
+}
+
+function checkoutProductName(plan, cadence) {
+  const definition = planDefinition(plan);
+  const normalizedCadence = normalizeSetupBillingCadence(cadence);
+  return `${definition.label} - ${normalizedCadence === "annual" ? "Annual" : "Monthly"}`;
+}
+
+function checkoutRedirectUrl(plan, cadence) {
+  const normalizedPlan = normalizeSetupProductPlan(plan);
+  const normalizedCadence = normalizeSetupBillingCadence(cadence);
+  return PRO_SAAS_SALE_LINKS[normalizedPlan] && PRO_SAAS_SALE_LINKS[normalizedPlan][normalizedCadence] || "";
+}
+
+function pendingCheckoutKey(email) {
+  const normalizedEmail = cleanEmail(email);
+  return `checkout-${crypto.createHash("sha256").update(normalizedEmail).digest("hex").slice(0, 32)}`;
 }
 
 const ACCOUNT_CLEANUP_OPTIONS = {

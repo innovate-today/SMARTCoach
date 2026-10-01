@@ -237,6 +237,112 @@ async function testSaasWorkflowRequiresRealBuyerLocationAndProduct() {
   }
 }
 
+async function testPendingCheckoutStoresOnboardingAndReturnsSaleLink() {
+  const previousFetch = global.fetch;
+  let savedRecord = null;
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/set/")) {
+      const encodedPayload = text.split("/set/")[1].split("/").slice(1).join("/");
+      savedRecord = JSON.parse(decodeURIComponent(encodedPayload));
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "OK" }),
+      };
+    }
+    throw new Error(`Unexpected pending checkout registry call: ${text}`);
+  };
+  try {
+    await withEnv({
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "pending-checkout" },
+        headers: {},
+        body: {
+          plan: "pro100",
+          cadence: "annual",
+          schoolName: "North Track Club",
+          firstName: "Taylor",
+          lastName: "Coach",
+          email: "Taylor.Coach@example.com",
+          phone: "(555) 123-4567",
+          teamType: "Track & Field",
+        },
+      }, res);
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.plan, "pro100");
+      assert.strictEqual(res.body.cadence, "annual");
+      assert.strictEqual(res.body.productName, "SMARTCoach Pro 100 - Annual");
+      assert.strictEqual(res.body.redirectUrl, "https://link.fastpaydirect.com/payment-link/6a1b382203b17c94f5713b65");
+      assert.ok(savedRecord);
+      assert.strictEqual(savedRecord.schoolName, "North Track Club");
+      assert.strictEqual(savedRecord.coachEmail, "taylor.coach@example.com");
+      assert.strictEqual(savedRecord.coachPhone, "5551234567");
+      assert.strictEqual(savedRecord.status, "pending_payment");
+      assert.strictEqual(JSON.stringify(savedRecord).includes("registry-token"), false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
+async function testPendingCheckoutValidatesRequiredFields() {
+  const previousFetch = global.fetch;
+  let fetchCalled = false;
+  global.fetch = async () => {
+    fetchCalled = true;
+    throw new Error("Invalid pending checkout should not write to registry.");
+  };
+  try {
+    await withEnv({
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const invalidPlan = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "pending-checkout" },
+        headers: {},
+        body: {
+          plan: "essential",
+          cadence: "monthly",
+          schoolName: "North Track Club",
+          firstName: "Taylor",
+          lastName: "Coach",
+          email: "taylor@example.com",
+        },
+      }, invalidPlan);
+      assert.strictEqual(invalidPlan.statusCode, 400);
+      assert.match(invalidPlan.body.error, /valid SMARTCoach Pro plan/);
+
+      const missingSchool = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "pending-checkout" },
+        headers: {},
+        body: {
+          plan: "pro25",
+          cadence: "monthly",
+          firstName: "Taylor",
+          lastName: "Coach",
+          email: "taylor@example.com",
+        },
+      }, missingSchool);
+      assert.strictEqual(missingSchool.statusCode, 400);
+      assert.match(missingSchool.body.error, /School or program name/);
+      assert.strictEqual(fetchCalled, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAccountSetupCodeProtection() {
   await withEnv({
     SMARTCOACH_ADMIN_SETUP_CODE: "setup-secret",
@@ -1524,6 +1630,8 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
   await testCheckoutProductOverridesLegacyWorkflowFields();
   await testCheckoutProductCorrectsExistingFallbackAmount();
   await testSaasWorkflowRequiresRealBuyerLocationAndProduct();
+  await testPendingCheckoutStoresOnboardingAndReturnsSaleLink();
+  await testPendingCheckoutValidatesRequiredFields();
   await testAccountSetupCodeProtection();
   await testAutomationSecretRequiredBeforeRegistry();
   await testAutomationDoesNotGenerateCoachCodes();

@@ -46,6 +46,7 @@ const htmlFiles = [
   "onboarding.html",
   "live-launch-validation.html",
   "sales.html",
+  "smartcoach-checkout.html",
   "privacy.html",
 ];
 const jsonFiles = [

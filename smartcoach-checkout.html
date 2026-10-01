@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Start SMARTCoach Pro Checkout</title>
+<style>
+:root{--ink:#172033;--muted:#56647b;--line:#d7dfeb;--blue:#2855d7;--blue-dark:#123a9c;--soft:#f4f7fb;--green:#08783c;--red:#d92d20}
+*{box-sizing:border-box}
+body{margin:0;background:var(--soft);color:var(--ink);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:0}
+.shell{min-height:100vh;display:grid;grid-template-columns:minmax(280px,.8fr) minmax(320px,1fr)}
+.summary{display:flex;flex-direction:column;justify-content:space-between;padding:44px max(28px,8vw);background:#fff;border-right:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;font-weight:900}
+.brand img{width:42px;height:42px;object-fit:contain}
+.summary h1{margin:54px 0 14px;font-size:clamp(36px,5vw,64px);line-height:1.02}
+.summary p{max-width:560px;color:var(--muted);font-size:18px;line-height:1.55}
+.plan-box{margin-top:28px;border:1px solid var(--line);border-radius:8px;padding:18px;background:var(--soft)}
+.plan-box span{display:block;color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase}
+.plan-box strong{display:block;margin-top:6px;font-size:22px}
+.form-wrap{display:flex;align-items:center;justify-content:center;padding:44px 24px}
+form{width:min(620px,100%);background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;box-shadow:0 16px 42px rgba(15,23,42,.08)}
+fieldset{border:0;margin:0;padding:0;display:grid;gap:16px}
+legend{font-size:28px;font-weight:950;margin-bottom:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:grid;gap:7px;color:#2d3748;font-size:13px;font-weight:850}
+input,select{width:100%;min-height:44px;border:1px solid #cdd6e4;border-radius:6px;padding:10px 12px;color:var(--ink);font:inherit;background:#fff}
+input:focus,select:focus{outline:2px solid rgba(40,85,215,.18);border-color:var(--blue)}
+button{width:100%;min-height:48px;border:0;border-radius:7px;background:var(--blue);color:#fff;font-weight:950;font-size:16px;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.65}
+.note{margin:12px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+.error{display:none;margin:0 0 14px;padding:11px 12px;border:1px solid #fecaca;border-radius:6px;background:#fff1f2;color:#991b1b;font-weight:750}
+.status{display:none;margin:0 0 14px;padding:11px 12px;border:1px solid #bbf7d0;border-radius:6px;background:#f0fdf4;color:#166534;font-weight:750}
+@media(max-width:860px){.shell{grid-template-columns:1fr}.summary{border-right:0;border-bottom:1px solid var(--line)}.summary h1{margin-top:34px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <section class="summary">
+    <div>
+      <a class="brand" href="/sales.html">
+        <img src="/assets/smart-logo.png" alt="SMARTCoach">
+        <span>SMARTCoach Pro</span>
+      </a>
+      <h1>Set up your program before payment.</h1>
+      <p>Tell us the school or program name now, then continue to the secure SaaS checkout. After payment, SMARTCoach can match your new sub-account to this setup record.</p>
+      <div class="plan-box">
+        <span>Selected plan</span>
+        <strong id="selectedPlan">SMARTCoach Pro</strong>
+      </div>
+    </div>
+    <p class="note">Payment is handled by the secure SMARTCoach Pro checkout. This page stores setup details only.</p>
+  </section>
+  <section class="form-wrap">
+    <form id="checkoutForm">
+      <div class="error" id="errorBox"></div>
+      <div class="status" id="statusBox">Saving setup details...</div>
+      <fieldset>
+        <legend>Program details</legend>
+        <label>
+          School or program name
+          <input name="schoolName" autocomplete="organization" required maxlength="140" placeholder="Example High School Track & Field">
+        </label>
+        <label>
+          Team type
+          <select name="teamType">
+            <option value="">Select team type</option>
+            <option>Track & Field</option>
+            <option>Cross Country</option>
+            <option>Track & Field + Cross Country</option>
+            <option>Club</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <div class="grid">
+          <label>
+            Head coach first name
+            <input name="firstName" autocomplete="given-name" required maxlength="80">
+          </label>
+          <label>
+            Head coach last name
+            <input name="lastName" autocomplete="family-name" required maxlength="80">
+          </label>
+        </div>
+        <label>
+          Coach email
+          <input type="email" name="email" autocomplete="email" required maxlength="160">
+        </label>
+        <label>
+          Coach phone
+          <input name="phone" autocomplete="tel" maxlength="32">
+        </label>
+        <button id="submitButton" type="submit">Continue to secure payment</button>
+        <p class="note">Use the same email on the payment screen so SMARTCoach can match the payment-created sub-account to this setup record.</p>
+      </fieldset>
+    </form>
+  </section>
+</main>
+<script>
+(function(){
+  var params=new URLSearchParams(location.search);
+  var plan=(params.get('plan')||'').toLowerCase();
+  var cadence=(params.get('cadence')||'monthly').toLowerCase();
+  var labels={pro25:'SMARTCoach Pro 25',pro100:'SMARTCoach Pro 100',pro200:'SMARTCoach Pro 200'};
+  var selected=document.getElementById('selectedPlan');
+  selected.textContent=(labels[plan]||'SMARTCoach Pro')+' - '+(cadence==='annual'?'Annual':'Monthly');
+  var form=document.getElementById('checkoutForm');
+  var errorBox=document.getElementById('errorBox');
+  var statusBox=document.getElementById('statusBox');
+  var submitButton=document.getElementById('submitButton');
+  function showError(message){
+    errorBox.textContent=message||'Could not start checkout.';
+    errorBox.style.display='block';
+    statusBox.style.display='none';
+  }
+  form.addEventListener('submit',function(event){
+    event.preventDefault();
+    errorBox.style.display='none';
+    statusBox.style.display='block';
+    submitButton.disabled=true;
+    var data=Object.fromEntries(new FormData(form).entries());
+    data.plan=plan;
+    data.cadence=cadence;
+    fetch('/api/smart-trak/pending-checkout',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data)
+    }).then(function(response){
+      return response.json().then(function(body){return {ok:response.ok,body:body};});
+    }).then(function(result){
+      if(!result.ok||!result.body||!result.body.redirectUrl)throw new Error(result.body&&result.body.error||'Could not start checkout.');
+      location.href=result.body.redirectUrl;
+    }).catch(function(error){
+      submitButton.disabled=false;
+      showError(error.message);
+    });
+  });
+})();
+</script>
+</body>
+</html>
