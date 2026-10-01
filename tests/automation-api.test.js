@@ -486,6 +486,7 @@ async function testGhlLocationCreateWithoutMatchDoesNotProvision() {
           type: "LocationCreate",
           id: "unmatched-buyer-location",
           email: "unmatched@example.com",
+          stripeProductId: "prod_smartcoach_pro_25",
         },
       }, res);
 
