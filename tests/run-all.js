@@ -11,6 +11,7 @@ require("./power-trak-rack-history.test");
 require("./athlete-personal-bests.test");
 require("./athletes-personal-bests.test");
 require("./dashboard-xc-details.test");
+require("./dashboard-training-expansion.test");
 require("./smart-trak-navigation.test");
 const overviewTests = spawnSync(process.execPath, ["tests/smart-trak-overview.test.js"], { stdio: "inherit" });
 if (overviewTests.status !== 0) throw new Error("SMART Trak Overview tests failed.");

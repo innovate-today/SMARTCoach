@@ -1646,9 +1646,12 @@ var inviteSessionAttempted=false;
 var visibleRosterRows=[];
 var visibleMeetRows=[];
 var visibleTrainingRows=[];
+var visibleTrainingAthleteGroups=[];
 var visibleVolumeRows=[];
 var dashboardVolumeUnit='miles';
 var expandedTrainingAthletes={};
+var trainingAthletePages={};
+var trainingWorkoutPageSize=25;
 var correctionRow=null;
 var meetCorrectionRow=null;
 var meetCorrectionAthleteOptions=[];
@@ -3306,7 +3309,15 @@ document.addEventListener('click',function(event){
     event.preventDefault();
     var key=toggle.getAttribute('data-training-toggle')||'';
     expandedTrainingAthletes[key]=!expandedTrainingAthletes[key];
-    renderRows();
+    renderTrainingAthleteGroup(key);
+    return;
+  }
+  var pageButton=event.target.closest&&event.target.closest('[data-training-page]');
+  if(pageButton){
+    event.preventDefault();
+    var pageKey=pageButton.getAttribute('data-training-page')||'';
+    trainingAthletePages[pageKey]=Number(pageButton.getAttribute('data-page'))||0;
+    renderTrainingAthleteGroup(pageKey);
     return;
   }
   var voidButton=event.target.closest&&event.target.closest('[data-void-training]');
@@ -5165,6 +5176,7 @@ function renderRows(){
   visibleRosterRows=rows;
   visibleMeetRows=meetRows;
   visibleTrainingRows=trainingRows;
+  visibleTrainingAthleteGroups=trainingGroups;
   visibleVolumeRows=volumeRows;
   els.rows.innerHTML=rows.map(rowHtml).join('');
   els.recentMeetRows.innerHTML=meetRows.map(recentMeetHtml).join('');
@@ -8873,9 +8885,34 @@ function trainingGroupHtml(group){
     '<td>'+mainLine(group.latestDate?formatDate(group.latestDate):'')+'</td>'+
   '</tr>';
   if(open){
-    html+='<tr class="training-detail-row"><td colspan="7"><div class="training-detail">'+trainingWorkoutDetailTable(group.rows)+'</div></td></tr>';
+    var page=trainingWorkoutPage(group);
+    html+='<tr class="training-detail-row"><td colspan="7"><div class="training-detail">'+trainingWorkoutDetailTable(page.rows)+trainingWorkoutPaginationHtml(group,page)+'</div></td></tr>';
   }
   return html;
+}
+
+function trainingWorkoutPage(group){
+  var count=group.rows.length,pages=Math.max(1,Math.ceil(count/trainingWorkoutPageSize));
+  var page=Math.min(pages-1,Math.max(0,Math.floor(Number(trainingAthletePages[group.key])||0)));
+  trainingAthletePages[group.key]=page;
+  var start=page*trainingWorkoutPageSize;
+  return {page:page,pages:pages,start:start,total:count,rows:group.rows.slice(start,start+trainingWorkoutPageSize)};
+}
+
+function trainingWorkoutPaginationHtml(group,page){
+  if(page.pages<=1)return '';
+  var attrs=' data-training-page="'+esc(group.key)+'"';
+  return '<div class="row-actions"><button class="ghost compact" type="button"'+attrs+' data-page="'+(page.page-1)+'"'+(page.page===0?' disabled':'')+'>Previous</button><span class="muted">'+(page.start+1)+'-'+(page.start+page.rows.length)+' of '+page.total+' entries</span><button class="ghost compact" type="button"'+attrs+' data-page="'+(page.page+1)+'"'+(page.page===page.pages-1?' disabled':'')+'>Next</button></div>';
+}
+
+function renderTrainingAthleteGroup(key){
+  var group=visibleTrainingAthleteGroups.find(function(item){return item.key===key;});
+  var summary=Array.from(els.recentTrainingRows.querySelectorAll('.training-summary-row')).find(function(item){return item.getAttribute('data-training-toggle')===key;});
+  if(!group||!summary)return;
+  var detail=summary.nextElementSibling;
+  if(detail&&detail.classList.contains('training-detail-row'))detail.remove();
+  summary.outerHTML=trainingGroupHtml(group);
+  refreshTableScrollbars();
 }
 
 function trainingTargetSummaryHtml(summary){
