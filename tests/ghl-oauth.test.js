@@ -559,7 +559,7 @@ async function run() {
     }
   }
 
-  for (const mode of ["success", "no-admin", "wrong-origin", "no-confirm", "wrong-owner", "wrong-plan", "staff-exists", "not-ready", "essential", "blocked", "inactive", "wrong-seller", "wrong-contact", "failed-send", "missing-message", "save-failed"]) {
+  for (const mode of ["success", "oauth-no-pit", "no-admin", "wrong-origin", "no-confirm", "wrong-owner", "wrong-plan", "staff-exists", "not-ready", "essential", "blocked", "inactive", "wrong-seller", "wrong-contact", "failed-send", "missing-message", "save-failed"]) {
     const access = fixture();
     access.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-token";
     access.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
@@ -567,7 +567,7 @@ async function run() {
     access.setResponse({ ...access.grant(), scope: access.env.SMARTCOACH_GHL_OAUTH_SCOPES });
     const pending = await access.start();
     await access.invoke("crm-connect-callback", access.callbackReq(pending));
-    const original = { locationId, token: "existing-pit", accountOwnerEmail: "support@example.com", productPlan: "pro100",
+    const original = { accountKey, locationId, token: mode === "oauth-no-pit" ? "" : "existing-pit", accountOwnerEmail: "support@example.com", productPlan: "pro100",
       subscription: { status: "active" }, accessStatus: "active", coachAccessCodes: ["shared-old-code"], coachCodeVersion: 7, coachStaff: [] };
     access.accounts.set(accountKey, structuredClone(original));
     let sends = 0, sentCode = "", sentInvite = "";
@@ -623,10 +623,10 @@ async function run() {
       assert.equal(sends, 0); assert.deepEqual(current, original);
     }
     const result = await access.invoke("ghl-oauth-create-head-coach", req);
-    assert.equal(result.statusCode, mode === "success" ? 200 : ["no-admin", "wrong-origin", "wrong-seller", "wrong-contact"].includes(mode) ? 403 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "save-failed" ? 503 : 409, mode);
-    assert.equal(sends, ["success", "failed-send", "missing-message"].includes(mode) ? 1 : 0, mode);
+    assert.equal(result.statusCode, ["success", "oauth-no-pit"].includes(mode) ? 200 : ["no-admin", "wrong-origin", "wrong-seller", "wrong-contact"].includes(mode) ? 403 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "save-failed" ? 503 : 409, mode);
+    assert.equal(sends, ["success", "oauth-no-pit", "failed-send", "missing-message"].includes(mode) ? 1 : 0, mode);
     const record = access.accounts.get(accountKey);
-    assert.equal(record.token, "existing-pit"); assert.deepEqual(record.coachAccessCodes, mode === "not-ready" ? [] : ["shared-old-code"]); assert.equal(record.coachCodeVersion, 7);
+    assert.equal(record.token, original.token); assert.deepEqual(record.coachAccessCodes, mode === "not-ready" ? [] : ["shared-old-code"]); assert.equal(record.coachCodeVersion, 7);
     for (const secret of [sentCode, sentInvite, "private-buyer-token", "private-seller-token", "private-provider-error"].filter(Boolean)) assert(!JSON.stringify(result).includes(secret));
     if (sentCode) assert(!JSON.stringify([...access.records.values(), record]).includes(sentCode));
     if (["success", "failed-send", "missing-message", "save-failed"].includes(mode)) {

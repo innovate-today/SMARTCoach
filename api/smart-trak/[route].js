@@ -432,7 +432,7 @@ module.exports = async function handler(req, res) {
 
   await attachRegistryAccount(req);
   if (!requireProPlan(req, res)) return;
-  if (!await require("../../lib/ghl-oauth-consumer").attachBuyerOAuthReadContext(req, res, route)) return;
+  if (!await require("../../lib/ghl-oauth-consumer").attachBuyerOAuthContext(req, res, route)) return;
   if (["sync-session", "meet-result", "manual-mileage", "correction"].includes(route)) {
     await recordRequestCoachDevice(req).catch(() => {});
   }
@@ -3962,7 +3962,7 @@ async function accountStatus(req, res) {
     return;
   }
 
-  const cachedStatus = cachedAccountStatus(req);
+  const cachedStatus = initialContext.buyerOAuthRequired ? null : cachedAccountStatus(req);
   if (cachedStatus) {
     res.status(cachedStatus.statusCode).json({
       ...cachedStatus.payload,
@@ -3972,6 +3972,7 @@ async function accountStatus(req, res) {
   }
 
   const registry = await attachRegistryAccount(req);
+  if (!await require("../../lib/ghl-oauth-consumer").attachBuyerOAuthContext(req, res, "account-status")) return;
   const { accountKey, token, locationId, productPlan, productPlanLabel, activeAthleteLimit, accessCode, coachSeats, coachAccessCodes, coachCodeVersion, requireCoachAccess, subscription, accountAccess, logoUrl } = getGhlContext(req);
   const coachSession = coachSessionFromRequest(req, accountKey);
   const currentCoachSession = coachSessionAllowedForAccount(coachSession, registry.record, coachCodeVersion) ? coachSession : null;
