@@ -10,8 +10,9 @@ This implementation saves an encrypted Company OAuth grant, renews it on demand,
 and obtains identity-verified tokens for individually installed buyer locations.
 Selected authenticated read routes can use the buyer OAuth pilot. A separate admin
 check writes and reads back only the buyer account-key custom value. It does NOT
-replace saved PITs, generate coach credentials, send welcome emails, or verify
-purchase-to-access onboarding. Other CRM consumers remain on their existing transport.
+replace saved PITs, generate coach credentials, or verify purchase-to-access
+onboarding. A separate admin action can submit a welcome sign-in link; inbox
+delivery remains independent. Other CRM consumers remain on their existing transport.
 
 ## Account-Key Write Verification
 
@@ -24,6 +25,25 @@ An existing conflicting nonempty key, duplicate key values, or foreign-location
 value fails closed without a write. The operation does not change plan, PIT, coach
 codes, athletes, or email delivery. Success proves this onboarding write only, not
 all coach save operations or automatic fulfillment.
+
+## Buyer Welcome Link Pilot
+
+`Send Welcome Link` makes an admin-header, same-origin POST to
+`ghl-oauth-send-welcome`. It uses verified buyer OAuth, the saved owner email,
+and an exact email/location-matching contact (created with an owner tag if absent).
+It refuses duplicate matching contacts. The email links to the buyer's Overview;
+it neither sends nor rotates coach codes. The buyer uses an existing coach code.
+HighLevel uses the buyer location's configured email service/default sender.
+No new sending provider, sender credential, or permission is configured here.
+
+An attempt is durably recorded before message submission, preventing automatic
+duplicates after uncertain failures. A message ID records provider acceptance,
+not delivery. Repeated accepted requests do not resend. Uncertain attempts or
+changed recipients require support review rather than a blind retry. This is an
+admin-triggered pilot, not automatic purchase fulfillment. Verify the inbox and
+Overview sign-in independently. Existing code recovery remains unchanged.
+
+API reference: https://marketplace.gohighlevel.com/docs/ghl/conversations/send-a-new-message/index.html
 
 ## Configuration Before Installation
 

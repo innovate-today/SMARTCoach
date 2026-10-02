@@ -237,6 +237,68 @@ async function run() {
     assert(!JSON.stringify(result).includes("private-write-token"));
   }
 
+  for (const mode of ["existing", "create", "wrong-contact", "duplicates", "no-email", "no-code", "no-admin", "wrong-origin", "failed-send", "missing-message", "wrong-mapping", "get", "missing-scope"]) {
+    const welcome = fixture();
+    const locationScopes = "locations.readonly contacts.readonly contacts.write conversations/message.write";
+    welcome.env.SMARTCOACH_GHL_OAUTH_SCOPES = `oauth.write ${locationScopes}`;
+    welcome.setResponse({ ...welcome.grant(), scope: welcome.env.SMARTCOACH_GHL_OAUTH_SCOPES });
+    const pending = await welcome.start();
+    await welcome.invoke("crm-connect-callback", welcome.callbackReq(pending));
+    welcome.accounts.set(accountKey, { locationId, token: "existing-pit", accountOwnerEmail: mode === "no-email" ? "" : "support@example.com", coachAccessCodes: mode === "no-code" ? [] : ["private-coach-code"] });
+    const owner = { id: "owner-id", locationId: mode === "wrong-contact" ? "wrong-location" : locationId, email: "support@example.com" };
+    let sends = 0, creates = 0;
+    welcome.setProvider((url, options) => {
+      const path = new URL(url).pathname;
+      if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: true }] };
+      if (path === "/oauth/location-token") return { access_token: "private-welcome-token", token_type: "Bearer", expires_in: 86400, scope: locationScopes, locationId };
+      if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: "agency-one" } };
+      if (path === "/contacts/") {
+        if (options.method === "POST") { creates++; return { contact: owner }; }
+        // The initial read probe need not contain the owner.
+        return { contacts: new URL(url).searchParams.has("query") ? mode === "create" ? [] : mode === "duplicates" ? [owner, owner] : [owner] : [] };
+      }
+      if (path === "/conversations/messages") {
+        sends++;
+        assert.equal(options.headers.Authorization, "Bearer private-welcome-token");
+        const email = JSON.parse(options.body);
+        assert.equal(email.emailTo, "support@example.com");
+        assert.equal(email.contactId, "owner-id");
+        assert(email.html.includes(`/overview.html?account=${accountKey}`));
+        assert(!email.html.includes("private-coach-code"));
+        if (mode === "failed-send") throw new Error("private-provider-error");
+        return mode === "missing-message" ? {} : { messageId: "welcome-message" };
+      }
+      return {};
+    });
+    const req = welcome.request(); req.body = { accountKey, locationId };
+    assert.equal((await welcome.invoke("ghl-oauth-verify-buyer", req)).statusCode, 200);
+    if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
+    if (mode === "wrong-origin") req.headers.origin = "https://attacker.example";
+    if (mode === "wrong-mapping") welcome.accounts.get(accountKey).locationId = "other-location";
+    if (mode === "get") req.method = "GET";
+    if (mode === "missing-scope") welcome.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write locations.readonly";
+    const sent = await welcome.invoke("ghl-oauth-send-welcome", req);
+    const success = ["existing", "create"].includes(mode);
+    assert.equal(sent.statusCode, success ? 200 : ["no-email", "no-code", "wrong-mapping"].includes(mode) ? 422 : mode === "duplicates" ? 409 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "get" ? 405 : 403, mode);
+    assert.equal(sends, success || ["failed-send", "missing-message"].includes(mode) ? 1 : 0, mode);
+    assert.equal(creates, mode === "create" ? 1 : 0);
+    assert.equal(welcome.accounts.get(accountKey).token, "existing-pit");
+    assert(!JSON.stringify(sent).includes("private-welcome-token"));
+    assert(!JSON.stringify(sent).includes("private-provider-error"));
+    if (sends) {
+      const again = await welcome.invoke("ghl-oauth-send-welcome", req);
+      assert.equal(again.statusCode, success ? 200 : 409);
+      assert.equal(sends, 1, "Do not duplicate accepted or uncertain sends");
+      if (success) {
+        assert.equal(sent.body.deliveryVerified, false);
+        assert.equal(again.body.alreadyAccepted, true);
+        welcome.accounts.get(accountKey).accountOwnerEmail = "changed@example.com";
+        assert.equal((await welcome.invoke("ghl-oauth-send-welcome", req)).statusCode, 409);
+        assert.equal(sends, 1);
+      }
+    }
+  }
+
   const page = fs.readFileSync("onboarding.html", "utf8");
   const connectionCode = page.slice(page.indexOf("async function highLevelConnectionRequest("), page.indexOf("function generateSetup(){"));
   const nodes = { setupCode: { value: "" }, ghlOAuthConnectBtn: { disabled: false }, ghlOAuthStatusBtn: { disabled: false } };
