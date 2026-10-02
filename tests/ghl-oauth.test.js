@@ -174,7 +174,7 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
-  for (const mode of ["valid", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
+  for (const mode of ["valid", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "wrapped-empty", "wrapped-wrong-buyer", "ambiguous", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
     const check = fixture();
     const auth = await check.start();
     await check.invoke("crm-connect-callback", check.callbackReq(auth));
@@ -184,29 +184,33 @@ async function run() {
       if (mode === "provider-error") throw new Error("private-provider-response");
       if (mode === "forbidden") return { mockHttpStatus: 403, secret: "private-provider-response" };
       if (mode === "empty") return {};
-      if (mode === "wrapped") return { data: { locationId, companyId: "agency-one", isSaaSV2: true, secret: "never-return-me" } };
+      if (mode === "wrapped-empty") return { data: {} };
+      if (mode === "ambiguous") return { locationId, companyId: "agency-one", isSaaSV2: true, data: { locationId: "other" } };
       const parsed = new URL(url);
       assert.equal(parsed.pathname, `/saas/get-saas-subscription/${locationId}`);
       assert.equal(parsed.searchParams.get("companyId"), "agency-one");
       assert.equal(options.method, undefined);
-      return { locationId: mode === "wrong-location" ? "another" : locationId,
+      const details = { locationId: ["wrong-location", "wrapped-wrong-buyer"].includes(mode) ? "another" : locationId,
         companyId: mode === "wrong-company" ? "another" : "agency-one", isSaaSV2: mode !== "not-v2",
         subscriptionStatus: mode === "unknown-status" ? "unknown" : "trialing",
         subscriptionId: "sub_verified", customerId: "cus_verified", productId: "prod_verified",
         priceId: mode === "missing-price" ? "" : "price_verified", saasPlanId: "plan_verified", access_token: "never-return-me" };
+      return ["wrapped", "wrapped-wrong-buyer"].includes(mode) ? { data: details } : details;
     });
     const req = check.request();
     req.body = { accountKey, locationId };
     if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
     if (mode === "wrong-origin") req.headers.origin = "https://other.example";
     const result = await check.invoke("ghl-oauth-check-subscription", req);
-    assert.equal(result.statusCode, mode === "valid" ? 200 : ["provider-error", "forbidden"].includes(mode) ? 502 : ["missing-price", "unknown-status"].includes(mode) ? 422 : 403);
+    assert.equal(result.statusCode, ["valid", "wrapped"].includes(mode) ? 200 : ["provider-error", "forbidden"].includes(mode) ? 502 : ["missing-price", "unknown-status"].includes(mode) ? 422 : 403);
     if (mode === "forbidden") assert.match(result.body.error, /HTTP 403/);
     if (mode === "wrong-location") assert.match(result.body.error, /location: mismatched; agency: matched/);
     if (mode === "empty") assert.match(result.body.error, /location: missing; agency: missing/);
-    if (mode === "wrapped") assert.match(result.body.error, /data wrapper: present/);
+    if (mode === "wrapped-empty") assert.match(result.body.error, /location: missing/);
+    if (mode === "wrapped-wrong-buyer") assert.match(result.body.error, /location: mismatched/);
+    if (mode === "ambiguous") assert.match(result.body.error, /ambiguous/);
     assert.deepEqual(check.accounts.get(accountKey), original);
-    if (mode === "valid") {
+    if (["valid", "wrapped"].includes(mode)) {
       assert.equal(result.body.providerSubscriptionStatus, "trialing");
       assert.equal(result.body.savedSubscriptionStatus, "active");
       assert.equal(result.body.purchaseVerified, false);
