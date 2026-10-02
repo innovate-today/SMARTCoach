@@ -189,7 +189,14 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
   }
   document.getElementById('overviewRefreshBtn').addEventListener('click',function(){load(true);});
   document.getElementById('accessForm').addEventListener('submit',function(event){event.preventDefault();var code=document.getElementById('accessCode').value.trim();if(!code)return;request('/api/smart-trak/account-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:key,accessCode:code})}).then(function(data){if(!data.sessionToken)throw new Error('Access was not accepted.');localStorage.setItem('sc_session_remembered_'+key,data.sessionToken);localStorage.removeItem('sc_access_'+key);document.getElementById('accessCode').value='';load();}).catch(function(failure){document.getElementById('accessMessage').textContent=failure&&failure.error||failure&&failure.message||'Access could not be checked.';});});
-  load();
+  var invite=new URLSearchParams(location.search).get('invite');
+  if(invite){
+    var cleanUrl=new URL(location.href);cleanUrl.searchParams.delete('invite');history.replaceState({},document.title,cleanUrl.toString());
+    request('/api/smart-trak/account-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:key,inviteToken:invite,deviceSource:'desktop'})}).then(function(data){
+      if(!data.sessionToken)throw new Error('Staff invite was not accepted.');
+      localStorage.setItem('sc_session_remembered_'+key,data.sessionToken);localStorage.removeItem('sc_access_'+key);load();
+    }).catch(function(failure){showAccess(failure&&failure.error||failure&&failure.message||'Staff invite was not accepted.');});
+  }else load();
 })();
 </script>
 <script src="/assets/smart-trak-navigation.js?v=20260927-fitness-review"></script>

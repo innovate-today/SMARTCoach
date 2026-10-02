@@ -1,6 +1,7 @@
 const assert = require("assert/strict");
 const fs = require("fs");
 const vm = require("vm");
+const crypto = require("crypto");
 const { createGhlOAuth, APP_ID, CALLBACK_PATH } = require("../lib/ghl-oauth");
 
 function fixture() {
@@ -355,6 +356,102 @@ async function run() {
         assert.equal(sends, 1);
       }
     }
+  }
+
+  for (const mode of ["success", "no-admin", "wrong-origin", "no-confirm", "wrong-owner", "wrong-plan", "staff-exists", "not-ready", "essential", "blocked", "inactive", "wrong-seller", "wrong-contact", "failed-send", "missing-message", "save-failed"]) {
+    const access = fixture();
+    access.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-token";
+    access.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
+    access.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write locations.readonly contacts.readonly";
+    access.setResponse({ ...access.grant(), scope: access.env.SMARTCOACH_GHL_OAUTH_SCOPES });
+    const pending = await access.start();
+    await access.invoke("crm-connect-callback", access.callbackReq(pending));
+    const original = { locationId, token: "existing-pit", accountOwnerEmail: "support@example.com", productPlan: "pro100", setupReady: true,
+      subscription: { status: "active" }, accessStatus: "active", coachAccessCodes: ["shared-old-code"], coachCodeVersion: 7, coachStaff: [] };
+    access.accounts.set(accountKey, structuredClone(original));
+    let sends = 0, sentCode = "", sentInvite = "";
+    access.setProvider((url, options) => {
+      const path = new URL(url).pathname;
+      if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: true }] };
+      if (path === "/oauth/location-token") return { access_token: "private-buyer-token", token_type: "Bearer", expires_in: 86400, scope: "locations.readonly contacts.readonly", locationId };
+      if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: "agency-one" } };
+      if (path === `/locations/${sellerLocationId}`) {
+        assert.equal(options.headers.Authorization, "Bearer private-seller-token");
+        return { location: { id: mode === "wrong-seller" ? locationId : sellerLocationId, companyId: "agency-one" } };
+      }
+      if (path === "/contacts/") return { contacts: new URL(url).searchParams.has("query") ? [{ id: "owner", email: "support@example.com", locationId: mode === "wrong-contact" ? locationId : sellerLocationId }] : [] };
+      if (path === "/conversations/messages") {
+        sends++;
+        assert.equal(options.headers.Authorization, "Bearer private-seller-token");
+        const email = JSON.parse(options.body);
+        assert.equal(email.emailFrom, "info@smartcoach-pro.com");
+        assert.equal(email.emailTo, "support@example.com");
+        assert.equal(email.subject, "SMARTCoach Access");
+        const savedStaff = access.accounts.get(accountKey).coachStaff[0];
+        sentCode = email.html.match(/personal SMARTCoach code is:<\/p><p><br><\/p><p>([A-Z2-9]{8})<\/p>/)[1];
+        sentInvite = savedStaff.inviteToken;
+        assert.equal(savedStaff.coachCodeHash, crypto.createHash("sha256").update(`private-admin:staff:${accountKey}:${sentCode}`).digest("hex"));
+        assert(email.html.includes(`/overview.html?account=${accountKey}&amp;invite=${sentInvite}`));
+        for (const line of ["iPhone", "Android", "Safari, not Chrome", "Add to Home Screen", "Full Access"]) assert(email.html.includes(line));
+        assert(!email.html.includes("shared-old-code"));
+        if (mode === "failed-send") throw new Error("private-provider-error");
+        return mode === "missing-message" ? {} : { messageId: "access-message" };
+      }
+      return {};
+    });
+    const req = access.request(); req.body = { accountKey, locationId, coachName: "Marcus Moore", confirmCreate: true, expectedOwnerEmail: "support@example.com", expectedProductPlan: "pro100" };
+    assert.equal((await access.invoke("ghl-oauth-verify-buyer", req)).statusCode, 200);
+    if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
+    if (mode === "wrong-origin") req.headers.origin = "https://other.example";
+    if (mode === "no-confirm") delete req.body.confirmCreate;
+    if (mode === "wrong-owner") req.body.expectedOwnerEmail = "other@example.com";
+    if (mode === "wrong-plan") req.body.expectedProductPlan = "pro25";
+    const current = access.accounts.get(accountKey);
+    if (mode === "staff-exists") current.coachStaff = [{ name: "Existing Coach", coachCodeHash: "unchanged" }];
+    if (mode === "not-ready") current.setupReady = false;
+    if (mode === "essential") current.productPlan = "essential";
+    if (mode === "blocked") current.subscription.status = "canceled";
+    if (mode === "inactive") current.accessStatus = "inactive";
+    if (mode === "save-failed") {
+      // Simulate a storage failure without letting the provider see unsaved access.
+      access.accounts.set = () => { throw new Error("private-storage-error"); };
+    }
+    if (mode === "success") {
+      const preview = await access.invoke("ghl-oauth-create-head-coach", { ...req, body: { ...req.body, preview: true } });
+      assert.equal(preview.statusCode, 200); assert.equal(preview.body.existingStaff, false);
+      assert.equal(sends, 0); assert.deepEqual(current, original);
+    }
+    const result = await access.invoke("ghl-oauth-create-head-coach", req);
+    assert.equal(result.statusCode, mode === "success" ? 200 : ["no-admin", "wrong-origin", "wrong-seller", "wrong-contact"].includes(mode) ? 403 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "save-failed" ? 503 : 409, mode);
+    assert.equal(sends, ["success", "failed-send", "missing-message"].includes(mode) ? 1 : 0, mode);
+    const record = access.accounts.get(accountKey);
+    assert.equal(record.token, "existing-pit"); assert.deepEqual(record.coachAccessCodes, ["shared-old-code"]); assert.equal(record.coachCodeVersion, 7);
+    for (const secret of [sentCode, sentInvite, "private-buyer-token", "private-seller-token", "private-provider-error"].filter(Boolean)) assert(!JSON.stringify(result).includes(secret));
+    if (sentCode) assert(!JSON.stringify([...access.records.values(), record]).includes(sentCode));
+    if (["success", "failed-send", "missing-message", "save-failed"].includes(mode)) {
+      const again = await access.invoke("ghl-oauth-create-head-coach", req);
+      assert.equal(again.statusCode, mode === "success" ? 200 : 409);
+      assert.equal(sends, mode === "save-failed" ? 0 : 1);
+      if (mode === "success") assert.equal(again.body.alreadyAccepted, true);
+    }
+  }
+
+  const inviteBoot = fs.readFileSync("overview.html", "utf8").split("  var invite=new URLSearchParams(location.search).get('invite');")[1].split("})();")[0];
+  for (const mode of ["accepted", "rejected", "no-invite"]) {
+    let cleaned = "", loaded = 0, accessShown = false;
+    const saved = new Map(), requests = [];
+    const context = { URL, URLSearchParams, key: accountKey, document: { title: "Overview" },
+      location: { search: mode === "no-invite" ? `?account=${accountKey}` : `?account=${accountKey}&invite=private-invite`, href: `https://app.smartcoach-pro.com/overview.html?account=${accountKey}&invite=private-invite` },
+      history: { replaceState: (_state, _title, url) => { cleaned = url; } },
+      localStorage: { setItem: (key, value) => saved.set(key, value), removeItem: () => {} },
+      request: async (_path, options) => { requests.push(JSON.parse(options.body)); if (mode === "rejected") throw new Error("Invalid invite"); return { sessionToken: "private-session" }; },
+      load: () => loaded++, showAccess: () => { accessShown = true; } };
+    vm.runInNewContext("var invite=new URLSearchParams(location.search).get('invite');" + inviteBoot, context);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(loaded, mode === "rejected" ? 0 : 1);
+    assert.equal(accessShown, mode === "rejected");
+    if (mode !== "no-invite") { assert(!cleaned.includes("invite=")); assert.equal(requests[0].accountKey, accountKey); }
+    if (mode === "accepted") assert.equal(saved.get(`sc_session_remembered_${accountKey}`), "private-session");
   }
 
   const page = fs.readFileSync("onboarding.html", "utf8");

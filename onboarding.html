@@ -194,6 +194,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthBuyerBtn" type="button" class="secondary" onclick="verifyHighLevelBuyer()">Verify Buyer OAuth</button>
         <button id="ghlOAuthWriteBtn" type="button" class="secondary" onclick="verifyHighLevelBuyerWrite()">Verify Account-Key Write</button>
         <button id="ghlOAuthWelcomeBtn" type="button" class="secondary" onclick="sendHighLevelBuyerWelcome()">Send Welcome Link</button>
+        <button id="ghlOAuthHeadCoachBtn" type="button" class="secondary" onclick="createHighLevelHeadCoach()">Create Head Coach &amp; Send Access</button>
         <button id="ghlOAuthOwnerBtn" type="button" class="secondary" onclick="updateHighLevelBuyerOwnerEmail()">Update Owner Email Only</button>
       </div>
       <div id="accountKeyWarning" class="setupnote" hidden><b>Account keys do not match</b>The setup form and account lookup are pointing at different customers. Match the account keys before saving or running live checks.</div>
@@ -1817,6 +1818,21 @@ async function sendHighLevelBuyerWelcome(){
     var data=await highLevelConnectionRequest('ghl-oauth-send-welcome','POST',Object.assign({},payload,{expectedOwnerEmail:preview.ownerEmail,
       confirmSellerCorrection:preview.sellerCorrectionRequired===true,expectedPreviousMessageId:preview.previousMessageId}));
     setStatus(data.welcomeAccepted?(data.alreadyAccepted?'Welcome link was already accepted by HighLevel. No duplicate sent.':'Welcome link accepted by HighLevel.')+' Inbox delivery and full onboarding are not yet verified.':'Welcome link acceptance incomplete.',data.welcomeAccepted?'good':'bad');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+async function createHighLevelHeadCoach(){
+  var button=document.getElementById('ghlOAuthHeadCoachBtn');
+  var name=window.prompt('Head coach name');
+  if(!name||!name.trim())return;
+  button.disabled=true;
+  try{
+    var payload={accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),coachName:name.trim()};
+    var preview=await highLevelConnectionRequest('ghl-oauth-create-head-coach','POST',Object.assign({},payload,{preview:true}));
+    if(preview.existingStaff&&!preview.alreadyAccepted)throw new Error('Existing Staff Access must be reviewed. No codes were changed.');
+    if(!window.confirm('Create '+preview.coachName+' as head coach for saved '+preview.productPlan+' and send personal access to '+preview.ownerEmail+' from '+preview.emailFrom+'? Existing shared codes stay unchanged. An accepted prior request will not resend.'))return;
+    var data=await highLevelConnectionRequest('ghl-oauth-create-head-coach','POST',Object.assign({},payload,{confirmCreate:true,expectedOwnerEmail:preview.ownerEmail,expectedProductPlan:preview.productPlan}));
+    setStatus(data.accessEmailAccepted?(data.alreadyAccepted?'Head coach access was already created and accepted. No duplicate sent.':'Head coach created; personal access email accepted by HighLevel.')+' Inbox delivery and buyer sign-in are not yet verified.':'Head coach creation incomplete.',data.accessEmailAccepted?'good':'bad');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }

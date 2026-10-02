@@ -67,6 +67,23 @@ message ID. Only accepted legacy attempts qualify. The replacement retains the
 complete original record as `priorDelivery`, even if transmission fails. Once a
 seller attempt exists, retries stay blocked or idempotent. Do not erase history.
 
+`Create Head Coach & Send Access` is an admin-only, same-origin pilot action at
+`ghl-oauth-create-head-coach`. It verifies buyer OAuth/mapping, saved ready Pro
+plan, subscription and account access, previews the owner/name/plan, and requires
+explicit creation confirmation. It only initializes an empty Staff Access list;
+existing staff and shared codes are never reset. Seller identity/contact checks
+are shared with welcome sending. A personal code is generated in memory and
+stored only as the existing account-bound hash. An invite token is saved on the
+new head-coach entry and sent only in the private Overview link. Responses do not
+include either credential. Overview exchanges the invite via account-session,
+removes it from the URL, and stores the normal account-scoped session.
+
+The separate buyeraccess attempt is persisted before saving credentials or
+sending mail. Partial saves and uncertain sends require support review; accepted
+repeats do not regenerate credentials or resend. The email retains the familiar
+SMARTCoach Access phone-installation instructions and Full Access designation.
+This remains an approved manual setup pilot, not automatic purchase fulfillment.
+
 `Update Owner Email Only` previews the saved recipient and explicitly confirms
 the change to the owner/code-recovery destination. Its same-origin admin POST to
 `ghl-oauth-update-owner-email` requires verified buyer OAuth and an unchanged
