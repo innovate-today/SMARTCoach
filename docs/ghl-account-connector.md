@@ -102,6 +102,17 @@ Cached buyer grants missing newly required location scopes are reissued through
 the verified agency. Unexpected permissions remain rejected; no SaaS write scope
 is requested. Updating scopes requires reauthorization before subscription checks.
 
+Before redirecting, onboarding calls same-origin admin POST ghl-oauth-check-state
+to verify that the browser returned the secure HttpOnly state cookie and that the
+stored state is fresh and unused. This read does not consume the state or exchange
+any code. Navigation stops if the cookie check fails. Callback errors distinguish
+invalid state, missing/expired cookie and mismatched cookie without exposing values.
+Both the callback cookie check and stored-state expiry/single-use checks remain
+mandatory. Onboarding uses the documented classic /oauth/chooselocation consent
+path, which supports agency reauthorization; the v2 app-details path can instead
+offer installation into unrelated sub-accounts. Never install all locations as a
+reauthorization workaround or bypass a browser-generated callback block.
+
 LocationCreate now initializes new mappings with an incomplete subscription,
 not inferred active status, and records purchase_verification_required. Existing
 buyer accounts are not overwritten by repeated events; a pending checkout already

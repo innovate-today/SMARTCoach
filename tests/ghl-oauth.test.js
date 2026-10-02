@@ -82,13 +82,33 @@ async function run() {
   assert.match(started.headers["Set-Cookie"], /Secure; HttpOnly; SameSite=Lax/);
   const cb = f.callbackReq(started);
   const noCookie = { ...cb, headers: {} };
-  assert.equal((await f.invoke("crm-connect-callback", noCookie)).statusCode, 400);
+  const missingCookieResult = await f.invoke("crm-connect-callback", noCookie);
+  assert.equal(missingCookieResult.statusCode, 400);
+  assert.match(missingCookieResult.body.error, /cookie is missing/);
+  const mismatch = { ...cb, headers: { cookie: "__Host-smartcoach-ghl-state=" + "a".repeat(64) } };
+  assert.match((await f.invoke("crm-connect-callback", mismatch)).body.error, /does not match/);
+  const malformed = { ...cb, query: { ...cb.query, state: "invalid" } };
+  assert.match((await f.invoke("crm-connect-callback", malformed)).body.error, /state is invalid/);
+  const cookieCheck = f.request();
+  cookieCheck.body = { state: cb.query.state };
+  cookieCheck.headers.cookie = cb.headers.cookie;
+  assert.deepEqual((await f.invoke("ghl-oauth-check-state", cookieCheck)).body, { stateCookieVerified: true });
+  assert.equal(f.records.get(`oauthstate-${crypto.createHash("sha256").update(cb.query.state).digest("hex")}`).used, false);
+  for (const mode of ["missing", "wrong-origin", "no-admin", "get"]) {
+    const rejected = structuredClone(cookieCheck);
+    if (mode === "missing") delete rejected.headers.cookie;
+    if (mode === "wrong-origin") rejected.headers.origin = "https://other.example";
+    if (mode === "no-admin") delete rejected.headers["x-smartcoach-setup-code"];
+    if (mode === "get") rejected.method = "GET";
+    assert.equal((await f.invoke("ghl-oauth-check-state", rejected)).statusCode, mode === "missing" ? 400 : mode === "get" ? 405 : 403);
+  }
   assert.equal(f.calls.length, 0);
   const saved = await f.invoke("crm-connect-callback", cb);
   assert.equal(saved.statusCode, 200);
   const serialized = JSON.stringify([...f.records.values()]);
   for (const secret of ["private-access", "private-refresh", "private-client-secret", "private-code", cb.query.state]) assert(!serialized.includes(secret));
   assert.equal((await f.invoke("crm-connect-callback", cb)).statusCode, 400);
+  assert.equal((await f.invoke("ghl-oauth-check-state", cookieCheck)).statusCode, 400);
   assert.equal(f.calls.length, 1);
   const status = await f.invoke("ghl-oauth-status", f.request("GET"));
   assert.equal(status.body.connected, true);
@@ -120,6 +140,10 @@ async function run() {
   const expired = fixture();
   const pending = await expired.start();
   expired.advance(600001);
+  const expiredCheck = expired.request();
+  expiredCheck.body = { state: expired.callbackReq(pending).query.state };
+  expiredCheck.headers.cookie = expired.callbackReq(pending).headers.cookie;
+  assert.equal((await expired.invoke("ghl-oauth-check-state", expiredCheck)).statusCode, 400);
   assert.equal((await expired.invoke("crm-connect-callback", expired.callbackReq(pending))).statusCode, 400);
   assert.equal(expired.calls.length, 0);
   const missing = fixture();
@@ -537,7 +561,8 @@ async function run() {
   const nodes = { setupCode: { value: "" }, ghlOAuthConnectBtn: { disabled: false }, ghlOAuthStatusBtn: { disabled: false } };
   const pageCalls = [], navigations = [], statuses = [];
   let pageResponse = { authorizationUrl: "https://marketplace.gohighlevel.com/oauth/chooselocation?state=test" };
-  const context = vm.createContext({ URL, document: { getElementById: (id) => nodes[id] }, window: { location: { assign: (url) => navigations.push(url) } }, setStatus: (...args) => statuses.push(args), fetch: async (url, options) => { pageCalls.push({ url, options }); return { ok: true, json: async () => pageResponse }; } });
+  let cookieConfirmed = true;
+  const context = vm.createContext({ URL, document: { getElementById: (id) => nodes[id] }, window: { location: { assign: (url) => navigations.push(url) } }, setStatus: (...args) => statuses.push(args), fetch: async (url, options) => { pageCalls.push({ url, options }); return { ok: true, json: async () => url.endsWith('ghl-oauth-check-state') ? { stateCookieVerified: cookieConfirmed } : pageResponse }; } });
   vm.runInContext(connectionCode, context);
   await context.connectHighLevelAgency();
   assert.equal(pageCalls.length, 0);
@@ -552,6 +577,12 @@ async function run() {
   pageResponse = { authorizationUrl: "https://marketplace.gohighlevel.com/v2/oauth/chooselocation?state=test" };
   await context.connectHighLevelAgency();
   assert.equal(navigations.length, 2);
+  assert.equal(new URL(navigations[1]).pathname, '/oauth/chooselocation');
+  cookieConfirmed = false;
+  await context.connectHighLevelAgency();
+  assert.equal(navigations.length, 2);
+  assert.match(statuses.pop()[0], /authorization cookie/);
+  cookieConfirmed = true;
   pageResponse = { authorizationUrl: "https://attacker.example/oauth" };
   await context.connectHighLevelAgency();
   assert.equal(navigations.length, 2);

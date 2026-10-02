@@ -1772,6 +1772,9 @@ async function connectHighLevelAgency(){
     var data=await highLevelConnectionRequest('ghl-oauth-start','POST');
     var url=new URL(data.authorizationUrl);
     if(url.origin!=='https://marketplace.gohighlevel.com'||['/oauth/chooselocation','/v2/oauth/chooselocation'].indexOf(url.pathname)<0)throw new Error('HighLevel returned an invalid authorization destination.');
+    var stateCheck=await highLevelConnectionRequest('ghl-oauth-check-state','POST',{state:url.searchParams.get('state')});
+    if(stateCheck.stateCookieVerified!==true)throw new Error('The browser did not confirm the authorization cookie. Stay on this page and contact support.');
+    url.pathname='/oauth/chooselocation';
     window.location.assign(url.href);
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
