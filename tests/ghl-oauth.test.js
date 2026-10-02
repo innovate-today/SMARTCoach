@@ -189,6 +189,54 @@ async function run() {
     }
   }
 
+  for (const mode of ["create", "update", "conflict", "duplicates", "wrong-location", "bad-readback", "missing-scope", "no-admin", "wrong-origin", "wrong-mapping", "seller", "get", "not-verified"]) {
+    const writer = fixture();
+    writer.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write locations.readonly locations/customValues.write";
+    writer.setResponse({ ...writer.grant(), scope: writer.env.SMARTCOACH_GHL_OAUTH_SCOPES });
+    const pending = await writer.start();
+    await writer.invoke("crm-connect-callback", writer.callbackReq(pending));
+    writer.accounts.set(accountKey, { locationId, token: "existing-pit", productPlan: "pro100" });
+    let writes = 0;
+    let values = mode === "create" ? [] : [{ id: "value-id", name: "account_key", value: mode === "conflict" ? "other-account" : accountKey, locationId: mode === "wrong-location" ? "other-location" : locationId }];
+    if (mode === "duplicates") values.push({ ...values[0], id: "duplicate" });
+    writer.setProvider((url, options) => {
+      const path = new URL(url).pathname;
+      if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: true }] };
+      if (path === "/oauth/location-token") return { access_token: "private-write-token", token_type: "Bearer", expires_in: 86400, scope: "locations.readonly locations/customValues.write", locationId };
+      if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: "agency-one" } };
+      if (path === "/contacts/") return { contacts: [] };
+      if (path.startsWith(`/locations/${locationId}/customValues`)) {
+        if (options.method === "POST" || options.method === "PUT") {
+          writes++;
+          assert.equal(options.headers.Authorization, "Bearer private-write-token");
+          assert.equal(options.method, mode === "create" ? "POST" : "PUT");
+          assert.deepEqual(JSON.parse(options.body), { name: "account_key", value: accountKey });
+          values = [{ id: "value-id", name: "account_key", value: mode === "bad-readback" ? "not-saved" : accountKey, locationId }];
+          return { customValue: values[0] };
+        }
+        return { customValues: values };
+      }
+      return {};
+    });
+    const req = writer.request();
+    req.body = { accountKey, locationId };
+    if (mode !== "not-verified") assert.equal((await writer.invoke("ghl-oauth-verify-buyer", req)).statusCode, 200);
+    if (mode === "missing-scope") writer.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write locations.readonly";
+    if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
+    if (mode === "wrong-origin") req.headers.origin = "https://attacker.example";
+    if (mode === "wrong-mapping") writer.accounts.get(accountKey).locationId = "other-location";
+    if (mode === "seller") req.body = { accountKey: "sc-qxwjweksyuf7sdofhpb4", locationId: "QxwjWekSyUf7sDOFHPB4" };
+    if (mode === "get") req.method = "GET";
+    const result = await writer.invoke("ghl-oauth-verify-write", req);
+    const success = ["create", "update"].includes(mode);
+    assert.equal(result.statusCode, success ? 200 : mode === "bad-readback" ? 502 : ["conflict", "duplicates", "wrong-location"].includes(mode) ? 409 : ["wrong-mapping", "seller"].includes(mode) ? 422 : mode === "get" ? 405 : mode === "not-verified" ? 503 : 403, mode);
+    assert.equal(writes, success || mode === "bad-readback" ? 1 : 0, mode);
+    if (success) assert.equal(result.body.accountKeyWriteVerified, true);
+    assert.equal(writer.accounts.get(accountKey).token, "existing-pit");
+    assert.equal(writer.accounts.get(accountKey).productPlan, "pro100");
+    assert(!JSON.stringify(result).includes("private-write-token"));
+  }
+
   const page = fs.readFileSync("onboarding.html", "utf8");
   const connectionCode = page.slice(page.indexOf("async function highLevelConnectionRequest("), page.indexOf("function generateSetup(){"));
   const nodes = { setupCode: { value: "" }, ghlOAuthConnectBtn: { disabled: false }, ghlOAuthStatusBtn: { disabled: false } };

@@ -192,6 +192,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthConnectBtn" type="button" class="secondary" onclick="connectHighLevelAgency()">Connect HighLevel Agency</button>
         <button id="ghlOAuthStatusBtn" type="button" class="secondary" onclick="checkHighLevelConnection()">Check HighLevel Connection</button>
         <button id="ghlOAuthBuyerBtn" type="button" class="secondary" onclick="verifyHighLevelBuyer()">Verify Buyer OAuth</button>
+        <button id="ghlOAuthWriteBtn" type="button" class="secondary" onclick="verifyHighLevelBuyerWrite()">Verify Account-Key Write</button>
       </div>
       <div id="accountKeyWarning" class="setupnote" hidden><b>Account keys do not match</b>The setup form and account lookup are pointing at different customers. Match the account keys before saving or running live checks.</div>
       <div id="status" class="status"></div>
@@ -1785,6 +1786,18 @@ async function verifyHighLevelBuyer(){
       locationId:document.getElementById('locationId').value.trim()
     });
     setStatus(data.buyerOAuthVerified&&data.crmReadsVerified?'Buyer OAuth location and CRM reads verified. Manual PIT unchanged. Full onboarding is not yet verified.':'Buyer OAuth verification incomplete.',data.buyerOAuthVerified&&data.crmReadsVerified?'good':'bad');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+async function verifyHighLevelBuyerWrite(){
+  var button=document.getElementById('ghlOAuthWriteBtn');
+  button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-verify-write','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),
+      locationId:document.getElementById('locationId').value.trim()
+    });
+    setStatus(data.accountKeyWriteVerified?'Buyer account-key OAuth write and readback verified. Manual PIT unchanged. Full onboarding is not yet verified.':'Buyer account-key write verification incomplete.',data.accountKeyWriteVerified?'good':'bad');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }

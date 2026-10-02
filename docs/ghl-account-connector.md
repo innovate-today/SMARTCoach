@@ -6,10 +6,24 @@ Private app `SMARTCoach Pro Account Connector`, app/version ID
 `6abfe408797ba36482ddbe72`, targets Sub-Account and is installable by Agency only.
 The original Agency-targeted provisioning app remains responsible for LocationCreate.
 
-This implementation saves an encrypted Company OAuth grant and renews it on demand.
-It does NOT connect buyer CRM accounts, replace PITs, generate coach credentials,
-send welcome emails, or verify purchase-to-access onboarding. No call site yet uses
-`agencyGrant()` for buyer provisioning. Existing manual account connections are unchanged.
+This implementation saves an encrypted Company OAuth grant, renews it on demand,
+and obtains identity-verified tokens for individually installed buyer locations.
+Selected authenticated read routes can use the buyer OAuth pilot. A separate admin
+check writes and reads back only the buyer account-key custom value. It does NOT
+replace saved PITs, generate coach credentials, send welcome emails, or verify
+purchase-to-access onboarding. Other CRM consumers remain on their existing transport.
+
+## Account-Key Write Verification
+
+Admin/Setup's `Verify Account-Key Write` sends a same-origin, admin-header POST to
+`/api/smart-trak/ghl-oauth-verify-write`. It requires prior buyer verification,
+the exact saved location-derived account key, current single-location installation,
+agency/location identity, and custom-value write permission. It creates or re-saves
+only `account_key` with the saved buyer key, then independently reads the value back.
+An existing conflicting nonempty key, duplicate key values, or foreign-location
+value fails closed without a write. The operation does not change plan, PIT, coach
+codes, athletes, or email delivery. Success proves this onboarding write only, not
+all coach save operations or automatic fulfillment.
 
 ## Configuration Before Installation
 
