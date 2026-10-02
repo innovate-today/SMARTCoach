@@ -239,7 +239,7 @@ async function run() {
   }
 
   const sellerLocationId = "QxwjWekSyUf7sDOFHPB4";
-  for (const mode of ["existing", "create", "wrong-contact", "duplicates", "no-email", "no-code", "no-admin", "wrong-origin", "failed-send", "missing-message", "wrong-mapping", "get", "missing-seller-token", "missing-from", "wrong-from", "wrong-seller", "wrong-seller-agency", "old-buyer-sender"]) {
+  for (const mode of ["existing", "create", "wrong-contact", "duplicates", "no-email", "no-code", "no-admin", "wrong-origin", "failed-send", "missing-message", "wrong-mapping", "get", "missing-seller-token", "missing-from", "wrong-from", "wrong-seller", "wrong-seller-agency", "old-buyer-sender", "corrected", "wrong-correction", "uncertain-correction", "failed-correction"]) {
     const welcome = fixture();
     welcome.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-token";
     welcome.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
@@ -287,7 +287,7 @@ async function run() {
         assert(email.html.includes("Account &gt; Staff Access"));
         assert(email.html.includes("phone-app setup instructions"));
         assert(!email.html.includes("existing coach access code"));
-        if (mode === "failed-send") throw new Error("private-provider-error");
+        if (["failed-send", "failed-correction"].includes(mode)) throw new Error("private-provider-error");
         return mode === "missing-message" ? {} : { messageId: "welcome-message" };
       }
       return {};
@@ -323,11 +323,20 @@ async function run() {
     if (mode === "missing-seller-token") delete welcome.env.SMARTCOACH_WELCOME_SELLER_TOKEN;
     if (mode === "missing-from") delete welcome.env.SMARTCOACH_WELCOME_FROM_EMAIL;
     if (mode === "wrong-from") welcome.env.SMARTCOACH_WELCOME_FROM_EMAIL = "sender@buyer.example.com";
-    if (mode === "old-buyer-sender") welcome.records.set(`buyerwelcome-${locationId}`, { buyerAccountKey: accountKey, ownerEmail: "support@example.com", status: "accepted", messageId: "old-buyer-message" });
+    const legacy = { buyerAccountKey: accountKey, ownerEmail: "support@example.com", status: mode === "uncertain-correction" ? "attempted" : "accepted", messageId: "old-buyer-message" };
+    if (["old-buyer-sender", "corrected", "wrong-correction", "uncertain-correction", "failed-correction"].includes(mode)) {
+      welcome.records.set(`buyerwelcome-${locationId}`, legacy);
+      const preview = await welcome.invoke("ghl-oauth-send-welcome", { ...req, body: { ...req.body, preview: true } });
+      assert.equal(preview.body.sellerCorrectionRequired, true);
+      assert.equal(preview.body.previousMessageId, legacy.messageId);
+      assert.equal(sends, 0);
+      if (mode !== "old-buyer-sender") Object.assign(req.body, { confirmSellerCorrection: true, expectedPreviousMessageId: mode === "wrong-correction" ? "wrong-message" : legacy.messageId });
+    }
     const sent = await welcome.invoke("ghl-oauth-send-welcome", req);
-    const success = ["existing", "create"].includes(mode);
-    assert.equal(sent.statusCode, success ? 200 : ["no-email", "no-code", "wrong-mapping"].includes(mode) ? 422 : ["duplicates", "old-buyer-sender"].includes(mode) ? 409 : ["failed-send", "missing-message"].includes(mode) ? 502 : ["missing-seller-token", "missing-from", "wrong-from"].includes(mode) ? 503 : mode === "get" ? 405 : 403, mode);
-    assert.equal(sends, success || ["failed-send", "missing-message"].includes(mode) ? 1 : 0, mode);
+    const success = ["existing", "create", "corrected"].includes(mode);
+    assert.equal(sent.statusCode, success ? 200 : ["no-email", "no-code", "wrong-mapping"].includes(mode) ? 422 : ["duplicates", "old-buyer-sender", "wrong-correction", "uncertain-correction"].includes(mode) ? 409 : ["failed-send", "missing-message", "failed-correction"].includes(mode) ? 502 : ["missing-seller-token", "missing-from", "wrong-from"].includes(mode) ? 503 : mode === "get" ? 405 : 403, mode);
+    assert.equal(sends, success || ["failed-send", "missing-message", "failed-correction"].includes(mode) ? 1 : 0, mode);
+    if (["corrected", "failed-correction"].includes(mode)) assert.deepEqual(welcome.records.get(`buyerwelcome-${locationId}`).priorDelivery, legacy);
     assert.equal(creates, mode === "create" ? 1 : 0);
     assert.equal(welcome.accounts.get(accountKey).token, "existing-pit");
     assert(!JSON.stringify(sent).includes("private-welcome-token"));

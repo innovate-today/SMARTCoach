@@ -61,7 +61,11 @@ changed recipients require support review rather than a blind retry. This is an
 admin-triggered pilot, not automatic purchase fulfillment. Verify the inbox and
 Overview sign-in independently. Existing code recovery remains unchanged.
 Legacy accepted messages sent from the buyer account block automatic resends;
-review and separately authorize a corrected seller delivery. Do not erase history.
+review and separately authorize a corrected seller delivery. The preview identifies
+the earlier message; a correction requires explicit confirmation and its exact
+message ID. Only accepted legacy attempts qualify. The replacement retains the
+complete original record as `priorDelivery`, even if transmission fails. Once a
+seller attempt exists, retries stay blocked or idempotent. Do not erase history.
 
 `Update Owner Email Only` previews the saved recipient and explicitly confirms
 the change to the owner/code-recovery destination. Its same-origin admin POST to
