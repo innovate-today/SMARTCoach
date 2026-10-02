@@ -484,6 +484,21 @@ async function run() {
   pageResponse = { connected: true };
   await context.checkHighLevelConnection();
   assert.match(statuses.pop()[0], /not yet verified/);
+  Object.assign(nodes, { buyerHeadCoachName: { value: "" }, ghlOAuthHeadCoachBtn: { disabled: false }, accountKey: { value: accountKey }, locationId: { value: locationId } });
+  const beforeCreate = pageCalls.length;
+  await context.createHighLevelHeadCoach();
+  assert.equal(pageCalls.length, beforeCreate);
+  nodes.buyerHeadCoachName.value = "Marcus Moore";
+  pageResponse = { ownerEmail: "support@example.com", productPlan: "pro100", coachName: "Marcus Moore", emailFrom: "info@smartcoach-pro.com" };
+  context.window.confirm = (message) => { assert(message.includes("Marcus Moore")); assert(message.includes("support@example.com")); assert(message.includes("info@smartcoach-pro.com")); return false; };
+  await context.createHighLevelHeadCoach();
+  assert.equal(pageCalls.length, beforeCreate + 1, "Cancel must stop before creating credentials");
+  context.window.confirm = () => true;
+  await context.createHighLevelHeadCoach();
+  const createBody = JSON.parse(pageCalls.at(-1).options.body);
+  assert.equal(createBody.confirmCreate, true); assert.equal(createBody.expectedProductPlan, "pro100");
+  assert.equal(createBody.expectedOwnerEmail, "support@example.com");
+  assert.equal(nodes.ghlOAuthHeadCoachBtn.disabled, false);
   console.log("HighLevel OAuth security and renewal tests passed");
 }
 

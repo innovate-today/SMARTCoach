@@ -186,6 +186,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <button id="generateBtn" type="button" onclick="generateSetup()">Preview Setup</button>
       </div>
+      <div class="field">
+        <label for="buyerHeadCoachName">Buyer Head Coach Name</label>
+        <input id="buyerHeadCoachName" type="text" maxlength="120" autocomplete="off">
+      </div>
       <div class="formactions">
         <button type="button" class="secondary" onclick="generateAccountKey()">Generate Account Key</button>
         <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Shared Code</button>
@@ -1823,8 +1827,8 @@ async function sendHighLevelBuyerWelcome(){
 }
 async function createHighLevelHeadCoach(){
   var button=document.getElementById('ghlOAuthHeadCoachBtn');
-  var name=window.prompt('Head coach name');
-  if(!name||!name.trim())return;
+  var name=document.getElementById('buyerHeadCoachName').value;
+  if(!name||!name.trim()){setStatus('Enter the buyer head coach name.','bad');return;}
   button.disabled=true;
   try{
     var payload={accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),coachName:name.trim()};
