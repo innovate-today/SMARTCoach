@@ -1760,7 +1760,7 @@ async function connectHighLevelAgency(){
   try{
     var data=await highLevelConnectionRequest('ghl-oauth-start','POST');
     var url=new URL(data.authorizationUrl);
-    if(url.origin!=='https://marketplace.gohighlevel.com'||url.pathname!=='/oauth/chooselocation')throw new Error('HighLevel returned an invalid authorization destination.');
+    if(url.origin!=='https://marketplace.gohighlevel.com'||['/oauth/chooselocation','/v2/oauth/chooselocation'].indexOf(url.pathname)<0)throw new Error('HighLevel returned an invalid authorization destination.');
     window.location.assign(url.href);
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}

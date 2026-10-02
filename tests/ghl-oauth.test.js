@@ -118,6 +118,18 @@ async function run() {
   const misconfigured = fixture();
   misconfigured.env.SMARTCOACH_GHL_OAUTH_ENCRYPTION_KEY = "bad";
   assert.equal((await misconfigured.start()).statusCode, 503);
+  for (const path of ["/oauth/chooselocation", "/v2/oauth/chooselocation"]) {
+    const official = fixture();
+    official.env.SMARTCOACH_GHL_OAUTH_INSTALL_URL = `https://marketplace.gohighlevel.com${path}?client_id=${APP_ID}-client`;
+    const result = await official.start();
+    assert.equal(result.statusCode, 200);
+    assert.equal(new URL(result.body.authorizationUrl).pathname, path);
+  }
+  for (const url of ["https://example.com/v2/oauth/chooselocation", "https://marketplace.gohighlevel.com/v3/oauth/chooselocation", "https://marketplace.gohighlevel.com/v2/oauth/chooselocation/extra"]) {
+    const invalid = fixture();
+    invalid.env.SMARTCOACH_GHL_OAUTH_INSTALL_URL = `${url}?client_id=${APP_ID}-client`;
+    assert.equal((await invalid.start()).statusCode, 503);
+  }
   const noRegistry = createGhlOAuth({ env: fixture().env, registry: { registryConfigured: () => false } });
   await assert.rejects(noRegistry.agencyGrant(), /registry is required/);
   const tampered = fixture();
@@ -143,9 +155,15 @@ async function run() {
   assert.equal(pageCalls[0].options.headers["X-SMARTCoach-Setup-Code"], "private-admin");
   assert(!pageCalls[0].url.includes("private-admin"));
   assert.equal(navigations.length, 1);
+  pageResponse = { authorizationUrl: "https://marketplace.gohighlevel.com/v2/oauth/chooselocation?state=test" };
+  await context.connectHighLevelAgency();
+  assert.equal(navigations.length, 2);
   pageResponse = { authorizationUrl: "https://attacker.example/oauth" };
   await context.connectHighLevelAgency();
-  assert.equal(navigations.length, 1);
+  assert.equal(navigations.length, 2);
+  pageResponse = { authorizationUrl: "https://marketplace.gohighlevel.com/v3/oauth/chooselocation?state=test" };
+  await context.connectHighLevelAgency();
+  assert.equal(navigations.length, 2);
   assert.equal(nodes.ghlOAuthConnectBtn.disabled, false);
   pageResponse = { connected: true };
   await context.checkHighLevelConnection();
