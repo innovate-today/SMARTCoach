@@ -28,7 +28,7 @@ function fixture() {
     loadAccountScopedRecord: async (account, namespace) => ({ record: records.get(namespace) }),
     saveAccountScopedRecord: async (account, namespace, record) => {
       assert.equal(account, "ghlconnector");
-      records.set(namespace, structuredClone(record));
+      records.set(namespace, { ...structuredClone(record), accountKey: account });
       return { saved: true };
     },
     acquireAccountScopedLock: async (account, namespace) => {
@@ -169,11 +169,21 @@ async function run() {
     assert(!JSON.stringify([...buyer.records.values()]).includes("private-buyer"));
     if (mode === "valid") {
       assert.equal(verified.body.buyerProvisioningVerified, false);
+      assert.equal(buyer.records.get(`buyergrant-${locationId}`).accountKey, "ghlconnector");
+      assert.equal(buyer.records.get(`buyergrant-${locationId}`).buyerAccountKey, accountKey);
+      await buyer.api.readConsumerGrant(accountKey, locationId);
       await buyer.api.buyerGrant(accountKey, locationId);
       assert.equal(buyer.calls.filter((c) => new URL(c.url).pathname === "/oauth/location-token").length, 1);
       buyer.advance(86300 * 1000);
       await buyer.api.buyerGrant(accountKey, locationId);
       assert.equal(buyer.calls.filter((c) => new URL(c.url).pathname === "/oauth/location-token").length, 2);
+      delete buyer.records.get(`buyergrant-${locationId}`).buyerAccountKey;
+      await buyer.api.readConsumerGrant(accountKey, locationId);
+      assert.equal(buyer.calls.filter((c) => new URL(c.url).pathname === "/oauth/location-token").length, 3);
+      assert.equal(buyer.records.get(`buyergrant-${locationId}`).buyerAccountKey, accountKey);
+      buyer.records.get(`buyergrant-${locationId}`).buyerAccountKey = "another-buyer";
+      await assert.rejects(buyer.api.readConsumerGrant(accountKey, locationId), /Verify buyer OAuth/);
+      buyer.records.get(`buyergrant-${locationId}`).buyerAccountKey = accountKey;
       buyer.setProvider(() => ({ items: [] }));
       await assert.rejects(buyer.api.buyerGrant(accountKey, locationId), /installation was not verified/);
     }
