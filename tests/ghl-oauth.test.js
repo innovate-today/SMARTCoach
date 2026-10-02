@@ -233,6 +233,42 @@ async function run() {
     }
   }
 
+  for (const mode of ["valid", "missing-location-read", "agency-scope-on-location", "extra-write", "cached-old-scopes"]) {
+    const mixed = fixture();
+    if (mode !== "cached-old-scopes") mixed.env.SMARTCOACH_GHL_OAUTH_SCOPES += " saas/company.read saas/location.read";
+    mixed.setResponse({ ...mixed.grant(), scope: mixed.env.SMARTCOACH_GHL_OAUTH_SCOPES });
+    const auth = await mixed.start();
+    assert.equal((await mixed.invoke("crm-connect-callback", mixed.callbackReq(auth))).statusCode, 200);
+    mixed.accounts.set(accountKey, { locationId, token: "keep-pit" });
+    mixed.setProvider((url) => {
+      const path = new URL(url).pathname;
+      if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: true }] };
+      if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: "agency-one" } };
+      if (path === "/oauth/location-token") {
+        const expanded = mixed.env.SMARTCOACH_GHL_OAUTH_SCOPES.includes("saas/location.read");
+        return { access_token: "private-mixed-buyer", token_type: "Bearer", expires_in: 86400, locationId,
+          scope: "locations.readonly" + (expanded && mode !== "missing-location-read" ? " saas/location.read" : "")
+            + (mode === "agency-scope-on-location" ? " saas/company.read" : "") + (mode === "extra-write" ? " saas/location.write" : "") };
+      }
+      return {};
+    });
+    if (["missing-location-read", "agency-scope-on-location", "extra-write"].includes(mode)) {
+      await assert.rejects(mixed.api.buyerGrant(accountKey, locationId), /permissions/);
+      assert(!mixed.records.has(`buyergrant-${locationId}`));
+    } else {
+      await mixed.api.buyerGrant(accountKey, locationId);
+      if (mode === "cached-old-scopes") {
+        mixed.env.SMARTCOACH_GHL_OAUTH_SCOPES += " saas/company.read saas/location.read";
+        mixed.setResponse({ ...mixed.grant(), scope: mixed.env.SMARTCOACH_GHL_OAUTH_SCOPES });
+        const reauth = await mixed.start();
+        await mixed.invoke("crm-connect-callback", mixed.callbackReq(reauth));
+        await mixed.api.buyerGrant(accountKey, locationId);
+        assert.equal(mixed.calls.filter((c) => new URL(c.url).pathname === "/oauth/location-token").length, 2);
+      }
+    }
+    assert.equal(mixed.accounts.get(accountKey).token, "keep-pit");
+  }
+
   for (const mode of ["create", "update", "conflict", "duplicates", "wrong-location", "bad-readback", "missing-scope", "no-admin", "wrong-origin", "wrong-mapping", "seller", "get", "not-verified"]) {
     const writer = fixture();
     writer.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write locations.readonly locations/customValues.write";

@@ -94,6 +94,14 @@ may occur normally. A rejected provider request does not fall back to the PIT.
 Provider product and price IDs still need a trusted exact tier/cadence/amount
 mapping before automatic fulfillment; the pre-checkout form is not that evidence.
 
+With explicit owner approval, the agency connector requests saas/company.read
+and saas/location.read in addition to its existing scopes. Agency grants still
+require the exact configured scope set. Buyer tokens require the configured
+location scopes, but must not carry the agency-only saas/company.read scope.
+Cached buyer grants missing newly required location scopes are reissued through
+the verified agency. Unexpected permissions remain rejected; no SaaS write scope
+is requested. Updating scopes requires reauthorization before subscription checks.
+
 LocationCreate now initializes new mappings with an incomplete subscription,
 not inferred active status, and records purchase_verification_required. Existing
 buyer accounts are not overwritten by repeated events; a pending checkout already
