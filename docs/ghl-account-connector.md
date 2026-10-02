@@ -20,13 +20,15 @@ Configure these server-only environment variables in Vercel:
 - `SMARTCOACH_GHL_OAUTH_CLIENT_SECRET`: client secret; never commit or expose it.
 - `SMARTCOACH_GHL_OAUTH_COMPANY_ID`: independently verified agency Company ID.
 - `SMARTCOACH_GHL_OAUTH_ENCRYPTION_KEY`: a dedicated random 32-byte key, base64 encoded.
-- `SMARTCOACH_GHL_OAUTH_REDIRECT_URI`: `https://app.smartcoach-pro.com/api/smart-trak/ghl-oauth-callback`.
+- `SMARTCOACH_GHL_OAUTH_REDIRECT_URI`: `https://app.smartcoach-pro.com/api/smart-trak/crm-connect-callback`.
 - `SMARTCOACH_GHL_OAUTH_INSTALL_URL`: the connector's official Marketplace install URL, with its matching client_id.
 - `SMARTCOACH_GHL_OAUTH_SCOPES`: exact space-separated approved scopes. Finalize these against the CRM operations before installation; do not grant all permissions.
 
 An existing configured account registry is also required. Register the exact callback
 URL in the connector Auth settings only after deploying the handler. Do not use the
 site root as the callback. Do not repurpose the original provisioning app's client.
+The neutral callback path is required because Marketplace white-label validation
+rejects URLs containing a HighLevel reference, including `ghl` in the path.
 
 ## Authorization
 

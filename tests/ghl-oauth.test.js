@@ -72,13 +72,13 @@ async function run() {
   assert.match(started.headers["Set-Cookie"], /Secure; HttpOnly; SameSite=Lax/);
   const cb = f.callbackReq(started);
   const noCookie = { ...cb, headers: {} };
-  assert.equal((await f.invoke("ghl-oauth-callback", noCookie)).statusCode, 400);
+  assert.equal((await f.invoke("crm-connect-callback", noCookie)).statusCode, 400);
   assert.equal(f.calls.length, 0);
-  const saved = await f.invoke("ghl-oauth-callback", cb);
+  const saved = await f.invoke("crm-connect-callback", cb);
   assert.equal(saved.statusCode, 200);
   const serialized = JSON.stringify([...f.records.values()]);
   for (const secret of ["private-access", "private-refresh", "private-client-secret", "private-code", cb.query.state]) assert(!serialized.includes(secret));
-  assert.equal((await f.invoke("ghl-oauth-callback", cb)).statusCode, 400);
+  assert.equal((await f.invoke("crm-connect-callback", cb)).statusCode, 400);
   assert.equal(f.calls.length, 1);
   const status = await f.invoke("ghl-oauth-status", f.request("GET"));
   assert.equal(status.body.connected, true);
@@ -104,13 +104,13 @@ async function run() {
     const bad = fixture();
     bad.setResponse({ ...bad.grant(), ...change });
     const pending = await bad.start();
-    assert.equal((await bad.invoke("ghl-oauth-callback", bad.callbackReq(pending))).statusCode, 403);
+    assert.equal((await bad.invoke("crm-connect-callback", bad.callbackReq(pending))).statusCode, 403);
     assert(!bad.records.has("oauthgrant"));
   }
   const expired = fixture();
   const pending = await expired.start();
   expired.advance(600001);
-  assert.equal((await expired.invoke("ghl-oauth-callback", expired.callbackReq(pending))).statusCode, 400);
+  assert.equal((await expired.invoke("crm-connect-callback", expired.callbackReq(pending))).statusCode, 400);
   assert.equal(expired.calls.length, 0);
   const missing = fixture();
   delete missing.env.SMARTCOACH_ADMIN_SETUP_CODE;
@@ -122,7 +122,7 @@ async function run() {
   await assert.rejects(noRegistry.agencyGrant(), /registry is required/);
   const tampered = fixture();
   const tamperedStart = await tampered.start();
-  await tampered.invoke("ghl-oauth-callback", tampered.callbackReq(tamperedStart));
+  await tampered.invoke("crm-connect-callback", tampered.callbackReq(tamperedStart));
   tampered.records.get("oauthgrant").encrypted.tag = Buffer.alloc(16).toString("base64");
   await assert.rejects(tampered.api.agencyGrant(), /authorized again/);
 
