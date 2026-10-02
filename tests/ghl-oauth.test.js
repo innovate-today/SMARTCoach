@@ -238,32 +238,48 @@ async function run() {
     assert(!JSON.stringify(result).includes("private-write-token"));
   }
 
-  for (const mode of ["existing", "create", "wrong-contact", "duplicates", "no-email", "no-code", "no-admin", "wrong-origin", "failed-send", "missing-message", "wrong-mapping", "get", "missing-scope"]) {
+  const sellerLocationId = "QxwjWekSyUf7sDOFHPB4";
+  for (const mode of ["existing", "create", "wrong-contact", "duplicates", "no-email", "no-code", "no-admin", "wrong-origin", "failed-send", "missing-message", "wrong-mapping", "get", "missing-seller-token", "missing-from", "wrong-from", "wrong-seller", "wrong-seller-agency", "old-buyer-sender"]) {
     const welcome = fixture();
+    welcome.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-token";
+    welcome.env.SMARTCOACH_WELCOME_FROM_EMAIL = "support@smartcoach-pro.com";
     const locationScopes = "locations.readonly contacts.readonly contacts.write conversations/message.write";
     welcome.env.SMARTCOACH_GHL_OAUTH_SCOPES = `oauth.write ${locationScopes}`;
     welcome.setResponse({ ...welcome.grant(), scope: welcome.env.SMARTCOACH_GHL_OAUTH_SCOPES });
     const pending = await welcome.start();
     await welcome.invoke("crm-connect-callback", welcome.callbackReq(pending));
     welcome.accounts.set(accountKey, { locationId, token: "existing-pit", accountOwnerEmail: mode === "no-email" ? "" : "support@example.com", coachAccessCodes: mode === "no-code" ? [] : ["private-coach-code"] });
-    const owner = { id: "owner-id", locationId: mode === "wrong-contact" ? "wrong-location" : locationId, email: "support@example.com" };
+    const owner = { id: "owner-id", locationId: mode === "wrong-contact" ? locationId : sellerLocationId, email: "support@example.com" };
     let sends = 0, creates = 0;
     welcome.setProvider((url, options) => {
       const path = new URL(url).pathname;
       if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: true }] };
       if (path === "/oauth/location-token") return { access_token: "private-welcome-token", token_type: "Bearer", expires_in: 86400, scope: locationScopes, locationId };
       if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: "agency-one" } };
+      if (path === `/locations/${sellerLocationId}`) {
+        assert.equal(options.headers.Authorization, "Bearer private-seller-token");
+        return { location: { id: mode === "wrong-seller" ? locationId : sellerLocationId, companyId: mode === "wrong-seller-agency" ? "another-agency" : "agency-one" } };
+      }
       if (path === "/contacts/") {
-        if (options.method === "POST") { creates++; return { contact: owner }; }
+        if (options.method === "POST") {
+          assert.equal(options.headers.Authorization, "Bearer private-seller-token");
+          assert.equal(JSON.parse(options.body).locationId, sellerLocationId);
+          creates++; return { contact: owner };
+        }
+        if (new URL(url).searchParams.has("query")) {
+          assert.equal(options.headers.Authorization, "Bearer private-seller-token");
+          assert.equal(new URL(url).searchParams.get("locationId"), sellerLocationId);
+        }
         // The initial read probe need not contain the owner.
         return { contacts: new URL(url).searchParams.has("query") ? mode === "create" ? [] : mode === "duplicates" ? [owner, owner] : [owner] : [] };
       }
       if (path === "/conversations/messages") {
         sends++;
-        assert.equal(options.headers.Authorization, "Bearer private-welcome-token");
+        assert.equal(options.headers.Authorization, "Bearer private-seller-token");
         const email = JSON.parse(options.body);
         assert.equal(email.emailTo, "support@example.com");
         assert.equal(email.contactId, "owner-id");
+        assert.equal(email.emailFrom, "support@smartcoach-pro.com");
         assert(email.html.includes(`/overview.html?account=${accountKey}`));
         assert(!email.html.includes("private-coach-code"));
         if (mode === "failed-send") throw new Error("private-provider-error");
@@ -299,14 +315,18 @@ async function run() {
     if (mode === "wrong-origin") req.headers.origin = "https://attacker.example";
     if (mode === "wrong-mapping") welcome.accounts.get(accountKey).locationId = "other-location";
     if (mode === "get") req.method = "GET";
-    if (mode === "missing-scope") welcome.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write locations.readonly";
+    if (mode === "missing-seller-token") delete welcome.env.SMARTCOACH_WELCOME_SELLER_TOKEN;
+    if (mode === "missing-from") delete welcome.env.SMARTCOACH_WELCOME_FROM_EMAIL;
+    if (mode === "wrong-from") welcome.env.SMARTCOACH_WELCOME_FROM_EMAIL = "sender@buyer.example.com";
+    if (mode === "old-buyer-sender") welcome.records.set(`buyerwelcome-${locationId}`, { buyerAccountKey: accountKey, ownerEmail: "support@example.com", status: "accepted", messageId: "old-buyer-message" });
     const sent = await welcome.invoke("ghl-oauth-send-welcome", req);
     const success = ["existing", "create"].includes(mode);
-    assert.equal(sent.statusCode, success ? 200 : ["no-email", "no-code", "wrong-mapping"].includes(mode) ? 422 : mode === "duplicates" ? 409 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "get" ? 405 : 403, mode);
+    assert.equal(sent.statusCode, success ? 200 : ["no-email", "no-code", "wrong-mapping"].includes(mode) ? 422 : ["duplicates", "old-buyer-sender"].includes(mode) ? 409 : ["failed-send", "missing-message"].includes(mode) ? 502 : ["missing-seller-token", "missing-from", "wrong-from"].includes(mode) ? 503 : mode === "get" ? 405 : 403, mode);
     assert.equal(sends, success || ["failed-send", "missing-message"].includes(mode) ? 1 : 0, mode);
     assert.equal(creates, mode === "create" ? 1 : 0);
     assert.equal(welcome.accounts.get(accountKey).token, "existing-pit");
     assert(!JSON.stringify(sent).includes("private-welcome-token"));
+    assert(!JSON.stringify(sent).includes("private-seller-token"));
     assert(!JSON.stringify(sent).includes("private-provider-error"));
     if (sends) {
       const again = await welcome.invoke("ghl-oauth-send-welcome", req);

@@ -29,12 +29,21 @@ all coach save operations or automatic fulfillment.
 ## Buyer Welcome Link Pilot
 
 `Send Welcome Link` makes an admin-header, same-origin POST to
-`ghl-oauth-send-welcome`. It uses verified buyer OAuth, the saved owner email,
-and an exact email/location-matching contact (created with an owner tag if absent).
+`ghl-oauth-send-welcome`. Buyer OAuth verifies the buyer identity only. Email
+uses a separate seller token, the saved buyer owner email, and an exact
+email/seller-location-matching contact (created with an owner tag if absent).
 It refuses duplicate matching contacts. The email links to the buyer's Overview;
 it neither sends nor rotates coach codes. The buyer uses an existing coach code.
-HighLevel uses the buyer location's configured email service/default sender.
-No new sending provider, sender credential, or permission is configured here.
+HighLevel must use the established SMARTCoach Pro seller location
+`QxwjWekSyUf7sDOFHPB4`, its authenticated email service, and an explicitly
+configured `SMARTCOACH_WELCOME_FROM_EMAIL`. Set the dedicated server-only
+`SMARTCOACH_WELCOME_SELLER_TOKEN` to that seller's PIT with locations.readonly,
+contacts.readonly, contacts.write, and conversations/message.write permissions.
+Never use a buyer token, infer the sender from a default CRM account, or install
+the connector in additional locations without approval. Missing seller configuration
+fails closed. Provider location/company and seller contact identity are checked
+before sending. Confirm the From address is configured and authenticated in GHL;
+the app's domain validation is not proof of SPF/DKIM/DMARC alignment or delivery.
 
 An attempt is durably recorded before message submission, preventing automatic
 duplicates after uncertain failures. A message ID records provider acceptance,
@@ -42,6 +51,8 @@ not delivery. Repeated accepted requests do not resend. Uncertain attempts or
 changed recipients require support review rather than a blind retry. This is an
 admin-triggered pilot, not automatic purchase fulfillment. Verify the inbox and
 Overview sign-in independently. Existing code recovery remains unchanged.
+Legacy accepted messages sent from the buyer account block automatic resends;
+review and separately authorize a corrected seller delivery. Do not erase history.
 
 `Update Owner Email Only` previews the saved recipient and explicitly confirms
 the change to the owner/code-recovery destination. Its same-origin admin POST to
