@@ -198,6 +198,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthBuyerBtn" type="button" class="secondary" onclick="verifyHighLevelBuyer()">Verify Buyer OAuth</button>
         <button id="ghlOAuthSubscriptionBtn" type="button" class="secondary" onclick="checkHighLevelBuyerSubscription()">Check Buyer Subscription</button>
         <button id="ghlOAuthTrialBtn" type="button" class="secondary" onclick="reconcileHighLevelBuyerTrial()">Reconcile Trial Status</button>
+        <button id="ghlOAuthFulfillmentBtn" type="button" class="secondary" onclick="previewHighLevelFulfillment()">Preview Fulfillment</button>
         <button id="ghlOAuthWriteBtn" type="button" class="secondary" onclick="verifyHighLevelBuyerWrite()">Verify Account-Key Write</button>
         <button id="ghlOAuthWelcomeBtn" type="button" class="secondary" onclick="sendHighLevelBuyerWelcome()">Send Welcome Link</button>
         <button id="ghlOAuthHeadCoachBtn" type="button" class="secondary" onclick="createHighLevelHeadCoach()">Create Head Coach &amp; Send Access</button>
@@ -1800,6 +1801,20 @@ async function checkHighLevelBuyerSubscription(){
     var summary='Buyer subscription identity verified. HighLevel: '+data.providerSubscriptionStatus+'; saved: '+data.savedSubscriptionStatus+'. ';
     summary+=data.purchaseVerified?data.purchasedProductName+'; '+data.purchasedCurrency+' '+data.purchasedAmount+' '+data.purchasedBillingCadence+'; plan trial '+data.planTrialDays+' days. Saved pricing '+(data.savedConfigurationMatches?'matches. ':'does not match. '):data.reason+' ';
     setStatus(summary+'No buyer setup changed. Automatic fulfillment remains off.',data.purchaseVerified?'good':'bad');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+
+async function previewHighLevelFulfillment(){
+  var button=document.getElementById('ghlOAuthFulfillmentBtn');
+  button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-preview-fulfillment','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim()
+    });
+    var summary='Fulfillment preview. '+(data.existingAccessPreserved?'Existing head coach and accepted access email preserved. ':'No coach access created. ');
+    summary+='Buyer OAuth: '+(data.buyerOAuthVerified?'verified':'not verified')+'; seller sender: '+(data.sellerSenderVerified?'verified':'not verified')+'. ';
+    setStatus(summary+'Automatic fulfillment remains off. '+data.blockers.join(' ')+' No account changes or email sent.','bad');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }

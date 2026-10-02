@@ -244,6 +244,53 @@ async function run() {
     if (["no-admin", "wrong-origin"].includes(mode)) assert.equal(check.calls.length, 1);
   }
   const catalogSubscription = { saasPlanId: "plan", productId: "product", priceId: "price" };
+  for (const mode of ["pilot", "wrong-pending", "uncertain-email", "uninstalled", "wrong-seller", "bad-price", "no-admin", "wrong-origin"]) {
+    const preview = fixture();
+    preview.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-preview";
+    preview.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
+    const auth = await preview.start();
+    await preview.invoke("crm-connect-callback", preview.callbackReq(auth));
+    const original = { locationId, productPlan: "pro100", accountOwnerEmail: "buyer@example.com", token: "keep-pit",
+      subscription: { status: "trialing", billingCadence: "monthly", amount: "29.00" },
+      coachStaff: [{ id: "head", active: true, accessType: "full", coachCodeHash: "private-hash" }] };
+    preview.accounts.set(accountKey, structuredClone(original));
+    preview.records.set("pendingcheckout", { source: "smartcoach-precheckout", lastMatchedLocationId: mode === "wrong-pending" ? "other" : locationId,
+      coachEmail: "buyer@example.com", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 Monthly", schoolName: "School", coachName: "Buyer" });
+    preview.records.set(`buyeraccess-${locationId}`, { buyerAccountKey: accountKey, locationId, ownerEmail: "buyer@example.com", productPlan: "pro100",
+      senderLocationId: "QxwjWekSyUf7sDOFHPB4", emailFrom: "info@smartcoach-pro.com", messageId: "accepted-message", staffId: "head", status: mode === "uncertain-email" ? "attempted" : "accepted" });
+    const history = structuredClone(preview.records.get(`buyeraccess-${locationId}`));
+    preview.setProvider(url => {
+      const path = new URL(url).pathname;
+      if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true,
+        subscriptionStatus: "trialing", subscriptionId: "sub", customerId: "cus", productId: "product", priceId: "price", saasPlanId: "plan" };
+      if (path === "/saas/saas-plan/plan") return { planId: "plan", companyId: "agency-one", providerLocationId: "QxwjWekSyUf7sDOFHPB4",
+        productId: "product", isSaaSV2: true, title: "SMARTCoach Pro 100", trialPeriod: 30,
+        prices: [{ id: "price", active: true, amount: mode === "bad-price" ? 2900 : 29, currency: "USD", billingInterval: "month" }] };
+      if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: mode !== "uninstalled" }] };
+      if (path === "/oauth/location-token") return { access_token: "private-preview-buyer", token_type: "Bearer", locationId, expires_in: 86400, scope: "locations.readonly" };
+      if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: "agency-one" } };
+      if (path === "/locations/QxwjWekSyUf7sDOFHPB4") return { location: { id: "QxwjWekSyUf7sDOFHPB4", companyId: mode === "wrong-seller" ? "other" : "agency-one" } };
+      throw new Error("Preview made an unexpected provider request");
+    });
+    const req = preview.request(); req.body = { accountKey, locationId };
+    if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
+    if (mode === "wrong-origin") req.headers.origin = "https://other.example";
+    const result = await preview.invoke("ghl-oauth-preview-fulfillment", req);
+    assert.equal(result.statusCode, ["no-admin", "wrong-origin"].includes(mode) ? 403 : 200);
+    assert.deepEqual(preview.accounts.get(accountKey), original);
+    assert.deepEqual(preview.records.get(`buyeraccess-${locationId}`), history);
+    assert(!preview.calls.some(call => ["/conversations/messages", "/contacts/"].includes(new URL(call.url).pathname)));
+    if (result.statusCode === 200) {
+      assert.equal(result.body.automaticFulfillmentReady, false);
+      assert.equal(result.body.emailSent, false);
+      assert.equal(result.body.existingAccessPreserved, mode !== "uncertain-email");
+      assert.equal(result.body.buyerOAuthVerified, mode !== "uninstalled");
+      assert.equal(result.body.sellerSenderVerified, mode !== "wrong-seller");
+      assert.equal(result.body.pendingCheckoutMatched, !["wrong-pending", "bad-price"].includes(mode));
+      assert(result.body.blockers.some(item => item.includes("manual PIT")));
+    }
+    for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
+  }
   const catalog = { planId: "plan", companyId: "agency", providerLocationId: "seller", productId: "product", isSaaSV2: true,
     title: "SMARTCoach Pro 100", trialPeriod: 30, prices: [{ id: "price", billingInterval: "month", active: true, amount: 29, currency: "USD" }] };
   assert.equal(verifySaasCatalogPurchase(catalogSubscription, catalog, "agency", "seller").purchaseVerified, true);
