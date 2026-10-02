@@ -101,10 +101,22 @@ Contact listing uses its documented 2023-02-21 version (deprecated upstream).
 
 Buyer grants are encrypted separately under `buyergrant-<locationId>`. Reuse checks
 the current installation and mapping; near expiry, a new token is requested through
-the agency grant instead of consuming a location refresh token. No CRM consumer
-uses this grant yet. Verification never overwrites the PIT, changes subscriptions,
+the agency grant instead of consuming a location refresh token. Verification never
+overwrites the PIT, changes subscriptions,
 creates coach credentials, sends email, or marks onboarding complete. Live renewal
 and INSTALL event reconciliation remain separate work.
+
+### Read-Only Consumer Rollout
+
+`SMARTCOACH_GHL_OAUTH_READ_ACCOUNTS` is an exact comma/space-separated allowlist
+of verified buyer account keys. For those accounts, authenticated GET requests to
+the smart-trak athletes, dashboard, groups, meets, training-plan, athlete-best and
+athlete-profile routes resolve the encrypted buyer grant before invoking existing
+CRM consumers. `X-SMARTCoach-CRM-Auth: oauth` identifies the selected transport,
+without exposing a token. A missing or revoked grant fails closed, not back to PIT.
+The PIT remains stored and is used by writes, other routes, legacy direct GHL routes,
+public links and non-allowlisted accounts. Removing the allowlist entry rolls back
+the pilot. This is not a completed OAuth migration or automatic onboarding.
 
 1. Configure client, scopes, agency identity and secrets, deploy, then obtain approval to authorize only the intended buyer installation.
 2. Verify real token response and refresh behavior; mock tests do not establish live connectivity.

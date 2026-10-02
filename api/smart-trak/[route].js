@@ -431,6 +431,7 @@ module.exports = async function handler(req, res) {
 
   await attachRegistryAccount(req);
   if (!requireProPlan(req, res)) return;
+  if (!await require("../../lib/ghl-oauth-consumer").attachBuyerOAuthReadContext(req, res, route)) return;
   if (["sync-session", "meet-result", "manual-mileage", "correction"].includes(route)) {
     await recordRequestCoachDevice(req).catch(() => {});
   }
