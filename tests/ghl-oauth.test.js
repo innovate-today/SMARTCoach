@@ -25,6 +25,7 @@ function fixture() {
   const registry = {
     registryConfigured: () => true,
     loadAccountRecord: async (key) => ({ found: accounts.has(key), record: accounts.get(key) }),
+    saveAccountRecord: async (key, record) => { accounts.set(key, structuredClone(record)); return { saved: true }; },
     loadAccountScopedRecord: async (account, namespace) => ({ record: records.get(namespace) }),
     saveAccountScopedRecord: async (account, namespace, record) => {
       assert.equal(account, "ghlconnector");
@@ -278,6 +279,21 @@ async function run() {
       assert.equal(sends, 0); assert.equal(creates, 0);
       assert.equal((await welcome.invoke("ghl-oauth-send-welcome", { ...req, body: { ...req.body, expectedOwnerEmail: "wrong@example.com" } })).statusCode, 409);
       assert.equal(sends, 0);
+      welcome.accounts.get(accountKey).accountOwnerContactId = "old-contact";
+      const before = structuredClone(welcome.accounts.get(accountKey));
+      const correction = { ...req, body: { ...req.body, ownerEmail: "approved@example.com" } };
+      assert.equal((await welcome.invoke("ghl-oauth-update-owner-email", { ...correction, headers: {} })).statusCode, 403);
+      assert.equal((await welcome.invoke("ghl-oauth-update-owner-email", { ...correction, headers: { ...req.headers, origin: "https://attacker.example" } })).statusCode, 403);
+      assert.equal((await welcome.invoke("ghl-oauth-update-owner-email", { ...correction, body: { ...correction.body, expectedOwnerEmail: "wrong@example.com" } })).statusCode, 409);
+      assert.equal((await welcome.invoke("ghl-oauth-update-owner-email", { ...correction, body: { ...correction.body, ownerEmail: "invalid" } })).statusCode, 422);
+      assert.equal((await welcome.invoke("ghl-oauth-update-owner-email", { ...correction, body: { ...correction.body, locationId: "wrong" } })).statusCode, 422);
+      assert.deepEqual(welcome.accounts.get(accountKey), before);
+      assert.equal((await welcome.invoke("ghl-oauth-update-owner-email", correction)).statusCode, 200);
+      const expected = { ...before, accountOwnerEmail: "approved@example.com" };
+      delete expected.accountOwnerContactId;
+      assert.deepEqual(welcome.accounts.get(accountKey), expected);
+      assert.equal(sends, 0); assert.equal(creates, 0);
+      assert.equal((await welcome.invoke("ghl-oauth-update-owner-email", { ...correction, body: { ...correction.body, expectedOwnerEmail: "approved@example.com", ownerEmail: "support@example.com" } })).statusCode, 200);
     }
     if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
     if (mode === "wrong-origin") req.headers.origin = "https://attacker.example";
@@ -299,6 +315,7 @@ async function run() {
       if (success) {
         assert.equal(sent.body.deliveryVerified, false);
         assert.equal(again.body.alreadyAccepted, true);
+        assert.equal((await welcome.invoke("ghl-oauth-update-owner-email", { ...req, body: { ...req.body, ownerEmail: "another@example.com" } })).statusCode, 409);
         welcome.accounts.get(accountKey).accountOwnerEmail = "changed@example.com";
         assert.equal((await welcome.invoke("ghl-oauth-send-welcome", req)).statusCode, 409);
         assert.equal(sends, 1);

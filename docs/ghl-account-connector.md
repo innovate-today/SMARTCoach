@@ -43,6 +43,14 @@ changed recipients require support review rather than a blind retry. This is an
 admin-triggered pilot, not automatic purchase fulfillment. Verify the inbox and
 Overview sign-in independently. Existing code recovery remains unchanged.
 
+`Update Owner Email Only` previews the saved recipient and explicitly confirms
+the change to the owner/code-recovery destination. Its same-origin admin POST to
+`ghl-oauth-update-owner-email` requires verified buyer OAuth and an unchanged
+expected old email. It preserves the existing record except owner email and
+clears a stale owner-contact reference when the email changes. It does not save
+unloaded setup form defaults. A prior welcome attempt blocks this correction
+until support has reviewed delivery. Changes require owner approval.
+
 API reference: https://marketplace.gohighlevel.com/docs/ghl/conversations/send-a-new-message/index.html
 
 ## Configuration Before Installation
