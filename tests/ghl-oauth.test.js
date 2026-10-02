@@ -3,6 +3,7 @@ const fs = require("fs");
 const vm = require("vm");
 const crypto = require("crypto");
 const { createGhlOAuth, APP_ID, CALLBACK_PATH } = require("../lib/ghl-oauth");
+const { verifySaasCatalogPurchase } = require("../lib/saas-purchase");
 
 function fixture() {
   let time = 1000000;
@@ -178,7 +179,7 @@ async function run() {
     const check = fixture();
     const auth = await check.start();
     await check.invoke("crm-connect-callback", check.callbackReq(auth));
-    const original = { locationId, productPlan: "pro100", token: "existing-pit", subscription: { status: "active" }, coachStaff: [{ id: "keep-staff" }] };
+    const original = { locationId, productPlan: "pro100", token: "existing-pit", subscription: { status: "active", billingCadence: "monthly", amount: "29.00" }, coachStaff: [{ id: "keep-staff" }] };
     check.accounts.set(accountKey, structuredClone(original));
     check.setProvider((url, options) => {
       if (mode === "provider-error") throw new Error("private-provider-response");
@@ -187,6 +188,14 @@ async function run() {
       if (mode === "wrapped-empty") return { data: {} };
       if (mode === "ambiguous") return { locationId, companyId: "agency-one", isSaaSV2: true, data: { locationId: "other" } };
       const parsed = new URL(url);
+      if (parsed.pathname === "/saas/saas-plan/plan_verified") {
+        assert.equal(parsed.searchParams.get("companyId"), "agency-one");
+        assert.equal(options.method, undefined);
+        const catalog = { planId: "plan_verified", companyId: "agency-one", providerLocationId: "QxwjWekSyUf7sDOFHPB4",
+          productId: "prod_verified", isSaaSV2: true, title: "SMARTCoach Pro 100", trialPeriod: 30,
+          prices: [{ id: "price_verified", billingInterval: "month", active: true, amount: 29, currency: "USD" }] };
+        return mode === "wrapped" ? { data: catalog } : catalog;
+      }
       assert.equal(parsed.pathname, `/saas/get-saas-subscription/${locationId}`);
       assert.equal(parsed.searchParams.get("companyId"), "agency-one");
       assert.equal(options.method, undefined);
@@ -213,7 +222,12 @@ async function run() {
     if (["valid", "wrapped"].includes(mode)) {
       assert.equal(result.body.providerSubscriptionStatus, "trialing");
       assert.equal(result.body.savedSubscriptionStatus, "active");
-      assert.equal(result.body.purchaseVerified, false);
+      assert.equal(result.body.purchaseVerified, true);
+      assert.equal(result.body.savedConfigurationMatches, true);
+      assert.equal(result.body.purchasedProductPlan, "pro100");
+      assert.equal(result.body.purchasedAmount, "29.00");
+      assert.equal(result.body.purchasedBillingCadence, "monthly");
+      assert.equal(result.body.planTrialDays, 30);
       assert.equal(result.body.automaticFulfillmentReady, false);
       assert.equal(result.body.buyerSetupUnchanged, true);
     }
@@ -221,6 +235,27 @@ async function run() {
     assert(!JSON.stringify(result).includes("private-provider-response"));
     if (["no-admin", "wrong-origin"].includes(mode)) assert.equal(check.calls.length, 1);
   }
+  const catalogSubscription = { saasPlanId: "plan", productId: "product", priceId: "price" };
+  const catalog = { planId: "plan", companyId: "agency", providerLocationId: "seller", productId: "product", isSaaSV2: true,
+    title: "SMARTCoach Pro 100", trialPeriod: 30, prices: [{ id: "price", billingInterval: "month", active: true, amount: 29, currency: "USD" }] };
+  assert.equal(verifySaasCatalogPurchase(catalogSubscription, catalog, "agency", "seller").purchaseVerified, true);
+  for (const mutate of [
+    c => { c.planId = "other"; }, c => { c.companyId = "other"; }, c => { c.providerLocationId = "buyer"; },
+    c => { c.productId = "other"; }, c => { c.isSaaSV2 = false; }, c => { c.title += " Monthly"; },
+    c => { c.title = "SMARTCoach Pro Unlimited"; }, c => { c.title = "SMARTCoach Essential"; },
+    c => { c.prices = []; }, c => { c.prices.push({ ...c.prices[0] }); }, c => { c.prices[0].active = false; },
+    c => { c.prices[0].currency = "AED"; }, c => { c.prices[0].amount = 2900; },
+    c => { c.prices[0].amount = null; }, c => { c.prices[0].billingInterval = "week"; },
+    c => { delete c.trialPeriod; }, c => { c.trialPeriod = "30"; }, c => { c.trialPeriod = -1; },
+  ]) {
+    const invalid = structuredClone(catalog);
+    mutate(invalid);
+    assert.equal(verifySaasCatalogPurchase(catalogSubscription, invalid, "agency", "seller").purchaseVerified, false);
+  }
+  const annualCatalog = structuredClone(catalog);
+  annualCatalog.prices[0].billingInterval = "year";
+  annualCatalog.prices[0].amount = "299";
+  assert.equal(verifySaasCatalogPurchase(catalogSubscription, annualCatalog, "agency", "seller").purchasedBillingCadence, "annual");
   for (const mode of ["valid", "wrong-install", "future-install", "wrong-token", "extra-scope", "wrong-agency", "wrong-contact", "wrong-mapping", "seller", "no-admin", "wrong-origin"]) {
     const buyer = fixture();
     const auth = await buyer.start();

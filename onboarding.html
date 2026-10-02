@@ -1796,7 +1796,9 @@ async function checkHighLevelBuyerSubscription(){
       accountKey:document.getElementById('accountKey').value.trim(),
       locationId:document.getElementById('locationId').value.trim()
     });
-    setStatus('Buyer subscription identity verified. HighLevel: '+data.providerSubscriptionStatus+'; saved: '+data.savedSubscriptionStatus+'. Exact product/price mapping is still required. No buyer setup changed.','good');
+    var summary='Buyer subscription identity verified. HighLevel: '+data.providerSubscriptionStatus+'; saved: '+data.savedSubscriptionStatus+'. ';
+    summary+=data.purchaseVerified?data.purchasedProductName+'; '+data.purchasedCurrency+' '+data.purchasedAmount+' '+data.purchasedBillingCadence+'; plan trial '+data.planTrialDays+' days. Saved pricing '+(data.savedConfigurationMatches?'matches. ':'does not match. '):data.reason+' ';
+    setStatus(summary+'No buyer setup changed. Automatic fulfillment remains off.',data.purchaseVerified?'good':'bad');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }
