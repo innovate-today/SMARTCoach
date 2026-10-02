@@ -42,7 +42,11 @@ function fixture() {
   const api = createGhlOAuth({ env, registry, now: () => time, fetch: async (url, options) => {
     calls.push({ url, options });
     if (new URL(url).pathname === "/oauth/token") assert(locks.has("oauthgrant"));
-    else if (provider) return { ok: true, json: async () => provider(url, options) };
+    else if (provider) {
+      const data = provider(url, options);
+      if (data.mockHttpStatus) return { ok: false, status: data.mockHttpStatus, json: async () => data };
+      return { ok: true, json: async () => data };
+    }
     if (response instanceof Error) throw response;
     return { ok: true, json: async () => structuredClone(response) };
   } });
@@ -146,7 +150,7 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
-  for (const mode of ["valid", "wrong-location", "wrong-company", "not-v2", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error"]) {
+  for (const mode of ["valid", "wrong-location", "wrong-company", "not-v2", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
     const check = fixture();
     const auth = await check.start();
     await check.invoke("crm-connect-callback", check.callbackReq(auth));
@@ -154,6 +158,7 @@ async function run() {
     check.accounts.set(accountKey, structuredClone(original));
     check.setProvider((url, options) => {
       if (mode === "provider-error") throw new Error("private-provider-response");
+      if (mode === "forbidden") return { mockHttpStatus: 403, secret: "private-provider-response" };
       const parsed = new URL(url);
       assert.equal(parsed.pathname, `/saas/get-saas-subscription/${locationId}`);
       assert.equal(parsed.searchParams.get("companyId"), "agency-one");
@@ -169,7 +174,8 @@ async function run() {
     if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
     if (mode === "wrong-origin") req.headers.origin = "https://other.example";
     const result = await check.invoke("ghl-oauth-check-subscription", req);
-    assert.equal(result.statusCode, mode === "valid" ? 200 : mode === "provider-error" ? 502 : ["missing-price", "unknown-status"].includes(mode) ? 422 : 403);
+    assert.equal(result.statusCode, mode === "valid" ? 200 : ["provider-error", "forbidden"].includes(mode) ? 502 : ["missing-price", "unknown-status"].includes(mode) ? 422 : 403);
+    if (mode === "forbidden") assert.match(result.body.error, /HTTP 403/);
     assert.deepEqual(check.accounts.get(accountKey), original);
     if (mode === "valid") {
       assert.equal(result.body.providerSubscriptionStatus, "trialing");
