@@ -48,6 +48,11 @@ the connector in additional locations without approval. Missing seller configura
 fails closed. Provider location/company and seller contact identity are checked
 before sending. Confirm the From address is configured and authenticated in GHL;
 the app's domain validation is not proof of SPF/DKIM/DMARC alignment or delivery.
+Owner-selected onboarding From address is `info@smartcoach-pro.com`; support
+instructions and buyer owner recipient remain `support@smartcoach-pro.com`.
+The dedicated seller integration is `SMARTCoach Welcome Email`, with only the
+four scopes above. Do not change the seller's domain-wide fallback header just
+to set a per-message From address; verify the actual received header separately.
 
 An attempt is durably recorded before message submission, preventing automatic
 duplicates after uncertain failures. A message ID records provider acceptance,

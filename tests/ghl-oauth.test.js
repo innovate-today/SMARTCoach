@@ -242,7 +242,7 @@ async function run() {
   for (const mode of ["existing", "create", "wrong-contact", "duplicates", "no-email", "no-code", "no-admin", "wrong-origin", "failed-send", "missing-message", "wrong-mapping", "get", "missing-seller-token", "missing-from", "wrong-from", "wrong-seller", "wrong-seller-agency", "old-buyer-sender"]) {
     const welcome = fixture();
     welcome.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-token";
-    welcome.env.SMARTCOACH_WELCOME_FROM_EMAIL = "support@smartcoach-pro.com";
+    welcome.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
     const locationScopes = "locations.readonly contacts.readonly contacts.write conversations/message.write";
     welcome.env.SMARTCOACH_GHL_OAUTH_SCOPES = `oauth.write ${locationScopes}`;
     welcome.setResponse({ ...welcome.grant(), scope: welcome.env.SMARTCOACH_GHL_OAUTH_SCOPES });
@@ -279,7 +279,7 @@ async function run() {
         const email = JSON.parse(options.body);
         assert.equal(email.emailTo, "support@example.com");
         assert.equal(email.contactId, "owner-id");
-        assert.equal(email.emailFrom, "support@smartcoach-pro.com");
+        assert.equal(email.emailFrom, "info@smartcoach-pro.com");
         assert(email.html.includes(`/overview.html?account=${accountKey}`));
         assert(!email.html.includes("private-coach-code"));
         assert(email.html.includes("separate <strong>SMARTCoach Access</strong> email"));
