@@ -146,6 +146,42 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
+  for (const mode of ["valid", "wrong-location", "wrong-company", "not-v2", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error"]) {
+    const check = fixture();
+    const auth = await check.start();
+    await check.invoke("crm-connect-callback", check.callbackReq(auth));
+    const original = { locationId, productPlan: "pro100", token: "existing-pit", subscription: { status: "active" }, coachStaff: [{ id: "keep-staff" }] };
+    check.accounts.set(accountKey, structuredClone(original));
+    check.setProvider((url, options) => {
+      if (mode === "provider-error") throw new Error("private-provider-response");
+      const parsed = new URL(url);
+      assert.equal(parsed.pathname, `/saas/get-saas-subscription/${locationId}`);
+      assert.equal(parsed.searchParams.get("companyId"), "agency-one");
+      assert.equal(options.method, undefined);
+      return { locationId: mode === "wrong-location" ? "another" : locationId,
+        companyId: mode === "wrong-company" ? "another" : "agency-one", isSaaSV2: mode !== "not-v2",
+        subscriptionStatus: mode === "unknown-status" ? "unknown" : "trialing",
+        subscriptionId: "sub_verified", customerId: "cus_verified", productId: "prod_verified",
+        priceId: mode === "missing-price" ? "" : "price_verified", saasPlanId: "plan_verified", access_token: "never-return-me" };
+    });
+    const req = check.request();
+    req.body = { accountKey, locationId };
+    if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
+    if (mode === "wrong-origin") req.headers.origin = "https://other.example";
+    const result = await check.invoke("ghl-oauth-check-subscription", req);
+    assert.equal(result.statusCode, mode === "valid" ? 200 : mode === "provider-error" ? 502 : ["missing-price", "unknown-status"].includes(mode) ? 422 : 403);
+    assert.deepEqual(check.accounts.get(accountKey), original);
+    if (mode === "valid") {
+      assert.equal(result.body.providerSubscriptionStatus, "trialing");
+      assert.equal(result.body.savedSubscriptionStatus, "active");
+      assert.equal(result.body.purchaseVerified, false);
+      assert.equal(result.body.automaticFulfillmentReady, false);
+      assert.equal(result.body.buyerSetupUnchanged, true);
+    }
+    assert(!JSON.stringify(result).includes("never-return-me"));
+    assert(!JSON.stringify(result).includes("private-provider-response"));
+    if (["no-admin", "wrong-origin"].includes(mode)) assert.equal(check.calls.length, 1);
+  }
   for (const mode of ["valid", "wrong-install", "future-install", "wrong-token", "extra-scope", "wrong-agency", "wrong-contact", "wrong-mapping", "seller", "no-admin", "wrong-origin"]) {
     const buyer = fixture();
     const auth = await buyer.start();

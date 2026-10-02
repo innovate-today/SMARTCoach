@@ -84,6 +84,24 @@ repeats do not regenerate credentials or resend. The email retains the familiar
 SMARTCoach Access phone-installation instructions and Full Access designation.
 This remains an approved manual setup pilot, not automatic purchase fulfillment.
 
+`Check Buyer Subscription` is a same-origin admin read at
+`ghl-oauth-check-subscription`. It uses the agency grant with HighLevel's documented
+GET `/saas/get-saas-subscription/:locationId?companyId=...` (Version v3). It checks
+the exact location, company, SaaS V2 identity, status and required provider IDs,
+then reports only allowlisted evidence. It does not save buyer account changes,
+send email, create access, or declare a purchase verified. Agency-token renewal
+may occur normally. A rejected provider request does not fall back to the PIT.
+Provider product and price IDs still need a trusted exact tier/cadence/amount
+mapping before automatic fulfillment; the pre-checkout form is not that evidence.
+
+LocationCreate now initializes new mappings with an incomplete subscription,
+not inferred active status, and records purchase_verification_required. Existing
+buyer accounts are not overwritten by repeated events; a pending checkout already
+matched to a different location conflicts. The checkout-scoped lock serializes
+webhook matching. These are guards for future fulfillment, not automatic onboarding.
+Existing configured accounts are unchanged until an explicit verified update.
+API reference: https://marketplace.gohighlevel.com/docs/ghl/saas-api/get-location-subscription/index.html
+
 `Update Owner Email Only` previews the saved recipient and explicitly confirms
 the change to the owner/code-recovery destination. Its same-origin admin POST to
 `ghl-oauth-update-owner-email` requires verified buyer OAuth and an unchanged

@@ -196,6 +196,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthConnectBtn" type="button" class="secondary" onclick="connectHighLevelAgency()">Connect HighLevel Agency</button>
         <button id="ghlOAuthStatusBtn" type="button" class="secondary" onclick="checkHighLevelConnection()">Check HighLevel Connection</button>
         <button id="ghlOAuthBuyerBtn" type="button" class="secondary" onclick="verifyHighLevelBuyer()">Verify Buyer OAuth</button>
+        <button id="ghlOAuthSubscriptionBtn" type="button" class="secondary" onclick="checkHighLevelBuyerSubscription()">Check Buyer Subscription</button>
         <button id="ghlOAuthWriteBtn" type="button" class="secondary" onclick="verifyHighLevelBuyerWrite()">Verify Account-Key Write</button>
         <button id="ghlOAuthWelcomeBtn" type="button" class="secondary" onclick="sendHighLevelBuyerWelcome()">Send Welcome Link</button>
         <button id="ghlOAuthHeadCoachBtn" type="button" class="secondary" onclick="createHighLevelHeadCoach()">Create Head Coach &amp; Send Access</button>
@@ -1784,6 +1785,19 @@ async function checkHighLevelConnection(){
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }
+async function checkHighLevelBuyerSubscription(){
+  var button=document.getElementById('ghlOAuthSubscriptionBtn');
+  button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-check-subscription','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),
+      locationId:document.getElementById('locationId').value.trim()
+    });
+    setStatus('Buyer subscription identity verified. HighLevel: '+data.providerSubscriptionStatus+'; saved: '+data.savedSubscriptionStatus+'. Exact product/price mapping is still required. No buyer setup changed.','good');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+
 async function verifyHighLevelBuyer(){
   var button=document.getElementById('ghlOAuthBuyerBtn');
   button.disabled=true;

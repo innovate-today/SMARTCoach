@@ -343,7 +343,7 @@ async function testPendingCheckoutValidatesRequiredFields() {
   }
 }
 
-async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation() {
+async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation(mode = "create") {
   const previousFetch = global.fetch;
   const pendingEmail = "taylor.coach@example.com";
   const pendingKey = `checkout-${crypto.createHash("sha256").update(pendingEmail).digest("hex").slice(0, 32)}`;
@@ -361,12 +361,15 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
     coachPhone: "5551234567",
     teamType: "Track & Field",
     createdAt: "2026-10-01T00:00:00.000Z",
-    lastMatchedLocationId: "",
+    lastMatchedLocationId: mode === "conflict" ? "other-buyer" : "",
   };
   let savedAccount = null;
   let savedPending = null;
   global.fetch = async (url) => {
     const text = String(url);
+    if (text.includes("/eval/") || (text.includes("/set/") && text.includes("%3Alock/"))) {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+    }
     if (text.includes("/get/")) {
       const key = decodeURIComponent(text.split("/get/")[1]);
       if (key === `smartcoach:account:${pendingKey}:pendingcheckout`) {
@@ -380,7 +383,12 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
         return {
           ok: true,
           status: 200,
-          text: async () => JSON.stringify({ result: "" }),
+          text: async () => JSON.stringify({ result: mode === "existing" ? JSON.stringify({
+            accountKey: "sc-buyer-location", locationId: "buyer-location", productPlan: "pro100",
+            token: "existing-private-token", coachAccessCodes: ["EXISTING"],
+            accountOwnerEmail: "corrected@example.com", subscription: { status: "trialing" },
+            coachStaff: [{ id: "existing-staff", coachCodeHash: "existing-hash" }],
+          }) : "" }),
         };
       }
       throw new Error(`Unexpected registry get key: ${key}`);
@@ -426,6 +434,23 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
         },
       }, res);
 
+      if (mode === "conflict") {
+        assert.strictEqual(res.statusCode, 409);
+        assert.match(res.body.error, /already matched/);
+        assert.strictEqual(savedAccount, null);
+        assert.strictEqual(savedPending, null);
+        return;
+      }
+      if (mode === "existing") {
+        assert.strictEqual(res.statusCode, 200);
+        assert.strictEqual(res.body.duplicateLocationCreate, true);
+        assert.strictEqual(res.body.provisioned, false);
+        assert.strictEqual(res.body.automaticFulfillmentReady, false);
+        assert.strictEqual(savedAccount, null);
+        assert.strictEqual(savedPending, null);
+        assert.strictEqual(JSON.stringify(res.body).includes("existing-private-token"), false);
+        return;
+      }
       assert.strictEqual(res.statusCode, 200);
       assert.strictEqual(res.body.success, true);
       assert.strictEqual(res.body.automationSecretFallback, true);
@@ -436,6 +461,11 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
       assert.strictEqual(res.body.productPlan, "pro200");
       assert.strictEqual(res.body.subscription.amount, "39.00");
       assert.strictEqual(res.body.accessReady, false);
+      assert.strictEqual(res.body.subscriptionAccessAllowed, false);
+      assert.strictEqual(res.body.subscription.status, "incomplete");
+      assert.strictEqual(res.body.buyerProvisioningVerified, false);
+      assert.strictEqual(res.body.automaticFulfillmentReady, false);
+      assert.strictEqual(res.body.productSelectionSource, "precheckout_form");
       assert.ok(savedAccount);
       assert.strictEqual(savedAccount.accountKey, "sc-buyer-location");
       assert.strictEqual(savedAccount.locationId, "buyer-location");
@@ -448,6 +478,7 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
       assert.strictEqual(savedAccount.lastAutomationEvent.source, "ghl_saas_workflow");
       assert.ok(savedPending);
       assert.strictEqual(savedPending.status, "matched_location");
+      assert.strictEqual(savedPending.fulfillmentStatus, "purchase_verification_required");
       assert.strictEqual(savedPending.lastMatchedLocationId, "buyer-location");
       assert.strictEqual(savedPending.lastLocationCreateEvent.stripeProductId, "");
       assert.strictEqual(JSON.stringify(res.body).includes("registry-token"), false);
@@ -463,6 +494,9 @@ async function testGhlLocationCreateWithoutMatchDoesNotProvision() {
   let saveCalled = false;
   global.fetch = async (url) => {
     const text = String(url);
+    if (text.includes("/eval/") || (text.includes("/set/") && text.includes("%3Alock/"))) {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+    }
     if (text.includes("/get/")) {
       return {
         ok: true,
@@ -1873,6 +1907,8 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
   await testPendingCheckoutStoresOnboardingAndReturnsSaleLink();
   await testPendingCheckoutValidatesRequiredFields();
   await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation();
+  await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation("existing");
+  await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation("conflict");
   await testGhlLocationCreateWithoutMatchDoesNotProvision();
   await testGhlLocationCreateRequiresSignatureOrSecret();
   await testGhlInstallWebhookAcknowledgesWithoutProvisioning();

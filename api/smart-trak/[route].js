@@ -124,7 +124,7 @@ function enforcePowerRackMutation(req, rackSession, payload) {
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
-  if (["ghl-oauth-start", "crm-connect-callback", "ghl-oauth-status", "ghl-oauth-verify-buyer", "ghl-oauth-verify-write", "ghl-oauth-send-welcome", "ghl-oauth-update-owner-email", "ghl-oauth-create-head-coach"].includes(route)) {
+  if (["ghl-oauth-start", "crm-connect-callback", "ghl-oauth-status", "ghl-oauth-verify-buyer", "ghl-oauth-verify-write", "ghl-oauth-send-welcome", "ghl-oauth-update-owner-email", "ghl-oauth-create-head-coach", "ghl-oauth-check-subscription"].includes(route)) {
     return require("../../lib/ghl-oauth").createGhlOAuth().handle(route, req, res);
   }
   return runSmartTrakRouteWithAudit(req, res, route, async () => {
@@ -6695,6 +6695,7 @@ async function pendingCheckout(req, res) {
 
 async function ghlLocationCreateWebhook(req, res) {
   setAutomationHeaders(res);
+  let releaseCheckoutLock = null;
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
@@ -6732,6 +6733,7 @@ async function ghlLocationCreateWebhook(req, res) {
     if (!email) throw httpError(422, "LocationCreate event is missing a valid buyer email.");
 
     const pendingKey = pendingCheckoutKey(email);
+    releaseCheckoutLock = await acquireAccountScopedLock(pendingKey, PENDING_CHECKOUT_NAMESPACE, { ttlMs: 120000, waitMs: 1000 });
     const pendingResult = await loadAccountScopedRecord(pendingKey, PENDING_CHECKOUT_NAMESPACE);
     const pending = pendingResult && pendingResult.record || null;
     if (!pending) {
@@ -6750,6 +6752,21 @@ async function ghlLocationCreateWebhook(req, res) {
 
     const productName = cleanSetupText(pending.productName);
     if (!parseCheckoutProductName(productName)) throw httpError(422, "Matched pending checkout record does not have an exact checkout product name.");
+    if (pending.lastMatchedLocationId && pending.lastMatchedLocationId !== buyerLocationId) {
+      throw httpError(409, "This checkout was already matched to another buyer location. Review before provisioning.");
+    }
+    const accountKey = normalizeSetupAccountKey(`sc-${buyerLocationId}`);
+    const existingResult = await loadAccountRecord(accountKey);
+    const existing = existingResult.found ? existingResult.record : null;
+    // LocationCreate retries must not overwrite credentials, owner corrections, or subscription updates.
+    if (existing) {
+      if (existing.locationId !== buyerLocationId) throw httpError(409, "Saved buyer location conflicts with this event.");
+      res.status(200).json({ success: true, eventType, buyerLocationId, accountKey,
+        pendingCheckoutMatched: true, duplicateLocationCreate: true, provisioned: false,
+        buyerProvisioningVerified: false, automaticFulfillmentReady: false,
+        reason: "Buyer account already exists. Existing setup preserved; purchase verification is still required." });
+      return;
+    }
 
     const now = new Date().toISOString();
     const provisioningPayload = {
@@ -6760,7 +6777,7 @@ async function ghlLocationCreateWebhook(req, res) {
       accountOwnerPhone: pending.coachPhone,
       accountOwnerName: pending.coachName,
       schoolName: pending.schoolName,
-      subscriptionStatus: "active",
+      subscriptionStatus: "incomplete",
       customData: {
         eventType: "ghl_saas_subscription_created",
         source: "ghl_saas_workflow",
@@ -6778,6 +6795,7 @@ async function ghlLocationCreateWebhook(req, res) {
     const updatedPending = {
       ...pending,
       status: "matched_location",
+      fulfillmentStatus: "purchase_verification_required",
       matchedAt: now,
       lastMatchedLocationId: buyerLocationId,
       lastLocationCreateEvent: {
@@ -6801,11 +6819,17 @@ async function ghlLocationCreateWebhook(req, res) {
       productName,
       pendingCheckoutMatched: true,
       pendingCheckoutUpdated: !!pendingRegistry.saved,
+      buyerProvisioningVerified: false,
+      automaticFulfillmentReady: false,
+      fulfillmentStatus: "purchase_verification_required",
+      productSelectionSource: "precheckout_form",
       provisioned: !!(result.registry && result.registry.saved),
       ...result,
     });
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not process LocationCreate webhook." });
+  } finally {
+    if (releaseCheckoutLock) await releaseCheckoutLock().catch(() => {});
   }
 }
 
