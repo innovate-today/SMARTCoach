@@ -123,7 +123,7 @@ function enforcePowerRackMutation(req, rackSession, payload) {
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
-  if (["ghl-oauth-start", "crm-connect-callback", "ghl-oauth-status"].includes(route)) {
+  if (["ghl-oauth-start", "crm-connect-callback", "ghl-oauth-status", "ghl-oauth-verify-buyer"].includes(route)) {
     return require("../../lib/ghl-oauth").createGhlOAuth().handle(route, req, res);
   }
   return runSmartTrakRouteWithAudit(req, res, route, async () => {

@@ -191,6 +191,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Shared Code</button>
         <button id="ghlOAuthConnectBtn" type="button" class="secondary" onclick="connectHighLevelAgency()">Connect HighLevel Agency</button>
         <button id="ghlOAuthStatusBtn" type="button" class="secondary" onclick="checkHighLevelConnection()">Check HighLevel Connection</button>
+        <button id="ghlOAuthBuyerBtn" type="button" class="secondary" onclick="verifyHighLevelBuyer()">Verify Buyer OAuth</button>
       </div>
       <div id="accountKeyWarning" class="setupnote" hidden><b>Account keys do not match</b>The setup form and account lookup are pointing at different customers. Match the account keys before saving or running live checks.</div>
       <div id="status" class="status"></div>
@@ -1743,12 +1744,13 @@ function registryPayloadFromForm(){
     betaExpiresAt:document.getElementById('betaExpiresAt').value.trim()
   };
 }
-async function highLevelConnectionRequest(route,method){
+async function highLevelConnectionRequest(route,method,body){
   var setupCode=document.getElementById('setupCode').value.trim();
   if(!setupCode)throw new Error('Enter the admin Setup Code first.');
   var response=await fetch('/api/smart-trak/'+route,{
     method:method,cache:'no-store',credentials:'same-origin',
-    headers:{'X-SMARTCoach-Setup-Code':setupCode}
+    headers:{'X-SMARTCoach-Setup-Code':setupCode,'Content-Type':'application/json'},
+    body:body?JSON.stringify(body):undefined
   });
   var data=await response.json();
   if(!response.ok)throw new Error(data.error||'HighLevel connection failed.');
@@ -1771,6 +1773,18 @@ async function checkHighLevelConnection(){
   try{
     var data=await highLevelConnectionRequest('ghl-oauth-status','GET');
     setStatus(data.connected?'HighLevel agency authorization is saved. Buyer onboarding is not yet verified.':'HighLevel connection: '+data.status,data.connected?'good':'bad');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+async function verifyHighLevelBuyer(){
+  var button=document.getElementById('ghlOAuthBuyerBtn');
+  button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-verify-buyer','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),
+      locationId:document.getElementById('locationId').value.trim()
+    });
+    setStatus(data.buyerOAuthVerified&&data.crmReadsVerified?'Buyer OAuth location and CRM reads verified. Manual PIT unchanged. Full onboarding is not yet verified.':'Buyer OAuth verification incomplete.',data.buyerOAuthVerified&&data.crmReadsVerified?'good':'bad');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }

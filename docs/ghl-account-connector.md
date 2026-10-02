@@ -89,6 +89,23 @@ encryption key stable; losing/rotating it requires reauthorization.
 
 ## Remaining Work
 
+### Buyer OAuth Verification
+
+Admin/Setup now includes Verify Buyer OAuth. Supply the existing location-based
+account key, its confirmed Location ID, and the admin Setup Code. The POST
+`ghl-oauth-verify-buyer` route requires the same-origin admin header, a saved matching
+buyer record, and a buyer location distinct from the seller. It confirms installation
+through the agency's installed-locations API, validates location-token identity and
+scopes, and reads location details, custom values, custom fields and one contact.
+Contact listing uses its documented 2023-02-21 version (deprecated upstream).
+
+Buyer grants are encrypted separately under `buyergrant-<locationId>`. Reuse checks
+the current installation and mapping; near expiry, a new token is requested through
+the agency grant instead of consuming a location refresh token. No CRM consumer
+uses this grant yet. Verification never overwrites the PIT, changes subscriptions,
+creates coach credentials, sends email, or marks onboarding complete. Live renewal
+and INSTALL event reconciliation remain separate work.
+
 1. Configure client, scopes, agency identity and secrets, deploy, then obtain approval to authorize only the intended buyer installation.
 2. Verify real token response and refresh behavior; mock tests do not establish live connectivity.
 3. Add verified INSTALL handling for this connector, matching app/company/location identity and an existing valid checkout-to-buyer mapping. Handle event arrival order and duplicate delivery safely.

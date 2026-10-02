@@ -8,6 +8,8 @@ function fixture() {
   const records = new Map();
   const locks = new Set();
   const calls = [];
+  const accounts = new Map();
+  let provider;
   let response = {
     access_token: "private-access", refresh_token: "private-refresh", token_type: "Bearer",
     userType: "Company", companyId: "agency-one", scope: "oauth.write locations.readonly", expires_in: 86400,
@@ -22,6 +24,7 @@ function fixture() {
   };
   const registry = {
     registryConfigured: () => true,
+    loadAccountRecord: async (key) => ({ found: accounts.has(key), record: accounts.get(key) }),
     loadAccountScopedRecord: async (account, namespace) => ({ record: records.get(namespace) }),
     saveAccountScopedRecord: async (account, namespace, record) => {
       assert.equal(account, "ghlconnector");
@@ -36,7 +39,8 @@ function fixture() {
   };
   const api = createGhlOAuth({ env, registry, now: () => time, fetch: async (url, options) => {
     calls.push({ url, options });
-    assert(locks.has("oauthgrant"));
+    if (new URL(url).pathname === "/oauth/token") assert(locks.has("oauthgrant"));
+    else if (provider) return { ok: true, json: async () => provider(url, options) };
     if (response instanceof Error) throw response;
     return { ok: true, json: async () => structuredClone(response) };
   } });
@@ -54,7 +58,7 @@ function fixture() {
     req.headers.cookie = started.headers["Set-Cookie"].split(";")[0];
     return req;
   };
-  return { api, env, records, calls, request, invoke, start, callbackReq, setResponse: (value) => { response = value; }, grant: () => structuredClone(response), advance: (ms) => { time += ms; } };
+  return { api, env, records, accounts, calls, request, invoke, start, callbackReq, setProvider: (value) => { provider = value; }, setResponse: (value) => { response = value; }, grant: () => structuredClone(response), advance: (ms) => { time += ms; } };
 }
 
 async function run() {
@@ -137,6 +141,43 @@ async function run() {
   await tampered.invoke("crm-connect-callback", tampered.callbackReq(tamperedStart));
   tampered.records.get("oauthgrant").encrypted.tag = Buffer.alloc(16).toString("base64");
   await assert.rejects(tampered.api.agencyGrant(), /authorized again/);
+
+  const locationId = "AbCdEfGhIjKlMnOpQrSt";
+  const accountKey = `sc-${locationId.toLowerCase()}`;
+  for (const mode of ["valid", "wrong-install", "future-install", "wrong-token", "extra-scope", "wrong-agency", "wrong-contact", "wrong-mapping", "seller", "no-admin", "wrong-origin"]) {
+    const buyer = fixture();
+    const auth = await buyer.start();
+    await buyer.invoke("crm-connect-callback", buyer.callbackReq(auth));
+    buyer.accounts.set(accountKey, { locationId: mode === "wrong-mapping" ? "wrong" : locationId, token: "existing-pit" });
+    buyer.setProvider((url) => {
+      const path = new URL(url).pathname;
+      if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: mode !== "wrong-install" }], installToFutureLocations: mode === "future-install" };
+      if (path === "/oauth/location-token") return { access_token: "private-buyer-access", refresh_token: "private-buyer-refresh", token_type: "Bearer", expires_in: 86400, scope: mode === "extra-scope" ? "locations.readonly users.write" : "locations.readonly", locationId: mode === "wrong-token" ? "another-buyer" : locationId, appId: APP_ID };
+      if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: mode === "wrong-agency" ? "another-agency" : "agency-one" } };
+      if (path === "/contacts/") return { contacts: [{ locationId: mode === "wrong-contact" ? "another-buyer" : locationId }] };
+      return {};
+    });
+    const req = buyer.request();
+    req.body = { accountKey, locationId };
+    if (mode === "seller") req.body = { accountKey: "sc-qxwjweksyuf7sdofhpb4", locationId: "QxwjWekSyUf7sDOFHPB4" };
+    if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
+    if (mode === "wrong-origin") req.headers.origin = "https://attacker.example";
+    const verified = await buyer.invoke("ghl-oauth-verify-buyer", req);
+    assert.equal(verified.statusCode, mode === "valid" ? 200 : ["wrong-mapping", "seller"].includes(mode) ? 422 : 403, mode);
+    assert.equal(buyer.accounts.get(accountKey).token, "existing-pit");
+    assert(!JSON.stringify(verified.body).includes("private-buyer"));
+    assert(!JSON.stringify([...buyer.records.values()]).includes("private-buyer"));
+    if (mode === "valid") {
+      assert.equal(verified.body.buyerProvisioningVerified, false);
+      await buyer.api.buyerGrant(accountKey, locationId);
+      assert.equal(buyer.calls.filter((c) => new URL(c.url).pathname === "/oauth/location-token").length, 1);
+      buyer.advance(86300 * 1000);
+      await buyer.api.buyerGrant(accountKey, locationId);
+      assert.equal(buyer.calls.filter((c) => new URL(c.url).pathname === "/oauth/location-token").length, 2);
+      buyer.setProvider(() => ({ items: [] }));
+      await assert.rejects(buyer.api.buyerGrant(accountKey, locationId), /installation was not verified/);
+    }
+  }
 
   const page = fs.readFileSync("onboarding.html", "utf8");
   const connectionCode = page.slice(page.indexOf("async function highLevelConnectionRequest("), page.indexOf("function generateSetup(){"));
