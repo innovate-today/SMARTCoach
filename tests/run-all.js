@@ -4881,6 +4881,10 @@ function checkTrainingPlanMissingSetupFallback() {
 }
 
 function checkQualityWorkoutTypesAccepted() {
+  const { energySystemValue } = require("../api/ghl/sync-session");
+  for (const [input, expected] of [["Aerobic", "oxidative_aerobic"], ["aerobic", "oxidative_aerobic"], ["Oxidative (Aerobic)", "oxidative_aerobic"], ["oxidative_aerobic", "oxidative_aerobic"], ["Glycolytic (Anaerobic)", "glycolytic_anaerobic"], ["ATP-PC", "atp_pc"], ["Mixed", "mixed"]]) {
+    if (energySystemValue(input) !== expected) throw new Error(`Sync energy system alias failed for ${input}`);
+  }
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const trainingPlanApi = fs.readFileSync("api/ghl/training-plan.js", "utf8");
