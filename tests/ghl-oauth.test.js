@@ -174,7 +174,7 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
-  for (const mode of ["valid", "wrong-location", "wrong-company", "not-v2", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
+  for (const mode of ["valid", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
     const check = fixture();
     const auth = await check.start();
     await check.invoke("crm-connect-callback", check.callbackReq(auth));
@@ -183,6 +183,8 @@ async function run() {
     check.setProvider((url, options) => {
       if (mode === "provider-error") throw new Error("private-provider-response");
       if (mode === "forbidden") return { mockHttpStatus: 403, secret: "private-provider-response" };
+      if (mode === "empty") return {};
+      if (mode === "wrapped") return { data: { locationId, companyId: "agency-one", isSaaSV2: true, secret: "never-return-me" } };
       const parsed = new URL(url);
       assert.equal(parsed.pathname, `/saas/get-saas-subscription/${locationId}`);
       assert.equal(parsed.searchParams.get("companyId"), "agency-one");
@@ -200,6 +202,9 @@ async function run() {
     const result = await check.invoke("ghl-oauth-check-subscription", req);
     assert.equal(result.statusCode, mode === "valid" ? 200 : ["provider-error", "forbidden"].includes(mode) ? 502 : ["missing-price", "unknown-status"].includes(mode) ? 422 : 403);
     if (mode === "forbidden") assert.match(result.body.error, /HTTP 403/);
+    if (mode === "wrong-location") assert.match(result.body.error, /location: mismatched; agency: matched/);
+    if (mode === "empty") assert.match(result.body.error, /location: missing; agency: missing/);
+    if (mode === "wrapped") assert.match(result.body.error, /data wrapper: present/);
     assert.deepEqual(check.accounts.get(accountKey), original);
     if (mode === "valid") {
       assert.equal(result.body.providerSubscriptionStatus, "trialing");
