@@ -56,6 +56,7 @@ async function handler(req, res) {
   await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
+  if (!await require("../../lib/ghl-oauth-consumer").attachBuyerOAuthContext(req, res, "athletes")) return;
 
   const { accountKey, token, locationId, activeAthleteLimit, productPlanLabel } = getGhlContext(req);
   const coachSession = coachSessionFromRequest(req, accountKey);

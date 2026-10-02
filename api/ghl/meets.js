@@ -27,6 +27,7 @@ module.exports = async function handler(req, res) {
   await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
+  if (!await require("../../lib/ghl-oauth-consumer").attachBuyerOAuthContext(req, res, "meets")) return;
 
   const { token, locationId, accountKey } = getGhlContext(req);
 

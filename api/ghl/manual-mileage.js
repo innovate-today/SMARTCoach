@@ -11,6 +11,7 @@ module.exports = async function handler(req, res) {
   await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
+  if (!await require("../../lib/ghl-oauth-consumer").attachBuyerOAuthContext(req, res, "manual-mileage")) return;
 
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });

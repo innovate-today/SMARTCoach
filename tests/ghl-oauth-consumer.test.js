@@ -1,6 +1,9 @@
 const assert = require("assert/strict");
-const { attachBuyerOAuthReadContext, attachBuyerOAuthContext } = require("../lib/ghl-oauth-consumer");
+const { attachBuyerOAuthReadContext, attachBuyerOAuthContext, buyerCrmToken } = require("../lib/ghl-oauth-consumer");
 const { getGhlContext, accountSetupReady } = require("../lib/ghl-account");
+const { athleteCalendarCredentialAccepted } = require("../lib/athlete-calendar");
+const crypto = require("crypto");
+const fs = require("fs");
 
 async function run() {
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
@@ -42,7 +45,7 @@ async function run() {
   const readinessRequest = request(), readinessResponse = response();
   assert.equal(await attachBuyerOAuthContext(readinessRequest, readinessResponse, "account-status", { ...writeDeps, authorize: () => { throw new Error("Account readiness must not require an existing coach session"); } }), true);
   assert.equal(getGhlContext(readinessRequest).token, "private-write-oauth");
-  for (const [route, methods] of Object.entries({ athletes: ["POST", "PUT", "PATCH"], groups: ["POST"], meets: ["POST", "PATCH", "DELETE"],
+  for (const [route, methods] of Object.entries({ records: ["POST", "PATCH", "DELETE"], "athlete-calendar": ["POST"], athletes: ["POST", "PUT", "PATCH"], groups: ["POST"], meets: ["POST", "PATCH", "DELETE"],
     "training-plan": ["POST"], "athlete-best": ["POST", "DELETE"], "sync-session": ["POST"], "manual-mileage": ["POST"], "meet-result": ["POST"], correction: ["POST"] })) {
     for (const method of methods) {
       const req = { ...request(), method }, res = response();
@@ -92,6 +95,52 @@ async function run() {
   assert.equal(accountSetupReady({ ...oauthAccount, coachAccessCodes: [] }, verified), false);
   assert.equal(accountSetupReady({ ...oauthAccount, accountKey: "sc-qxwjweksyuf7sdofhpb4", locationId: "QxwjWekSyUf7sDOFHPB4" }, { accountKey: "sc-qxwjweksyuf7sdofhpb4", locationId: "QxwjWekSyUf7sDOFHPB4", token: "seller" }), false);
   assert.equal(accountSetupReady({ ...oauthAccount, token: "manual-pit" }), true);
+  const crmAccount = { accountKey, locationId, token: "manual-pit" };
+  assert.equal(await buyerCrmToken(crmAccount, ["contacts.write"], writeDeps), "private-write-oauth");
+  assert.equal(await buyerCrmToken(crmAccount, ["ungranted.write"], { ...writeDeps, env: {} }), "manual-pit");
+  await assert.rejects(buyerCrmToken(crmAccount, ["ungranted.write"], writeDeps), /connection could not be verified/);
+  await assert.rejects(buyerCrmToken(crmAccount, [], { ...writeDeps, oauth: { readConsumerGrant: async () => { throw new Error("private-revoked"); } } }), error => error.statusCode === 503 && !error.message.includes("private-revoked"));
+  await assert.rejects(buyerCrmToken(crmAccount, [], { ...writeDeps, oauth: { readConsumerGrant: async () => ({ locationId: "wrong", access_token: "foreign" }) } }), /connection could not be verified/);
+  const secret = String(process.env.SMARTCOACH_ATHLETE_ACCESS_SECRET || process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || "smartcoach-athlete-calendar").trim();
+  const athleteId = "athlete-one";
+  const privateCode = crypto.createHmac("sha256", secret).update(`${accountKey}:${athleteId}`).digest("hex").slice(0, 12);
+  const calendarGet = { ...request(), query: { account: accountKey, athlete: athleteId, code: privateCode } };
+  const calendarContext = getGhlContext(calendarGet);
+  assert.equal(athleteCalendarCredentialAccepted(calendarGet, calendarContext), true);
+  assert.equal(athleteCalendarCredentialAccepted({ ...calendarGet, query: { ...calendarGet.query, code: "wrong" } }, calendarContext), false);
+  assert.equal(athleteCalendarCredentialAccepted(calendarGet, { ...calendarContext, accountKey: "other" }), false);
+  assert.equal(athleteCalendarCredentialAccepted({ ...calendarGet, query: { ...calendarGet.query, athlete: "another" } }, calendarContext), false);
+  const calendarPost = { ...request(), method: "POST", body: { athleteId, code: privateCode } };
+  assert.equal(athleteCalendarCredentialAccepted(calendarPost, calendarContext), true);
+  assert.equal(athleteCalendarCredentialAccepted({ ...calendarPost, body: { athleteId: "another", code: privateCode } }, calendarContext), false);
+  assert.equal(athleteCalendarCredentialAccepted({ ...calendarGet, method: "DELETE" }, calendarContext), false);
+  let calendarGrantCalls = 0;
+  const calendarDeps = { ...writeDeps,
+    authorize: req => athleteCalendarCredentialAccepted(req, getGhlContext(req)),
+    oauth: { readConsumerGrant: async () => { calendarGrantCalls++; return { locationId, access_token: "private-calendar-oauth", scope: writeScopes }; } },
+  };
+  assert.equal(await attachBuyerOAuthContext({ ...calendarGet, query: { ...calendarGet.query, code: "wrong" } }, response(), "athlete-calendar", calendarDeps), false);
+  assert.equal(await attachBuyerOAuthContext({ ...calendarPost, body: { athleteId: "another", code: privateCode } }, response(), "athlete-calendar", calendarDeps), false);
+  assert.equal(calendarGrantCalls, 0, "Private athlete authorization must run before buyer grant lookup");
+  const acceptedCalendar = { ...calendarGet };
+  assert.equal(await attachBuyerOAuthContext(acceptedCalendar, response(), "athlete-calendar", calendarDeps), true);
+  assert.equal(calendarGrantCalls, 1);
+  assert.equal(getGhlContext(acceptedCalendar).token, "private-calendar-oauth");
+  for (const route of ["records", "attendance", "sync-diagnostics", "athlete-calendar"]) {
+    const req = request();
+    assert.equal(await attachBuyerOAuthContext(req, response(), route, writeDeps), true);
+    assert.equal(getGhlContext(req).token, "private-write-oauth");
+  }
+  let repeatCalls = 0;
+  const repeatReq = { ...request(), method: "POST" };
+  const repeatDeps = { ...writeDeps, oauth: { readConsumerGrant: async () => { repeatCalls++; return { locationId, access_token: "private-write-oauth", scope: writeScopes }; } } };
+  assert.equal(await attachBuyerOAuthContext(repeatReq, response(), "manual-mileage", repeatDeps), true);
+  assert.equal(await attachBuyerOAuthContext(repeatReq, response(), "sync-session", repeatDeps), true);
+  assert.equal(repeatCalls, 1, "Nested handlers must reuse the request-only grant");
+  for (const [file, route] of [["athletes", "athletes"], ["records", "records"], ["athlete-best", "athlete-best"], ["athlete-profile", "athlete-profile"],
+    ["dashboard", "dashboard"], ["meets", "meets"], ["training-plan", "training-plan"], ["sync-session", "sync-session"], ["manual-mileage", "manual-mileage"], ["meet-result", "meet-result"], ["correction", "correction"]]) {
+    assert(fs.readFileSync(`api/ghl/${file}.js`, "utf8").includes(`attachBuyerOAuthContext(req, res, "${route}"`), `${file} direct handler must attach OAuth`);
+  }
   const denied = request();
   assert.equal(await attachBuyerOAuthReadContext(denied, response(), "athletes", { ...deps, authorize: () => false }), false);
   assert.equal(calls, before);

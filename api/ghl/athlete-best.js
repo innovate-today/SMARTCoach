@@ -20,6 +20,7 @@ module.exports = async function handler(req, res) {
   await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
+  if (!await require("../../lib/ghl-oauth-consumer").attachBuyerOAuthContext(req, res, "athlete-best")) return;
 
   if (req.method !== "GET" && req.method !== "POST" && req.method !== "DELETE") {
     res.status(405).json({ error: "Method not allowed" });

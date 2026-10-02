@@ -364,6 +364,7 @@ module.exports = async function handler(req, res) {
   if (route === "attendance") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
+    if (req.method === "GET" && !await require("../../lib/ghl-oauth-consumer").attachBuyerOAuthContext(req, res, route)) return;
     await recordRequestCoachDevice(req).catch(() => {});
     return accountAttendance(req, res);
   }
@@ -6906,7 +6907,7 @@ async function enforcePlanDowngradeAthleteLimit({ existing, account }) {
   const previousLimit = previousPlan.activeAthleteLimit;
   const loweringLimit = previousLimit === null || typeof previousLimit === "undefined" || Number(previousLimit) > Number(targetLimit);
   if (!loweringLimit) return;
-  const token = cleanSetupText(account.token || existing.token);
+  const token = await require("../../lib/ghl-oauth-consumer").buyerCrmToken({ ...existing, ...account, token: account.token || existing.token }, ["objects/record.readonly"]);
   const locationId = cleanSetupText(account.locationId || existing.locationId);
   if (!token || !locationId) return;
   const activeAthletes = await athletesApi.listSmartCoachAthletes({ token, locationId, includeContacts: false });
@@ -6921,16 +6922,17 @@ async function enforcePlanDowngradeAthleteLimit({ existing, account }) {
 
 async function syncAccountKeyCustomValue(account) {
   if (!account || account.productPlan === "essential") return customValueSyncSkipped("Essential accounts do not need a SMART Trak custom value.");
-  if (!account.token || !account.locationId) return customValueSyncSkipped("Missing Location ID or Private Integration Token.");
   try {
+    const token = await require("../../lib/ghl-oauth-consumer").buyerCrmToken(account, ["locations/customValues.readonly", "locations/customValues.write"]);
+    if (!token || !account.locationId) return customValueSyncSkipped("Missing Location ID or CRM connection.");
     const existing = await findGhlCustomValue({
-      token: account.token,
+      token,
       locationId: account.locationId,
       name: GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME,
     });
     if (existing && existing.id) {
       const updated = await ghlRequest({
-        token: account.token,
+        token,
         path: `/locations/${encodeURIComponent(account.locationId)}/customValues/${encodeURIComponent(existing.id)}`,
         method: "PUT",
         body: { name: existing.name || GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME, value: account.accountKey },
@@ -6938,7 +6940,7 @@ async function syncAccountKeyCustomValue(account) {
       return customValueSyncSuccess("updated", updated, account.accountKey);
     }
     const created = await ghlRequest({
-      token: account.token,
+      token,
       path: `/locations/${encodeURIComponent(account.locationId)}/customValues`,
       method: "POST",
       body: { name: GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME, value: account.accountKey },
@@ -7109,10 +7111,11 @@ async function ghlRequest({ token, path, method = "GET", body }) {
 }
 
 async function safeGhlLocationNameFromAccount(account) {
-  const token = cleanSetupText(account && account.token);
   const locationId = cleanSetupText(account && account.locationId);
-  if (!token || !locationId) return "";
+  if (!locationId) return "";
   try {
+    const token = await require("../../lib/ghl-oauth-consumer").buyerCrmToken(account, ["locations.readonly"]);
+    if (!token) return "";
     const result = await ghlRequest({
       token,
       path: `/locations/${encodeURIComponent(locationId)}`,
@@ -7609,7 +7612,8 @@ async function accountCodeRecovery(req, res) {
 
     const ownerEmail = cleanEmail(existing.accountOwnerEmail);
     if (!ownerEmail) throw httpError(400, "Account owner email is not saved yet. Add it in Account Setup or contact support.");
-    if (!existing.token || !existing.locationId) throw httpError(503, "Email recovery is not configured for this account. Contact support to reset the coach code.");
+    const recoveryToken = await require("../../lib/ghl-oauth-consumer").buyerCrmToken(existing, ["contacts.readonly", "contacts.write", "conversations/message.write"]);
+    if (!recoveryToken || !existing.locationId) throw httpError(503, "Email recovery is not configured for this account. Contact support to reset the coach code.");
     const lastRequestedAt = Date.parse(existing.coachCodeRecovery && existing.coachCodeRecovery.requestedAt || "");
     if (Number.isFinite(lastRequestedAt) && Date.now() - lastRequestedAt < 60 * 1000) {
       throw httpError(429, "A temporary code was just sent. Wait a minute before requesting another one.");
@@ -7628,7 +7632,7 @@ async function accountCodeRecovery(req, res) {
     };
 
     const contact = await findOrCreateAccountOwnerContact({
-      token: existing.token,
+      token: recoveryToken,
       locationId: existing.locationId,
       ownerEmail,
       ownerPhone: existing.accountOwnerPhone,
@@ -7642,7 +7646,7 @@ async function accountCodeRecovery(req, res) {
       coachCodeRecovery: recovery,
     });
     await sendCoachCodeRecoveryEmail({
-      token: existing.token,
+      token: recoveryToken,
       accountKey,
       productPlan: existing.productPlan,
       contactId: contact.id,
