@@ -33,7 +33,11 @@ all coach save operations or automatic fulfillment.
 uses a separate seller token, the saved buyer owner email, and an exact
 email/seller-location-matching contact (created with an owner tag if absent).
 It refuses duplicate matching contacts. The email links to the buyer's Overview;
-it neither sends nor rotates coach codes. The buyer uses an existing coach code.
+it neither sends nor rotates coach codes. Welcome instructions direct the buyer
+to the separate SMARTCoach Access email for a personal code and phone-app setup,
+then Overview sign-in and Account -> Staff Access for head-coach invitations.
+Buyers missing the access email are directed to support before trying to sign in.
+This copy does not establish that a personal code or access email was delivered.
 HighLevel must use the established SMARTCoach Pro seller location
 `QxwjWekSyUf7sDOFHPB4`, its authenticated email service, and an explicitly
 configured `SMARTCOACH_WELCOME_FROM_EMAIL`. Set the dedicated server-only

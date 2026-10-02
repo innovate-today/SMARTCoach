@@ -282,6 +282,11 @@ async function run() {
         assert.equal(email.emailFrom, "support@smartcoach-pro.com");
         assert(email.html.includes(`/overview.html?account=${accountKey}`));
         assert(!email.html.includes("private-coach-code"));
+        assert(email.html.includes("separate <strong>SMARTCoach Access</strong> email"));
+        assert(email.html.includes("If you have not received it, contact support before trying to sign in."));
+        assert(email.html.includes("Account &gt; Staff Access"));
+        assert(email.html.includes("phone-app setup instructions"));
+        assert(!email.html.includes("existing coach access code"));
         if (mode === "failed-send") throw new Error("private-provider-error");
         return mode === "missing-message" ? {} : { messageId: "welcome-message" };
       }
