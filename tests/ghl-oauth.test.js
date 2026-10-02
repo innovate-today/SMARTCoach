@@ -270,8 +270,15 @@ async function run() {
       }
       return {};
     });
-    const req = welcome.request(); req.body = { accountKey, locationId };
+    const req = welcome.request(); req.body = { accountKey, locationId, expectedOwnerEmail: "support@example.com" };
     assert.equal((await welcome.invoke("ghl-oauth-verify-buyer", req)).statusCode, 200);
+    if (mode === "existing") {
+      const preview = await welcome.invoke("ghl-oauth-send-welcome", { ...req, body: { accountKey, locationId, preview: true } });
+      assert.equal(preview.body.ownerEmail, "support@example.com");
+      assert.equal(sends, 0); assert.equal(creates, 0);
+      assert.equal((await welcome.invoke("ghl-oauth-send-welcome", { ...req, body: { ...req.body, expectedOwnerEmail: "wrong@example.com" } })).statusCode, 409);
+      assert.equal(sends, 0);
+    }
     if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
     if (mode === "wrong-origin") req.headers.origin = "https://attacker.example";
     if (mode === "wrong-mapping") welcome.accounts.get(accountKey).locationId = "other-location";

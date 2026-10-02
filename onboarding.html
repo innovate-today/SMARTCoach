@@ -1806,10 +1806,13 @@ async function sendHighLevelBuyerWelcome(){
   var button=document.getElementById('ghlOAuthWelcomeBtn');
   button.disabled=true;
   try{
-    var data=await highLevelConnectionRequest('ghl-oauth-send-welcome','POST',{
+    var payload={
       accountKey:document.getElementById('accountKey').value.trim(),
       locationId:document.getElementById('locationId').value.trim()
-    });
+    };
+    var preview=await highLevelConnectionRequest('ghl-oauth-send-welcome','POST',Object.assign({},payload,{preview:true}));
+    if(!window.confirm('Send the SMARTCoach Overview sign-in link to '+preview.ownerEmail+'? No coach codes will be emailed or changed.'))return;
+    var data=await highLevelConnectionRequest('ghl-oauth-send-welcome','POST',Object.assign({},payload,{expectedOwnerEmail:preview.ownerEmail}));
     setStatus(data.welcomeAccepted?(data.alreadyAccepted?'Welcome link was already accepted by HighLevel. No duplicate sent.':'Welcome link accepted by HighLevel.')+' Inbox delivery and full onboarding are not yet verified.':'Welcome link acceptance incomplete.',data.welcomeAccepted?'good':'bad');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
