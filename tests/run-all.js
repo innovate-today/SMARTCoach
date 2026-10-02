@@ -1,5 +1,7 @@
 const fs = require("fs");
 const { spawnSync } = require("child_process");
+const ghlOAuthTests = spawnSync(process.execPath, ["tests/ghl-oauth.test.js"], { stdio: "inherit" });
+if (ghlOAuthTests.status !== 0) throw new Error("HighLevel OAuth security tests failed.");
 const powerStorageTests = spawnSync(process.execPath, ["tests/power-trak-session-storage.test.js"], { stdio: "inherit" });
 if (powerStorageTests.status !== 0) throw new Error("Power Trak session storage tests failed.");
 const powerQuickLoadTests = spawnSync(process.execPath, ["tests/power-trak-quick-load.test.js"], { stdio: "inherit" });

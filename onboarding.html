@@ -189,6 +189,8 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="formactions">
         <button type="button" class="secondary" onclick="generateAccountKey()">Generate Account Key</button>
         <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Shared Code</button>
+        <button id="ghlOAuthConnectBtn" type="button" class="secondary" onclick="connectHighLevelAgency()">Connect HighLevel Agency</button>
+        <button id="ghlOAuthStatusBtn" type="button" class="secondary" onclick="checkHighLevelConnection()">Check HighLevel Connection</button>
       </div>
       <div id="accountKeyWarning" class="setupnote" hidden><b>Account keys do not match</b>The setup form and account lookup are pointing at different customers. Match the account keys before saving or running live checks.</div>
       <div id="status" class="status"></div>
@@ -1740,6 +1742,37 @@ function registryPayloadFromForm(){
     accessReason:document.getElementById('accessReason').value.trim(),
     betaExpiresAt:document.getElementById('betaExpiresAt').value.trim()
   };
+}
+async function highLevelConnectionRequest(route,method){
+  var setupCode=document.getElementById('setupCode').value.trim();
+  if(!setupCode)throw new Error('Enter the admin Setup Code first.');
+  var response=await fetch('/api/smart-trak/'+route,{
+    method:method,cache:'no-store',credentials:'same-origin',
+    headers:{'X-SMARTCoach-Setup-Code':setupCode}
+  });
+  var data=await response.json();
+  if(!response.ok)throw new Error(data.error||'HighLevel connection failed.');
+  return data;
+}
+async function connectHighLevelAgency(){
+  var button=document.getElementById('ghlOAuthConnectBtn');
+  button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-start','POST');
+    var url=new URL(data.authorizationUrl);
+    if(url.origin!=='https://marketplace.gohighlevel.com'||url.pathname!=='/oauth/chooselocation')throw new Error('HighLevel returned an invalid authorization destination.');
+    window.location.assign(url.href);
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+async function checkHighLevelConnection(){
+  var button=document.getElementById('ghlOAuthStatusBtn');
+  button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-status','GET');
+    setStatus(data.connected?'HighLevel agency authorization is saved. Buyer onboarding is not yet verified.':'HighLevel connection: '+data.status,data.connected?'good':'bad');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
 }
 function generateSetup(){
   var account=cleanAccountKey(document.getElementById('accountKey').value.trim());

@@ -1,0 +1,103 @@
+# HighLevel Account Connector
+
+## Current Boundary
+
+Private app `SMARTCoach Pro Account Connector`, app/version ID
+`6abfe408797ba36482ddbe72`, targets Sub-Account and is installable by Agency only.
+The original Agency-targeted provisioning app remains responsible for LocationCreate.
+
+This implementation saves an encrypted Company OAuth grant and renews it on demand.
+It does NOT connect buyer CRM accounts, replace PITs, generate coach credentials,
+send welcome emails, or verify purchase-to-access onboarding. No call site yet uses
+`agencyGrant()` for buyer provisioning. Existing manual account connections are unchanged.
+
+## Configuration Before Installation
+
+Configure these server-only environment variables in Vercel:
+
+- `SMARTCOACH_ADMIN_SETUP_CODE`: required, accepted only through the setup-code header.
+- `SMARTCOACH_GHL_OAUTH_CLIENT_ID`: client belonging to the connector app above.
+- `SMARTCOACH_GHL_OAUTH_CLIENT_SECRET`: client secret; never commit or expose it.
+- `SMARTCOACH_GHL_OAUTH_COMPANY_ID`: independently verified agency Company ID.
+- `SMARTCOACH_GHL_OAUTH_ENCRYPTION_KEY`: a dedicated random 32-byte key, base64 encoded.
+- `SMARTCOACH_GHL_OAUTH_REDIRECT_URI`: `https://app.smartcoach-pro.com/api/smart-trak/ghl-oauth-callback`.
+- `SMARTCOACH_GHL_OAUTH_INSTALL_URL`: the connector's official Marketplace install URL, with its matching client_id.
+- `SMARTCOACH_GHL_OAUTH_SCOPES`: exact space-separated approved scopes. Finalize these against the CRM operations before installation; do not grant all permissions.
+
+An existing configured account registry is also required. Register the exact callback
+URL in the connector Auth settings only after deploying the handler. Do not use the
+site root as the callback. Do not repurpose the original provisioning app's client.
+
+## Authorization
+
+### Audited Scope List
+
+The existing CRM call sites and HighLevel's scope documentation support this
+11-scope request for the planned buyer connector:
+
+| Scope | Existing/planned operation |
+| --- | --- |
+| `oauth.readonly` | Verify the connector's installed buyer locations |
+| `oauth.write` | Exchange agency authorization for installed-location access |
+| `locations.readonly` | Verify the buyer location |
+| `locations/customValues.readonly` | Find the SMARTCoach account-key custom value |
+| `locations/customValues.write` | Save the buyer account-key custom value |
+| `locations/customFields.readonly` | Read athlete field definitions |
+| `contacts.readonly` | Read roster and owner contacts |
+| `contacts.write` | Save athletes, contact tags/notes and owner contact |
+| `objects/record.readonly` | Read/search training, meet and result records |
+| `objects/record.write` | Save/correct training, meet and result records |
+| `conversations/message.write` | Send approved access/calendar emails |
+
+No user scopes, payments, location creation/deletion, object-schema editing,
+custom-field editing, or unrelated marketing/calendar permissions are needed by
+the inspected call sites. GHL scopes are coarser than SMARTCoach operations:
+contacts.write includes campaign/workflow contact operations, and record.write
+includes deletion. Application authorization must continue constraining use.
+The scope list does not itself authorize sending email or modifying unrelated
+locations, and has not been granted by an install.
+
+Sources: https://marketplace.gohighlevel.com/docs/Authorization/Scopes/index.html
+and https://marketplace.gohighlevel.com/docs/ghl/objects/search-object-records/ .
+
+In Admin/Setup (`onboarding.html`), enter the admin Setup Code and select
+Connect HighLevel Agency. POST `/api/smart-trak/ghl-oauth-start` requires a matching
+Origin and the `x-smartcoach-setup-code` header. It sets a Secure, HttpOnly,
+SameSite=Lax host-only cookie and returns an authorization URL with random state.
+Authorize in the same browser. Obtain owner approval before the access grant.
+
+The callback checks cookie binding, ten-minute expiry, one-time registry state,
+Company token type, expected agency identity, optional returned app identity,
+and exact scopes. It refuses all-location and future-location approvals in this
+initial release. The token exchange uses the documented v3 OAuth endpoint.
+HTTP 200 means only agency authorization was saved, never buyer onboarding.
+
+Tokens are AES-256-GCM encrypted in a separate account-scoped registry record,
+with app/agency identity as authenticated data. No token, authorization code,
+or provider response appears in endpoint responses or application usage audit.
+Hosting-layer access logs may contain callback query parameters; restrict their
+access and retention. Callback responses are no-store and no-referrer.
+
+Check HighLevel Connection returns only status, app ID, and expiry. It does not
+refresh or return credentials. `agencyGrant()` performs locked, on-demand refresh
+within two minutes of expiry. Refresh attempts mark the saved grant as requiring
+reauthorization before consuming a single-use refresh token. If an exchange or
+save is interrupted, reauthorize; do not retry the old refresh token. Keep the
+encryption key stable; losing/rotating it requires reauthorization.
+
+## Remaining Work
+
+1. Configure client, scopes, agency identity and secrets, deploy, then obtain approval to authorize only the intended buyer installation.
+2. Verify real token response and refresh behavior; mock tests do not establish live connectivity.
+3. Add verified INSTALL handling for this connector, matching app/company/location identity and an existing valid checkout-to-buyer mapping. Handle event arrival order and duplicate delivery safely.
+4. Obtain location tokens only for confirmed installed buyer locations, validating returned location identity. Add renewal to CRM consumers before replacing any PIT.
+5. Verify private-app future-install eligibility in the actual UI. Enabling it later requires an explicit access-scope decision and changes to this release's default rejection.
+6. Reconcile Trialing versus Active, verify coach creation, welcome-email delivery to the verified owner, Overview destination, and approved clean purchase-to-access validation.
+
+## Sources
+
+- https://marketplace.gohighlevel.com/docs/Authorization/TargetUserSubAccount/index.html
+- https://marketplace.gohighlevel.com/docs/ghl/oauth/get-access-token/index.html
+- https://marketplace.gohighlevel.com/docs/ghl/oauth/get-location-access-token/
+
+Run `node tests/ghl-oauth.test.js` or the full `npm test` suite.
