@@ -175,7 +175,7 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
-  for (const mode of ["valid", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "wrapped-empty", "wrapped-wrong-buyer", "ambiguous", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
+  for (const mode of ["valid", "reconcile", "reconcile-bad-price", "reconcile-bad-confirm", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "wrapped-empty", "wrapped-wrong-buyer", "ambiguous", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
     const check = fixture();
     const auth = await check.start();
     await check.invoke("crm-connect-callback", check.callbackReq(auth));
@@ -194,6 +194,7 @@ async function run() {
         const catalog = { planId: "plan_verified", companyId: "agency-one", providerLocationId: "QxwjWekSyUf7sDOFHPB4",
           productId: "prod_verified", isSaaSV2: true, title: "SMARTCoach Pro 100", trialPeriod: 30,
           prices: [{ id: "price_verified", billingInterval: "month", active: true, amount: 29, currency: "USD" }] };
+        if (mode === "reconcile-bad-price") catalog.prices[0].amount = 2900;
         return mode === "wrapped" ? { data: catalog } : catalog;
       }
       assert.equal(parsed.pathname, `/saas/get-saas-subscription/${locationId}`);
@@ -208,17 +209,24 @@ async function run() {
     });
     const req = check.request();
     req.body = { accountKey, locationId };
+    if (mode.startsWith("reconcile")) Object.assign(req.body, { reconcileTrialStatus: true, expectedSavedStatus: "active", expectedProviderStatus: mode === "reconcile-bad-confirm" ? "active" : "trialing" });
     if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
     if (mode === "wrong-origin") req.headers.origin = "https://other.example";
     const result = await check.invoke("ghl-oauth-check-subscription", req);
-    assert.equal(result.statusCode, ["valid", "wrapped"].includes(mode) ? 200 : ["provider-error", "forbidden"].includes(mode) ? 502 : ["missing-price", "unknown-status"].includes(mode) ? 422 : 403);
+    assert.equal(result.statusCode, ["valid", "wrapped", "reconcile"].includes(mode) ? 200 : mode.startsWith("reconcile-bad") ? 409 : ["provider-error", "forbidden"].includes(mode) ? 502 : ["missing-price", "unknown-status"].includes(mode) ? 422 : 403);
     if (mode === "forbidden") assert.match(result.body.error, /HTTP 403/);
     if (mode === "wrong-location") assert.match(result.body.error, /location: mismatched; agency: matched/);
     if (mode === "empty") assert.match(result.body.error, /location: missing; agency: missing/);
     if (mode === "wrapped-empty") assert.match(result.body.error, /location: missing/);
     if (mode === "wrapped-wrong-buyer") assert.match(result.body.error, /location: mismatched/);
     if (mode === "ambiguous") assert.match(result.body.error, /ambiguous/);
-    assert.deepEqual(check.accounts.get(accountKey), original);
+    assert.deepEqual(check.accounts.get(accountKey), mode === "reconcile" ? { ...original, subscription: { ...original.subscription, status: "trialing" } } : original);
+    if (mode === "reconcile") {
+      assert.equal(result.body.trialStatusReconciled, true);
+      assert.equal(result.body.automaticFulfillmentReady, false);
+      const replay = await check.invoke("ghl-oauth-check-subscription", req);
+      assert.equal(replay.statusCode, 409);
+    }
     if (["valid", "wrapped"].includes(mode)) {
       assert.equal(result.body.providerSubscriptionStatus, "trialing");
       assert.equal(result.body.savedSubscriptionStatus, "active");

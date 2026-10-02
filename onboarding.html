@@ -197,6 +197,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthStatusBtn" type="button" class="secondary" onclick="checkHighLevelConnection()">Check HighLevel Connection</button>
         <button id="ghlOAuthBuyerBtn" type="button" class="secondary" onclick="verifyHighLevelBuyer()">Verify Buyer OAuth</button>
         <button id="ghlOAuthSubscriptionBtn" type="button" class="secondary" onclick="checkHighLevelBuyerSubscription()">Check Buyer Subscription</button>
+        <button id="ghlOAuthTrialBtn" type="button" class="secondary" onclick="reconcileHighLevelBuyerTrial()">Reconcile Trial Status</button>
         <button id="ghlOAuthWriteBtn" type="button" class="secondary" onclick="verifyHighLevelBuyerWrite()">Verify Account-Key Write</button>
         <button id="ghlOAuthWelcomeBtn" type="button" class="secondary" onclick="sendHighLevelBuyerWelcome()">Send Welcome Link</button>
         <button id="ghlOAuthHeadCoachBtn" type="button" class="secondary" onclick="createHighLevelHeadCoach()">Create Head Coach &amp; Send Access</button>
@@ -1799,6 +1800,20 @@ async function checkHighLevelBuyerSubscription(){
     var summary='Buyer subscription identity verified. HighLevel: '+data.providerSubscriptionStatus+'; saved: '+data.savedSubscriptionStatus+'. ';
     summary+=data.purchaseVerified?data.purchasedProductName+'; '+data.purchasedCurrency+' '+data.purchasedAmount+' '+data.purchasedBillingCadence+'; plan trial '+data.planTrialDays+' days. Saved pricing '+(data.savedConfigurationMatches?'matches. ':'does not match. '):data.reason+' ';
     setStatus(summary+'No buyer setup changed. Automatic fulfillment remains off.',data.purchaseVerified?'good':'bad');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+
+async function reconcileHighLevelBuyerTrial(){
+  var button=document.getElementById('ghlOAuthTrialBtn');
+  button.disabled=true;
+  try{
+    var buyer={accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim()};
+    var preview=await highLevelConnectionRequest('ghl-oauth-check-subscription','POST',buyer);
+    if(!preview.purchaseVerified||!preview.savedConfigurationMatches||preview.providerSubscriptionStatus!=='trialing'||preview.savedSubscriptionStatus!=='active')throw new Error('Verified matching pricing and an active-to-trialing status change are required. No change made.');
+    if(!window.confirm('Update only the saved SMARTCoach subscription status from active to trialing for '+buyer.accountKey+'? HighLevel billing, coach access and email history will remain unchanged.'))return;
+    var data=await highLevelConnectionRequest('ghl-oauth-check-subscription','POST',Object.assign({},buyer,{reconcileTrialStatus:true,expectedSavedStatus:'active',expectedProviderStatus:'trialing'}));
+    setStatus(data.trialStatusReconciled?'Verified '+data.purchasedProductName+'; '+data.purchasedCurrency+' '+data.purchasedAmount+' '+data.purchasedBillingCadence+'. HighLevel and saved status: trialing. Billing, coach access and email history unchanged. Automatic fulfillment remains off.':'Trial reconciliation not verified.',data.trialStatusReconciled?'good':'bad');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }
