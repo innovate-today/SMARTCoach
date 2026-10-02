@@ -466,7 +466,13 @@ async function createPerformanceRecordWithWorkoutTypeFallback({ token, locationI
 
 function performanceRecordFallbackProperties({ properties, error, removed }) {
   const message = String(error && error.message || "");
-  if (/allowed option|isn't an allowed option|not an allowed/i.test(message) && properties.workout_type && !removed.has("workout_type")) {
+  const optionRejected = /allowed option|isn't an allowed option|not an allowed/i.test(message);
+  // Older SMART Trak snapshots use "oxidative" for the same aerobic system.
+  if (optionRejected && /energy[ _]*systems?/i.test(message) && properties.energy_system === "oxidative_aerobic" && !removed.has("energy_system")) {
+    removed.add("energy_system");
+    return { ...properties, energy_system: "oxidative" };
+  }
+  if (optionRejected && /workout[ _]*type/i.test(message) && properties.workout_type && !removed.has("workout_type")) {
     removed.add("workout_type");
     const fallback = { ...properties };
     delete fallback.workout_type;
@@ -1386,6 +1392,7 @@ function energySystemValue(value) {
 }
 
 module.exports.energySystemValue = energySystemValue;
+module.exports.performanceRecordFallbackProperties = performanceRecordFallbackProperties;
 
 function phaseValue(value) {
   const normalized = optionValue(value);

@@ -4881,7 +4881,15 @@ function checkTrainingPlanMissingSetupFallback() {
 }
 
 function checkQualityWorkoutTypesAccepted() {
-  const { energySystemValue } = require("../api/ghl/sync-session");
+  const { energySystemValue, performanceRecordFallbackProperties } = require("../api/ghl/sync-session");
+  const energyProperties = { energy_system: "oxidative_aerobic", workout_type: "easy_recovery_run" };
+  const rejectedEnergy = { message: '"oxidative_aerobic" isn\'t an allowed option for Energy System.' };
+  const retriedFields = new Set();
+  const legacyEnergy = performanceRecordFallbackProperties({ properties: energyProperties, error: rejectedEnergy, removed: retriedFields });
+  if (!legacyEnergy || legacyEnergy.energy_system !== "oxidative" || legacyEnergy.workout_type !== energyProperties.workout_type) throw new Error("Legacy energy-system retry must preserve workout type and field meaning");
+  if (energyProperties.energy_system !== "oxidative_aerobic") throw new Error("Energy-system retry mutated the original payload");
+  if (performanceRecordFallbackProperties({ properties: legacyEnergy, error: rejectedEnergy, removed: retriedFields }) !== null) throw new Error("Energy-system retry must be bounded");
+  if (performanceRecordFallbackProperties({ properties: energyProperties, error: { message: '"unknown" isn\'t an allowed option for Unrelated Field.' }, removed: new Set() }) !== null) throw new Error("Unrelated option errors must not discard workout type");
   for (const [input, expected] of [["Aerobic", "oxidative_aerobic"], ["aerobic", "oxidative_aerobic"], ["Oxidative (Aerobic)", "oxidative_aerobic"], ["oxidative_aerobic", "oxidative_aerobic"], ["Glycolytic (Anaerobic)", "glycolytic_anaerobic"], ["ATP-PC", "atp_pc"], ["Mixed", "mixed"]]) {
     if (energySystemValue(input) !== expected) throw new Error(`Sync energy system alias failed for ${input}`);
   }
