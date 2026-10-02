@@ -37,6 +37,7 @@ const {
   coachSessionSecretSource,
   coachSessionTtlSeconds,
   subscriptionAccessAllowed,
+  accountSetupReady,
   subscriptionBlockedMessage,
   normalizeAccountAccess,
   normalizeAccountAccessStatus,
@@ -7020,14 +7021,6 @@ async function previewAutomationAccount(payload, options = {}) {
     ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
     accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
   };
-}
-
-function accountSetupReady(account) {
-  const source = account || {};
-  const codes = Array.isArray(source.coachAccessCodes) ? source.coachAccessCodes : [];
-  const coachAccessReady = source.requireCoachAccess === false || codes.length > 0;
-  if (!isProPlan(source.productPlan)) return coachAccessReady;
-  return !!(source.token && source.locationId && coachAccessReady);
 }
 
 function publicAccountRecord(account) {

@@ -366,7 +366,7 @@ async function run() {
     access.setResponse({ ...access.grant(), scope: access.env.SMARTCOACH_GHL_OAUTH_SCOPES });
     const pending = await access.start();
     await access.invoke("crm-connect-callback", access.callbackReq(pending));
-    const original = { locationId, token: "existing-pit", accountOwnerEmail: "support@example.com", productPlan: "pro100", setupReady: true,
+    const original = { locationId, token: "existing-pit", accountOwnerEmail: "support@example.com", productPlan: "pro100",
       subscription: { status: "active" }, accessStatus: "active", coachAccessCodes: ["shared-old-code"], coachCodeVersion: 7, coachStaff: [] };
     access.accounts.set(accountKey, structuredClone(original));
     let sends = 0, sentCode = "", sentInvite = "";
@@ -408,7 +408,7 @@ async function run() {
     if (mode === "wrong-plan") req.body.expectedProductPlan = "pro25";
     const current = access.accounts.get(accountKey);
     if (mode === "staff-exists") current.coachStaff = [{ name: "Existing Coach", coachCodeHash: "unchanged" }];
-    if (mode === "not-ready") current.setupReady = false;
+    if (mode === "not-ready") current.coachAccessCodes = [];
     if (mode === "essential") current.productPlan = "essential";
     if (mode === "blocked") current.subscription.status = "canceled";
     if (mode === "inactive") current.accessStatus = "inactive";
@@ -425,7 +425,7 @@ async function run() {
     assert.equal(result.statusCode, mode === "success" ? 200 : ["no-admin", "wrong-origin", "wrong-seller", "wrong-contact"].includes(mode) ? 403 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "save-failed" ? 503 : 409, mode);
     assert.equal(sends, ["success", "failed-send", "missing-message"].includes(mode) ? 1 : 0, mode);
     const record = access.accounts.get(accountKey);
-    assert.equal(record.token, "existing-pit"); assert.deepEqual(record.coachAccessCodes, ["shared-old-code"]); assert.equal(record.coachCodeVersion, 7);
+    assert.equal(record.token, "existing-pit"); assert.deepEqual(record.coachAccessCodes, mode === "not-ready" ? [] : ["shared-old-code"]); assert.equal(record.coachCodeVersion, 7);
     for (const secret of [sentCode, sentInvite, "private-buyer-token", "private-seller-token", "private-provider-error"].filter(Boolean)) assert(!JSON.stringify(result).includes(secret));
     if (sentCode) assert(!JSON.stringify([...access.records.values(), record]).includes(sentCode));
     if (["success", "failed-send", "missing-message", "save-failed"].includes(mode)) {
