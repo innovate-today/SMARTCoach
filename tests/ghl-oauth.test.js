@@ -182,11 +182,12 @@ async function run() {
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
     "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-resume", "scan-private-reason", "scan-bad-env", "scan-corrupt-history",
-    "order-valid", "order-usd-lower", "order-currency-other", "order-denied", "order-bad-request", "order-validation", "order-seller", "order-link", "order-email", "order-source", "order-test", "order-product", "order-price", "order-cadence", "order-shape", "order-missing-token"]) {
+    "order-valid", "order-install-missing", "order-install-future", "order-install-ambiguous", "order-usd-lower", "order-currency-other", "order-denied", "order-bad-request", "order-validation", "order-seller", "order-link", "order-email", "order-source", "order-test", "order-product", "order-price", "order-cadence", "order-shape", "order-missing-token"]) {
     const review = fixture(["scan-incomplete", "scan-limit", "scan-private-reason"].includes(mode)
       ? { inventory: { complete: false, references: [], reason: mode === "scan-limit" ? "scan_page_limit_reached" : "private-inventory-error" } }
       : { corruptHistory: mode === "scan-corrupt-history" });
     review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " saas/company.read";
+    if (mode.startsWith("order-")) review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " oauth.readonly";
     if (mode.startsWith("order-") && mode !== "order-missing-token") review.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-token";
     review.setResponse({ ...review.grant(), scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES });
     const auth = await review.start();
@@ -209,6 +210,16 @@ async function run() {
       if (mode === "forbidden") return { mockHttpStatus: 403, secret: "private-provider-response" };
       if (mode === "provider-error") throw new Error("private-provider-response");
       const path = new URL(url).pathname;
+      if (path === "/oauth/installed-locations") {
+        assert.equal(new URL(url).searchParams.get("locationId"), locationId);
+        assert.equal(new URL(url).searchParams.get("appId"), APP_ID);
+        assert.equal(new URL(url).searchParams.get("versionId"), APP_ID);
+        assert.equal(options.headers.Authorization, "Bearer private-access");
+        return { installToFutureLocations: mode === "order-install-future",
+          items: mode === "order-install-missing" ? [{ _id: "other", isInstalled: true }]
+            : mode === "order-install-ambiguous" ? [{ _id: locationId, isInstalled: true }, { _id: locationId, isInstalled: true }]
+              : [{ _id: locationId, isInstalled: true }] };
+      }
       if (path === "/locations/QxwjWekSyUf7sDOFHPB4") {
         assert.equal(options.headers.Authorization, "Bearer private-seller-token");
         return { location: { id: mode === "order-seller" ? "other" : "QxwjWekSyUf7sDOFHPB4", companyId: "agency-one" } };
@@ -293,7 +304,7 @@ async function run() {
       review.advance(10 * 60 * 1000);
       assert.equal((await review.invoke("ghl-oauth-review-legacy-purchase", req)).statusCode, 409);
     }
-    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-resume", "order-valid", "order-usd-lower"].includes(mode)) {
+    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-resume", "order-valid", "order-install-missing", "order-usd-lower"].includes(mode)) {
       assert.equal(result.statusCode, 200);
       assert.equal(result.body.providerPurchaseVerified, true);
       assert.equal(result.body.ownerEmail, "buyer@example.com");
@@ -302,7 +313,12 @@ async function run() {
       assert.equal(result.body.amount, "19.00");
       assert.equal(result.body.planTrialDays, 30);
       assert.equal(result.body.subscriptionId, req.body.expectedSubscriptionId);
-      assert.equal(result.body.originalOrderVerified, ["order-valid", "order-usd-lower"].includes(mode));
+      assert.equal(result.body.originalOrderVerified, ["order-valid", "order-install-missing", "order-usd-lower"].includes(mode));
+      if (mode.startsWith("order-")) {
+        assert.equal(result.body.connectorInstallation.installed, mode !== "order-install-missing");
+        assert.equal(result.body.connectorInstallation.buyerTokenRequested, false);
+        assert.equal(result.body.connectorInstallation.snapshotVerified, false);
+      }
       for (const key of ["alternateAccountHistoryVerified", "buyerOAuthVerified", "recoveryReady", "emailSent", "automaticFulfillmentReady"]) assert.equal(result.body[key], false);
       assert.equal(result.body.accountUnchanged, true);
       assert.equal(result.body.pendingCheckoutUnchanged, true);
