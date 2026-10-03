@@ -1865,7 +1865,7 @@ async function reviewHighLevelLegacyPurchase(){
     var productName=document.getElementById('legacyProductName').value;
     var amount=Number(document.getElementById('legacyAmount').value);
     if(!Number.isFinite(amount)||amount<=0)throw new Error('Enter the recurring subscription amount.');
-    var data=await highLevelConnectionRequest('ghl-oauth-review-legacy-purchase','POST',{
+    var request={
       preview:true,verifyExistingSetup:true,accountKey:document.getElementById('accountKey').value.trim(),
       locationId:document.getElementById('locationId').value.trim(),
       schoolName:document.getElementById('legacySchoolName').value.trim(),
@@ -1874,7 +1874,19 @@ async function reviewHighLevelLegacyPurchase(){
       expectedSubscriptionId:document.getElementById('legacySubscriptionId').value.trim(),
       expectedProductName:productName,expectedBillingCadence:productName.endsWith('Annual')?'annual':'monthly',
       expectedAmount:amount.toFixed(2)
-    });
+    };
+    var data;
+    for(var batch=0;batch<100;batch++){
+      data=await highLevelConnectionRequest('ghl-oauth-review-legacy-purchase','POST',request);
+      if(data.inventoryComplete!==false)break;
+      if(data.preview!==true||data.accountUnchanged!==true||data.pendingCheckoutUnchanged!==true
+        ||data.emailSent!==false||data.recoveryReady!==false||data.automaticFulfillmentReady!==false
+        ||typeof data.inventoryContinuation!=='string'||!data.inventoryContinuation){
+        throw new Error('Incomplete inventory response could not be verified.');
+      }
+      request.inventoryContinuation=data.inventoryContinuation;
+      setStatus('Reviewing saved account inventory, batch '+(batch+2)+'. No account changes or email sent.','');
+    }
     if(data.preview!==true||data.providerPurchaseVerified!==true||data.locationIdentityVerified!==true
       ||data.accountUnchanged!==true||data.pendingCheckoutUnchanged!==true||data.emailSent!==false
       ||data.recoveryReady!==false||data.automaticFulfillmentReady!==false||!Array.isArray(data.blockers)

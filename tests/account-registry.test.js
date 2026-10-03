@@ -538,7 +538,18 @@ async function testLocationReferencesReadOnly() {
         assert.strictEqual(reviewed.reason, expectedReasons[mode]);
         if (mode === "found") assert.deepStrictEqual(reviewed.references, ["old-school"]);
         if (mode === "empty") assert.deepStrictEqual(reviewed.references, []);
-        if (mode === "partial") assert.strictEqual(scans, 20);
+        if (mode === "partial") {
+          assert.strictEqual(scans, 20);
+          assert.strictEqual(reviewed.continuation.cursor, "42");
+          global.fetch = async (url) => {
+            assert(new URL(url).pathname.startsWith('/scan/42/'));
+            return { ok: true, text: async () => JSON.stringify({ result: ["0", []] }) };
+          };
+          const completed = await inspectAccountLocationReferences(locationId, reviewed.continuation);
+          assert.strictEqual(completed.complete, true);
+          const invalid = await inspectAccountLocationReferences(locationId, { ...reviewed.continuation, prefix: "other:" });
+          assert.strictEqual(invalid.reason, "invalid_continuation");
+        }
         assert(calls.every(parts => ["scan", "mget"].includes(parts[0])));
         assert(!JSON.stringify(reviewed).includes("never-return-token"));
         assert(!JSON.stringify(reviewed).includes("private-hash"));

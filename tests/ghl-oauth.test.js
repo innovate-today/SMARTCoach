@@ -68,7 +68,7 @@ function fixture(options = {}) {
     req.headers.cookie = started.headers["Set-Cookie"].split(";")[0];
     return req;
   };
-  return { api, env, records, accounts, calls, request, invoke, start, callbackReq, setProvider: (value) => { provider = value; }, setResponse: (value) => { response = value; }, grant: () => structuredClone(response), advance: (ms) => { time += ms; } };
+  return { api, env, registry, records, accounts, calls, request, invoke, start, callbackReq, setProvider: (value) => { provider = value; }, setResponse: (value) => { response = value; }, grant: () => structuredClone(response), advance: (ms) => { time += ms; } };
 }
 
 async function run() {
@@ -181,7 +181,7 @@ async function run() {
   for (const mode of ["valid", "ghl-id", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
-    "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-private-reason", "scan-bad-env", "scan-corrupt-history"]) {
+    "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-resume", "scan-private-reason", "scan-bad-env", "scan-corrupt-history"]) {
     const review = fixture(["scan-incomplete", "scan-limit", "scan-private-reason"].includes(mode)
       ? { inventory: { complete: false, references: [], reason: mode === "scan-limit" ? "scan_page_limit_reached" : "private-inventory-error" } }
       : { corruptHistory: mode === "scan-corrupt-history" });
@@ -236,8 +236,33 @@ async function run() {
     if (mode === "wrong-amount") req.body.expectedAmount = "29.00";
     if (mode === "wrong-cadence") req.body.expectedBillingCadence = "annual";
     const recordsBefore = structuredClone([...review.records]);
-    const result = await review.invoke("ghl-oauth-review-legacy-purchase", req);
-    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment"].includes(mode)) {
+    if (mode === "scan-resume") {
+      review.registry.inspectAccountLocationReferences = async (location, scan) => scan
+        ? { complete: true, references: ["older-school"] }
+        : { complete: false, references: ["older-school"], reason: "scan_page_limit_reached",
+          continuation: { prefix: "test:account:", cursor: "42", seen: ["test:account:older-school"], references: ["older-school"] } };
+    }
+    let result = await review.invoke("ghl-oauth-review-legacy-purchase", req);
+    if (mode === "scan-resume") {
+      assert.equal(result.statusCode, 202);
+      assert.equal(result.body.inventoryComplete, false);
+      assert.equal(result.body.recoveryReady, false);
+      assert(!JSON.stringify(result.body).includes("older-school"));
+      const token = result.body.inventoryContinuation;
+      const changed = structuredClone(req);
+      changed.body.inventoryContinuation = token;
+      changed.body.schoolName = "Different school";
+      assert.equal((await review.invoke("ghl-oauth-review-legacy-purchase", changed)).statusCode, 409);
+      changed.body.schoolName = req.body.schoolName;
+      changed.body.inventoryContinuation = token.slice(0, -8) + "invalid";
+      assert.equal((await review.invoke("ghl-oauth-review-legacy-purchase", changed)).statusCode, 409);
+      req.body.inventoryContinuation = token;
+      result = await review.invoke("ghl-oauth-review-legacy-purchase", req);
+      assert.deepEqual(result.body.existingSetup.savedAccountReferences, ["older-school"]);
+      review.advance(10 * 60 * 1000);
+      assert.equal((await review.invoke("ghl-oauth-review-legacy-purchase", req)).statusCode, 409);
+    }
+    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-resume"].includes(mode)) {
       assert.equal(result.statusCode, 200);
       assert.equal(result.body.providerPurchaseVerified, true);
       assert.equal(result.body.ownerEmail, "buyer@example.com");
