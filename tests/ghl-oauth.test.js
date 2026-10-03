@@ -215,6 +215,7 @@ async function run() {
       }
       if (path.startsWith("/payments/")) {
         assert.equal(options.headers.Version, "2021-07-28");
+        assert.equal(new URL(url).searchParams.get("altType"), "location");
         if (path.startsWith("/payments/orders/")) assert.equal(new URL(url).searchParams.get("locationId"), "QxwjWekSyUf7sDOFHPB4");
         assert.equal(options.headers.Authorization, "Bearer private-seller-token");
         assert.equal(new URL(url).searchParams.get("altId"), "QxwjWekSyUf7sDOFHPB4");
