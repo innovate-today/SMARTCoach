@@ -237,6 +237,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <button id="ghlOAuthLegacyReviewBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase()">Review Legacy Purchase</button>
         <button id="ghlOAuthLegacyCrmBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase(true)">Preview Legacy Buyer CRM</button>
+        <button id="ghlOAuthLegacyRecoverBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase(true,true)">Recover Approved Legacy Account</button>
       </details>
       <details>
         <summary>Checkout Identity Approval</summary>
@@ -1867,8 +1868,8 @@ async function checkHighLevelBuyerSubscription(){
   finally{button.disabled=false;}
 }
 
-async function reviewHighLevelLegacyPurchase(verifyBuyerCrm){
-  var button=document.getElementById(verifyBuyerCrm===true?'ghlOAuthLegacyCrmBtn':'ghlOAuthLegacyReviewBtn');
+async function reviewHighLevelLegacyPurchase(verifyBuyerCrm,recover){
+  var button=document.getElementById(recover===true?'ghlOAuthLegacyRecoverBtn':verifyBuyerCrm===true?'ghlOAuthLegacyCrmBtn':'ghlOAuthLegacyReviewBtn');
   button.disabled=true;
   try{
     var productName=document.getElementById('legacyProductName').value;
@@ -1892,8 +1893,12 @@ async function reviewHighLevelLegacyPurchase(verifyBuyerCrm){
       if(!orderId||!saleLinkId)throw new Error('Original order and sale-link IDs are required for buyer CRM preview.');
       request.verifyBuyerCrm=true;
     }
+    if(recover===true){
+      if(!window.confirm('Create '+request.schoolName+' account '+request.accountKey+' for '+request.ownerEmail+' with '+productName+' at USD '+request.expectedAmount+' '+request.expectedBillingCadence+'? Save encrypted buyer OAuth. Keep manual hold. No coach credentials, email or billing changes.'))return;
+      request.confirmRecovery=true;
+    }
     for(var batch=0;batch<100;batch++){
-      data=await highLevelConnectionRequest('ghl-oauth-review-legacy-purchase','POST',request);
+      data=await highLevelConnectionRequest(recover===true?'ghl-oauth-recover-legacy-purchase':'ghl-oauth-review-legacy-purchase','POST',request);
       if(data.inventoryComplete!==false)break;
       if(data.preview!==true||data.accountUnchanged!==true||data.pendingCheckoutUnchanged!==true
         ||data.emailSent!==false||data.recoveryReady!==false||data.automaticFulfillmentReady!==false
@@ -1902,6 +1907,17 @@ async function reviewHighLevelLegacyPurchase(verifyBuyerCrm){
       }
       request.inventoryContinuation=data.inventoryContinuation;
       setStatus('Reviewing saved account inventory, batch '+(batch+2)+'. No account changes or email sent.','');
+    }
+    if(recover===true){
+      if(data.accountRecovered!==true||data.accountKey!==request.accountKey||data.locationId!==request.locationId
+        ||data.productPlan!=='pro25'||data.amount!==request.expectedAmount||data.billingCadence!==request.expectedBillingCadence
+        ||!['active','trialing'].includes(data.subscriptionStatus)||data.buyerOAuthSaved!==true||data.snapshotVerified!==true
+        ||data.accessStatus!=='manual_hold'||data.coachAccessCreated!==false||data.emailSent!==false
+        ||data.billingUnchanged!==true||data.pendingCheckoutUnchanged!==true||data.automaticFulfillmentReady!==false){
+        throw new Error('Recovery result could not be verified. Review saved setup before retrying.');
+      }
+      setStatus('Athletic Develop account recovered and read back. Pro 25; USD '+data.amount+' '+data.billingCadence+'; '+data.subscriptionStatus+'. Encrypted buyer OAuth saved; snapshot verified. Manual hold remains. No coach credentials, email or billing changes. Automatic fulfillment remains disabled.','good');
+      return;
     }
     if(data.preview!==true||data.providerPurchaseVerified!==true||data.locationIdentityVerified!==true
       ||data.accountUnchanged!==true||data.pendingCheckoutUnchanged!==true||data.emailSent!==false

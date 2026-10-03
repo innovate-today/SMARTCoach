@@ -30,10 +30,16 @@ function fixture(options = {}) {
       references: [...accounts].filter(([, record]) => record.locationId === locationId).map(([key]) => key) }),
     loadAccountRecord: async (key) => ({ found: accounts.has(key), record: accounts.get(key) }),
     saveAccountRecord: async (key, record) => { accounts.set(key, structuredClone(record)); return { saved: true }; },
+    createAccountRecord: async (key, record) => {
+      if (options.nxRace) accounts.set(key, { locationId: record.locationId, schoolName: "Preserve concurrent account" });
+      if (accounts.has(key)) return { saved: false };
+      accounts.set(key, { ...structuredClone(record), accountKey: key }); return { saved: true };
+    },
     loadAccountScopedRecord: async (account, namespace) => options.corruptHistory && namespace.startsWith("buyeraccess-")
       ? { found: false, error: "private-history-error" } : ({ record: records.get(namespace) }),
     saveAccountScopedRecord: async (account, namespace, record) => {
       assert.equal(account, "ghlconnector");
+      if (options.failBuyerGrantSave && namespace.startsWith("buyergrant-")) return { saved: false };
       records.set(namespace, { ...structuredClone(record), accountKey: account });
       return { saved: true };
     },
@@ -178,15 +184,21 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
-  for (const mode of ["valid", "ghl-id", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
+  for (const rawMode of ["recovery-valid", "recovery-no-confirm", "recovery-wrong-buyer", "recovery-fields", "recovery-nx-race", "recovery-grant-fail", "recovery-no-admin", "recovery-wrong-origin", "recovery-get", "recovery-existing",
+    "valid", "ghl-id", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
     "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-resume", "scan-private-reason", "scan-bad-env", "scan-corrupt-history",
     "order-crm-valid", "order-crm-token", "order-crm-scope", "order-crm-contact", "order-crm-fields", "order-crm-schema", "order-crm-no-inventory", "order-crm-missing-install",
     "order-valid", "order-install-missing", "order-install-future", "order-install-ambiguous", "order-usd-lower", "order-currency-other", "order-denied", "order-bad-request", "order-validation", "order-seller", "order-link", "order-email", "order-source", "order-test", "order-product", "order-price", "order-cadence", "order-shape", "order-missing-token"]) {
+    const recovery = rawMode.startsWith("recovery-");
+    const mode = recovery ? rawMode === "recovery-fields" ? "order-crm-fields" : "order-crm-valid" : rawMode;
+    const locationId = recovery ? "tIz08pPpV3nUaS4nKt63" : "AbCdEfGhIjKlMnOpQrSt";
+    const accountKey = `sc-${locationId.toLowerCase()}`;
+    const ownerEmail = recovery ? "athleticdevelop@yahoo.com" : "buyer@example.com";
     const review = fixture(["scan-incomplete", "scan-limit", "scan-private-reason"].includes(mode)
       ? { inventory: { complete: false, references: [], reason: mode === "scan-limit" ? "scan_page_limit_reached" : "private-inventory-error" } }
-      : { corruptHistory: mode === "scan-corrupt-history" });
+      : { corruptHistory: mode === "scan-corrupt-history", nxRace: rawMode === "recovery-nx-race", failBuyerGrantSave: rawMode === "recovery-grant-fail" });
     review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " saas/company.read";
     if (mode.startsWith("order-")) review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " oauth.readonly";
     if (mode.startsWith("order-crm-")) review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " contacts.readonly contacts.write locations/customFields.readonly locations/customValues.readonly locations/customValues.write objects/record.readonly objects/record.write objects/schema.readonly";
@@ -195,6 +207,7 @@ async function run() {
     const auth = await review.start();
     await review.invoke("crm-connect-callback", review.callbackReq(auth));
     if (mode === "existing") review.accounts.set(accountKey, { locationId, coachStaff: [{ id: "preserve" }] });
+    if (rawMode === "recovery-existing") review.accounts.set(accountKey, { locationId, coachStaff: [{ id: "preserve" }] });
     if (mode === "scan-alt") review.accounts.set("older-school", { locationId, token: "keep-pit", coachStaff: [{ coachCodeHash: "private-hash" }] });
     if (mode === "scan-env") review.env.SMARTCOACH_ACCOUNTS = JSON.stringify({ "older-school": { ghlLocationId: locationId, token: "keep-pit" } });
     if (mode === "scan-env-suffix") review.env.GHL_LOCATION_ID_OLD_SCHOOL = locationId;
@@ -257,7 +270,7 @@ async function run() {
           message: ["altType must be a string private-provider-response", "private-provider-response", "altType should not be empty", "locationId must be a string"] };
         if (mode === "order-shape") return { data: { secret: "private-provider-response" } };
         const common = { altId: "QxwjWekSyUf7sDOFHPB4", altType: "location", contactId: "customer",
-          contactSnapshot: { email: mode === "order-email" ? "other@example.com" : "buyer@example.com" }, currency: mode === "order-usd-lower" ? "usd" : mode === "order-currency-other" ? "CAD" : "USD",
+          contactSnapshot: { email: mode === "order-email" ? "other@example.com" : ownerEmail }, currency: mode === "order-usd-lower" ? "usd" : mode === "order-currency-other" ? "CAD" : "USD",
           liveMode: mode !== "order-test", markAsTest: false };
         const source = { type: "payment_link", subType: "payments_dashboard", id: mode === "order-source" ? "other" : "6a1b37c203b17c94f5713b61" };
         if (path.startsWith("/payments/orders/")) return { ...common, _id: "6abd8977b229ab130b0f3c93", status: "completed", amount: 0, source,
@@ -269,7 +282,7 @@ async function run() {
           status: "trialing", amount: 19, subscriptionId: "sub_provider" };
       }
       if (path === `/locations/${locationId}`) return { location: { id: mode === "wrong-location" ? "other" : locationId,
-        companyId: mode === "wrong-agency" ? "other" : "agency-one", email: mode === "wrong-email" ? "other@example.com" : "buyer@example.com",
+        companyId: mode === "wrong-agency" ? "other" : "agency-one", email: mode === "wrong-email" ? "other@example.com" : ownerEmail,
         token: "private-location-token" } };
       if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true,
         subscriptionStatus: mode === "past-due" ? "past_due" : "trialing", subscriptionId: mode === "ghl-id" || mode.startsWith("order-") ? "6abd897d66ad43f827dbaa4e" : "sub_verified",
@@ -296,6 +309,14 @@ async function run() {
     if (mode.startsWith("order-")) Object.assign(req.body, { expectedSubscriptionId: "6abd897d66ad43f827dbaa4e",
       expectedOrderId: "6abd8977b229ab130b0f3c93", expectedSaleLinkId: "6a1b37c203b17c94f5713b61" });
     if (mode.startsWith("order-crm-")) Object.assign(req.body, { verifyBuyerCrm: true, verifyExistingSetup: mode !== "order-crm-no-inventory" });
+    if (recovery) {
+      req.body.ownerEmail = ownerEmail;
+      req.body.confirmRecovery = rawMode !== "recovery-no-confirm";
+      if (rawMode === "recovery-wrong-buyer") req.body.locationId = "AbCdEfGhIjKlMnOpQrSt";
+      if (rawMode === "recovery-no-admin") delete req.headers["x-smartcoach-setup-code"];
+      if (rawMode === "recovery-wrong-origin") req.headers.origin = "https://other.example";
+      if (rawMode === "recovery-get") req.method = "GET";
+    }
     if (mode === "wrong-product") req.body.expectedProductName = "SMARTCoach Pro 100 - Monthly";
     if (mode === "wrong-amount") req.body.expectedAmount = "29.00";
     if (mode === "wrong-cadence") req.body.expectedBillingCadence = "annual";
@@ -306,7 +327,30 @@ async function run() {
         : { complete: false, references: ["older-school"], reason: "scan_page_limit_reached",
           continuation: { prefix: "test:account:", cursor: "42", seen: ["test:account:older-school"], references: ["older-school"] } };
     }
-    let result = await review.invoke("ghl-oauth-review-legacy-purchase", req);
+    let result = await review.invoke(recovery ? "ghl-oauth-recover-legacy-purchase" : "ghl-oauth-review-legacy-purchase", req);
+    if (recovery) {
+      assert.equal(result.statusCode, rawMode === "recovery-valid" ? 200 : rawMode === "recovery-get" ? 405
+        : rawMode === "recovery-grant-fail" ? 503 : ["recovery-fields", "recovery-nx-race", "recovery-existing"].includes(rawMode) ? 409 : 403, rawMode);
+      const saved = review.accounts.get(accountKey);
+      if (rawMode === "recovery-valid") {
+        assert.equal(result.body.accountRecovered, true); assert.equal(result.body.buyerOAuthSaved, true);
+        assert.equal(saved.productPlan, "pro25"); assert.equal(saved.subscription.status, "trialing");
+        assert.equal(saved.subscription.amount, "19.00"); assert.equal(saved.accessStatus, "manual_hold");
+        assert.equal(saved.requireCoachAccess, true); assert.equal(saved.token, "");
+        assert.deepEqual(saved.coachStaff, []); assert.deepEqual(saved.coachAccessCodes, []);
+        assert.equal(review.records.get(`buyergrant-${locationId}`).buyerAccountKey, accountKey);
+        for (const key of ["emailSent", "coachAccessCreated", "automaticFulfillmentReady", "buyerProvisioningVerified"]) assert.equal(result.body[key], false);
+        assert.equal((await review.invoke("ghl-oauth-recover-legacy-purchase", req)).statusCode, 409);
+      } else if (rawMode === "recovery-nx-race") assert.equal(saved.schoolName, "Preserve concurrent account");
+      else if (rawMode === "recovery-grant-fail") {
+        assert.equal(saved.accessStatus, "manual_hold");
+        assert.equal((await review.invoke("ghl-oauth-recover-legacy-purchase", req)).statusCode, 409);
+      } else if (rawMode === "recovery-existing") assert.deepEqual(saved.coachStaff, [{ id: "preserve" }]);
+      else assert.equal(saved, undefined);
+      assert(!JSON.stringify(result).includes("private-preview-token"));
+      assert(!JSON.stringify([...review.records]).includes("private-preview-token"));
+      continue;
+    }
     if (mode === "scan-resume") {
       assert.equal(result.statusCode, 202);
       assert.equal(result.body.inventoryComplete, false);
@@ -1065,7 +1109,7 @@ async function run() {
   assert.equal(createBody.confirmCreate, true); assert.equal(createBody.expectedProductPlan, "pro100");
   assert.equal(createBody.expectedOwnerEmail, "support@example.com");
   assert.equal(nodes.ghlOAuthHeadCoachBtn.disabled, false);
-  Object.assign(nodes, { ghlOAuthLegacyReviewBtn: { disabled: false }, ghlOAuthLegacyCrmBtn: { disabled: false }, legacySchoolName: { value: "Athletic Develop" },
+  Object.assign(nodes, { ghlOAuthLegacyReviewBtn: { disabled: false }, ghlOAuthLegacyCrmBtn: { disabled: false }, ghlOAuthLegacyRecoverBtn: { disabled: false }, legacySchoolName: { value: "Athletic Develop" },
     legacyCoachName: { value: "Jenn Moore" }, legacyOwnerEmail: { value: "buyer@example.com" },
     legacySubscriptionId: { value: "sub_verified" }, legacyProductName: { value: "SMARTCoach Pro 25 - Monthly" }, legacyAmount: { value: "19" },
     legacyOrderId: { value: "" }, legacySaleLinkId: { value: "" } });
@@ -1115,6 +1159,26 @@ async function run() {
     await context.reviewHighLevelLegacyPurchase(true);
     assert.match(statuses.pop()[0], /Buyer CRM preview response could not be verified/);
     assert.equal(nodes.ghlOAuthLegacyCrmBtn.disabled, false);
+  }
+  context.window.confirm = () => false;
+  const beforeRecoveryCancel = pageCalls.length;
+  await context.reviewHighLevelLegacyPurchase(true, true);
+  assert.equal(pageCalls.length, beforeRecoveryCancel);
+  assert.equal(nodes.ghlOAuthLegacyRecoverBtn.disabled, false);
+  context.window.confirm = () => true;
+  pageResponse = { accountRecovered: true, accountKey: nodes.accountKey.value, locationId: nodes.locationId.value,
+    productPlan: "pro25", amount: "19.00", billingCadence: "monthly", subscriptionStatus: "trialing",
+    buyerOAuthSaved: true, snapshotVerified: true, accessStatus: "manual_hold", coachAccessCreated: false,
+    emailSent: false, billingUnchanged: true, pendingCheckoutUnchanged: true, automaticFulfillmentReady: false };
+  await context.reviewHighLevelLegacyPurchase(true, true);
+  assert.match(statuses.pop()[0], /account recovered and read back/);
+  assert(pageCalls.at(-1).url.endsWith('ghl-oauth-recover-legacy-purchase'));
+  assert.equal(JSON.parse(pageCalls.at(-1).options.body).confirmRecovery, true);
+  const safeRecovery = pageResponse;
+  for (const change of [{ emailSent: true }, { accessStatus: "active" }, { buyerOAuthSaved: false }, { coachAccessCreated: true }, { amount: "29.00" }]) {
+    pageResponse = { ...safeRecovery, ...change };
+    await context.reviewHighLevelLegacyPurchase(true, true);
+    assert.match(statuses.pop()[0], /Recovery result could not be verified/);
   }
   nodes.legacyAmount.value = "";
   const beforeInvalidAmount = pageCalls.length;

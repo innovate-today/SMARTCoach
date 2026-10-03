@@ -3,6 +3,7 @@ const {
   registryConfigured,
   registryHealth,
   saveAccountRecord,
+  createAccountRecord,
   loadAccountRecord,
   inspectAccountLocationReferences,
   saveAttendanceRecords,
@@ -558,7 +559,31 @@ async function testLocationReferencesReadOnly() {
   } finally { global.fetch = previousFetch; }
 }
 
+async function testCreateOnlyAccountRecord() {
+  const previousFetch = global.fetch;
+  let saved;
+  global.fetch = async url => {
+    const parts = new URL(url).pathname.split('/').slice(1).map(decodeURIComponent);
+    assert.strictEqual(parts[0], 'set');
+    assert.strictEqual(parts[1], 'test:buyer');
+    assert.strictEqual(parts[3], 'NX');
+    const result = saved ? null : 'OK';
+    if (!saved) saved = JSON.parse(parts[2]);
+    return { ok: true, text: async () => JSON.stringify({ result }) };
+  };
+  try {
+    await withEnv({ SMARTCOACH_REGISTRY_REST_URL: 'https://registry.example',
+      SMARTCOACH_REGISTRY_REST_TOKEN: 'test-token', SMARTCOACH_REGISTRY_PREFIX: 'test:' }, async () => {
+      assert.strictEqual((await createAccountRecord('buyer', { schoolName: 'Preserved' })).saved, true);
+      assert.strictEqual((await createAccountRecord('buyer', { schoolName: 'Replacement' })).saved, false);
+      assert.strictEqual(saved.schoolName, 'Preserved');
+      assert.strictEqual(saved.accountKey, 'buyer');
+    });
+  } finally { global.fetch = previousFetch; }
+}
+
 (async () => {
+  await testCreateOnlyAccountRecord();
   await testLocationReferencesReadOnly();
   await testVercelKvAliases();
   await testUpstashAliasesAndCustomPrefix();
