@@ -190,6 +190,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <label for="buyerHeadCoachName">Buyer Head Coach Name</label>
         <input id="buyerHeadCoachName" type="text" maxlength="120" autocomplete="off">
       </div>
+      <div class="field">
+        <label for="originalCheckoutEmail">Original Checkout Email</label>
+        <input id="originalCheckoutEmail" type="email" maxlength="254" autocomplete="off">
+      </div>
       <div class="formactions">
         <button type="button" class="secondary" onclick="generateAccountKey()">Generate Account Key</button>
         <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Shared Code</button>
@@ -1822,8 +1826,8 @@ async function previewHighLevelFulfillment(){
 
 async function reviewHighLevelCheckoutIdentity(){
   var button=document.getElementById('ghlOAuthCheckoutReviewBtn');
-  var originalEmail=prompt('Original checkout email to review. This preview will not change the account or approve reconciliation.');
-  if(!originalEmail)return;
+  var originalEmail=document.getElementById('originalCheckoutEmail').value.trim();
+  if(!originalEmail){setStatus('Enter the original checkout email before reviewing identity.','bad');return;}
   button.disabled=true;
   try{
     var data=await highLevelConnectionRequest('ghl-oauth-reconcile-checkout','POST',{
