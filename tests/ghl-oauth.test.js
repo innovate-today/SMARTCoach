@@ -184,7 +184,7 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
-  for (const rawMode of ["recovery-activate-valid", "recovery-activate-no-rollout", "recovery-activate-no-confirm", "recovery-activate-stale", "recovery-activate-existing-access", "recovery-activate-failed-send", "recovery-activate-no-admin", "recovery-activate-wrong-origin", "recovery-activate-wrong-buyer",
+  for (const rawMode of ["recovery-activate-valid", "recovery-activate-metadata", "recovery-activate-no-rollout", "recovery-activate-no-confirm", "recovery-activate-stale", "recovery-activate-existing-access", "recovery-activate-failed-send", "recovery-activate-no-admin", "recovery-activate-wrong-origin", "recovery-activate-wrong-buyer",
     "recovery-valid", "recovery-no-confirm", "recovery-wrong-buyer", "recovery-fields", "recovery-nx-race", "recovery-grant-fail", "recovery-no-admin", "recovery-wrong-origin", "recovery-get", "recovery-existing",
     "valid", "ghl-id", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
@@ -358,6 +358,11 @@ async function run() {
     if (recovery) {
       if (activation) {
         assert.equal(result.statusCode, 200, rawMode);
+        if (rawMode === 'recovery-activate-metadata') {
+          review.accounts.get(accountKey).updatedAt = '2026-10-03T20:00:00.000Z';
+          const originalSave = review.registry.saveAccountRecord;
+          review.registry.saveAccountRecord = (key, record) => originalSave(key, { ...record, accountKey: key, updatedAt: '2026-10-03T23:00:00.000Z' });
+        }
         const beforeActivation = structuredClone(review.accounts.get(accountKey));
         const activationReq = review.request(); activationReq.body = { accountKey, locationId, preview: true };
         const preview = await review.invoke('ghl-oauth-activate-legacy-buyer', activationReq);
@@ -372,7 +377,7 @@ async function run() {
         if (rawMode === 'recovery-activate-wrong-origin') activationReq.headers.origin = 'https://other.example';
         if (rawMode === 'recovery-activate-wrong-buyer') activationReq.body.locationId = 'other';
         const activated = await review.invoke('ghl-oauth-activate-legacy-buyer', activationReq);
-        const success = rawMode === 'recovery-activate-valid';
+        const success = ['recovery-activate-valid', 'recovery-activate-metadata'].includes(rawMode);
         assert.equal(activated.statusCode, success ? 200 : rawMode === 'recovery-activate-failed-send' ? 502
           : ['recovery-activate-no-admin','recovery-activate-wrong-origin','recovery-activate-wrong-buyer'].includes(rawMode) ? 403 : 409, rawMode + ': ' + activated.body.error);
         if (success || rawMode === 'recovery-activate-failed-send') {
