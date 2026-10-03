@@ -244,10 +244,11 @@ async function run() {
     if (["no-admin", "wrong-origin"].includes(mode)) assert.equal(check.calls.length, 1);
   }
   const catalogSubscription = { saasPlanId: "plan", productId: "product", priceId: "price" };
-  for (const mode of ["pilot", "wrong-pending", "uncertain-email", "uninstalled", "wrong-seller", "bad-price", "no-admin", "wrong-origin", "reconciled", "stale-reconciliation"]) {
+  for (const mode of ["pilot", "wrong-pending", "uncertain-email", "uninstalled", "wrong-seller", "bad-price", "no-admin", "wrong-origin", "reconciled", "stale-reconciliation", "ready-preserved"]) {
     const preview = fixture();
     preview.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-preview";
     preview.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
+    if (mode === "ready-preserved") preview.env.SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS = accountKey;
     const auth = await preview.start();
     await preview.invoke("crm-connect-callback", preview.callbackReq(auth));
     const original = { locationId, productPlan: "pro100", accountOwnerEmail: "buyer@example.com", token: "keep-pit",
@@ -334,7 +335,11 @@ async function run() {
       assert.equal(result.body.sellerSenderVerified, mode !== "wrong-seller");
       assert.equal(result.body.pendingCheckoutMatched, !["wrong-pending", "bad-price", "stale-reconciliation"].includes(mode));
       assert.equal(result.body.checkoutIdentityReconciled, mode === "reconciled");
-      assert(result.body.blockers.some(item => item.includes("manual PIT")));
+      assert.equal(result.body.stagedFulfillment.nextAction, mode === "ready-preserved" ? "preserve_existing_access" : "support_review_required");
+      assert.equal(result.body.stagedFulfillment.stagedPlanReady, mode === "ready-preserved");
+      assert.equal(result.body.stagedFulfillment.automaticFulfillmentReady, false);
+      assert.deepEqual(result.body.stagedFulfillment.steps, []);
+      assert.equal(result.body.blockers.some(item => item.includes("manual PIT")), mode !== "ready-preserved");
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }

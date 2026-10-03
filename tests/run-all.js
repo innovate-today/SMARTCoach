@@ -4,6 +4,8 @@ const ghlOAuthTests = spawnSync(process.execPath, ["tests/ghl-oauth.test.js"], {
 if (ghlOAuthTests.status !== 0) throw new Error("HighLevel OAuth security tests failed.");
 const checkoutApprovalTests = spawnSync(process.execPath, ["tests/onboarding-checkout-approval.test.js"], { stdio: "inherit" });
 if (checkoutApprovalTests.status !== 0) throw new Error("Onboarding checkout approval controls failed.");
+const buyerFulfillmentTests = spawnSync(process.execPath, ["tests/buyer-fulfillment.test.js"], { stdio: "inherit" });
+if (buyerFulfillmentTests.status !== 0) throw new Error("Buyer fulfillment tests failed.");
 const ghlOAuthConsumerTests = spawnSync(process.execPath, ["tests/ghl-oauth-consumer.test.js"], { stdio: "inherit" });
 if (ghlOAuthConsumerTests.status !== 0) throw new Error("HighLevel OAuth consumer tests failed.");
 const powerStorageTests = spawnSync(process.execPath, ["tests/power-trak-session-storage.test.js"], { stdio: "inherit" });
