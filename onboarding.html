@@ -195,6 +195,41 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <input id="originalCheckoutEmail" type="email" maxlength="254" autocomplete="off">
       </div>
       <details>
+        <summary>Legacy Purchase Review</summary>
+        <div class="field">
+          <label for="legacySchoolName">School / Program</label>
+          <input id="legacySchoolName" type="text" maxlength="120" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="legacyCoachName">Head Coach</label>
+          <input id="legacyCoachName" type="text" maxlength="120" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="legacyOwnerEmail">Buyer Email</label>
+          <input id="legacyOwnerEmail" type="email" maxlength="254" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="legacySubscriptionId">Stripe Subscription ID</label>
+          <input id="legacySubscriptionId" type="text" maxlength="200" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="legacyProductName">Purchased Product</label>
+          <select id="legacyProductName">
+            <option value="SMARTCoach Pro 25 - Monthly">SMARTCoach Pro 25 - Monthly</option>
+            <option value="SMARTCoach Pro 25 - Annual">SMARTCoach Pro 25 - Annual</option>
+            <option value="SMARTCoach Pro 100 - Monthly">SMARTCoach Pro 100 - Monthly</option>
+            <option value="SMARTCoach Pro 100 - Annual">SMARTCoach Pro 100 - Annual</option>
+            <option value="SMARTCoach Pro 200 - Monthly">SMARTCoach Pro 200 - Monthly</option>
+            <option value="SMARTCoach Pro 200 - Annual">SMARTCoach Pro 200 - Annual</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="legacyAmount">Recurring Amount (USD)</label>
+          <input id="legacyAmount" type="number" min="0.01" step="0.01" inputmode="decimal">
+        </div>
+        <button id="ghlOAuthLegacyReviewBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase()">Review Legacy Purchase</button>
+      </details>
+      <details>
         <summary>Checkout Identity Approval</summary>
         <div class="field">
           <label for="checkoutReviewer">Reviewer</label>
@@ -1819,6 +1854,33 @@ async function checkHighLevelBuyerSubscription(){
     var summary='Buyer subscription identity verified. HighLevel: '+data.providerSubscriptionStatus+'; saved: '+data.savedSubscriptionStatus+'. ';
     summary+=data.purchaseVerified?data.purchasedProductName+'; '+data.purchasedCurrency+' '+data.purchasedAmount+' '+data.purchasedBillingCadence+'; plan trial '+data.planTrialDays+' days. Saved pricing '+(data.savedConfigurationMatches?'matches. ':'does not match. '):data.reason+' ';
     setStatus(summary+'No buyer setup changed. Automatic fulfillment remains off.',data.purchaseVerified?'good':'bad');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+
+async function reviewHighLevelLegacyPurchase(){
+  var button=document.getElementById('ghlOAuthLegacyReviewBtn');
+  button.disabled=true;
+  try{
+    var productName=document.getElementById('legacyProductName').value;
+    var amount=Number(document.getElementById('legacyAmount').value);
+    if(!Number.isFinite(amount)||amount<=0)throw new Error('Enter the recurring subscription amount.');
+    var data=await highLevelConnectionRequest('ghl-oauth-review-legacy-purchase','POST',{
+      preview:true,accountKey:document.getElementById('accountKey').value.trim(),
+      locationId:document.getElementById('locationId').value.trim(),
+      schoolName:document.getElementById('legacySchoolName').value.trim(),
+      coachName:document.getElementById('legacyCoachName').value.trim(),
+      ownerEmail:document.getElementById('legacyOwnerEmail').value.trim().toLowerCase(),
+      expectedSubscriptionId:document.getElementById('legacySubscriptionId').value.trim(),
+      expectedProductName:productName,expectedBillingCadence:productName.endsWith('Annual')?'annual':'monthly',
+      expectedAmount:amount.toFixed(2)
+    });
+    if(data.preview!==true||data.providerPurchaseVerified!==true||data.locationIdentityVerified!==true
+      ||data.accountUnchanged!==true||data.pendingCheckoutUnchanged!==true||data.emailSent!==false
+      ||data.recoveryReady!==false||data.automaticFulfillmentReady!==false||!Array.isArray(data.blockers)){
+      throw new Error('Legacy purchase review response could not be verified.');
+    }
+    setStatus('Legacy provider purchase and location verified. '+data.productName+'; '+data.currency+' '+data.amount+' '+data.billingCadence+'. '+data.blockers.join(' ')+' Recovery remains disabled. No account changes or email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }

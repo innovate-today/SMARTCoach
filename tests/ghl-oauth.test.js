@@ -175,6 +175,72 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
+  for (const mode of ["valid", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
+    "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
+    "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error"]) {
+    const review = fixture();
+    review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " saas/company.read";
+    review.setResponse({ ...review.grant(), scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES });
+    const auth = await review.start();
+    await review.invoke("crm-connect-callback", review.callbackReq(auth));
+    if (mode === "existing") review.accounts.set(accountKey, { locationId, coachStaff: [{ id: "preserve" }] });
+    if (mode === "missing-scope") {
+      review.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write locations.readonly";
+      const again = await review.start();
+      review.setResponse({ ...review.grant(), scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES });
+      await review.invoke("crm-connect-callback", review.callbackReq(again));
+    }
+    review.setProvider((url, options) => {
+      assert.equal(options.method, undefined, "Review must only read provider data");
+      if (mode === "forbidden") return { mockHttpStatus: 403, secret: "private-provider-response" };
+      if (mode === "provider-error") throw new Error("private-provider-response");
+      const path = new URL(url).pathname;
+      if (path === `/locations/${locationId}`) return { location: { id: mode === "wrong-location" ? "other" : locationId,
+        companyId: mode === "wrong-agency" ? "other" : "agency-one", email: mode === "wrong-email" ? "other@example.com" : "buyer@example.com",
+        token: "private-location-token" } };
+      if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true,
+        subscriptionStatus: mode === "past-due" ? "past_due" : "trialing", subscriptionId: "sub_verified",
+        customerId: "cus_verified", productId: "product", priceId: "price", saasPlanId: "plan", access_token: "never-return-me" };
+      assert.equal(path, "/saas/saas-plan/plan");
+      if (mode === "race") review.accounts.set(accountKey, { locationId, coachStaff: [{ id: "preserve" }] });
+      return { planId: "plan", companyId: "agency-one", providerLocationId: "QxwjWekSyUf7sDOFHPB4", productId: "product",
+        isSaaSV2: true, title: mode === "bad-catalog" ? "SMARTCoach Pro 25 lookalike" : "SMARTCoach Pro 25", trialPeriod: 30,
+        prices: [{ id: "price", active: true, amount: 19, currency: "USD", billingInterval: "month" }] };
+    });
+    const req = review.request(mode === "get" ? "GET" : "POST");
+    req.body = { preview: true, accountKey, locationId, schoolName: "Athletic Develop", coachName: "Jenn Moore", ownerEmail: "BUYER@example.com",
+      expectedSubscriptionId: "sub_verified", expectedProductName: "SMARTCoach Pro 25 - Monthly", expectedBillingCadence: "monthly", expectedAmount: "19.00" };
+    if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
+    if (mode === "wrong-origin") req.headers.origin = "https://other.example";
+    if (mode === "execute") req.body.confirmRecovery = true;
+    if (mode === "missing-preview") delete req.body.preview;
+    if (mode === "seller") { req.body.locationId = "QxwjWekSyUf7sDOFHPB4"; req.body.accountKey = "sc-qxwjweksyuf7sdofhpb4"; }
+    if (mode === "wrong-key") req.body.accountKey = "other";
+    if (mode === "missing-coach") req.body.coachName = "";
+    if (mode === "wrong-subscription") req.body.expectedSubscriptionId = "sub_other";
+    if (mode === "wrong-product") req.body.expectedProductName = "SMARTCoach Pro 100 - Monthly";
+    if (mode === "wrong-amount") req.body.expectedAmount = "29.00";
+    if (mode === "wrong-cadence") req.body.expectedBillingCadence = "annual";
+    const recordsBefore = structuredClone([...review.records]);
+    const result = await review.invoke("ghl-oauth-review-legacy-purchase", req);
+    if (mode === "valid") {
+      assert.equal(result.statusCode, 200);
+      assert.equal(result.body.providerPurchaseVerified, true);
+      assert.equal(result.body.ownerEmail, "buyer@example.com");
+      assert.equal(result.body.proposedCoachName, "Jenn Moore");
+      assert.equal(result.body.productName, "SMARTCoach Pro 25 - Monthly");
+      assert.equal(result.body.amount, "19.00");
+      assert.equal(result.body.planTrialDays, 30);
+      for (const key of ["originalOrderVerified", "alternateAccountHistoryVerified", "buyerOAuthVerified", "recoveryReady", "emailSent", "automaticFulfillmentReady"]) assert.equal(result.body[key], false);
+      assert.equal(result.body.accountUnchanged, true);
+      assert.equal(result.body.pendingCheckoutUnchanged, true);
+      const normal = await review.invoke("ghl-oauth-check-subscription", { ...req, body: { accountKey, locationId } });
+      assert.equal(normal.statusCode, 422, "Normal provisioning must still require saved buyer mapping");
+    } else assert(result.statusCode >= 400, mode);
+    assert.deepEqual([...review.records], recordsBefore, "Review must not persist recovery, grants, audits or checkout records");
+    assert.equal(review.accounts.size, ["existing", "race"].includes(mode) ? 1 : 0);
+    for (const secret of ["private-access", "private-location-token", "private-provider-response", "never-return-me"]) assert(!JSON.stringify(result).includes(secret));
+  }
   for (const mode of ["valid", "reconcile", "reconcile-bad-price", "reconcile-bad-confirm", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "wrapped-empty", "wrapped-wrong-buyer", "ambiguous", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
     const check = fixture();
     const auth = await check.start();
@@ -867,6 +933,34 @@ async function run() {
   assert.equal(createBody.confirmCreate, true); assert.equal(createBody.expectedProductPlan, "pro100");
   assert.equal(createBody.expectedOwnerEmail, "support@example.com");
   assert.equal(nodes.ghlOAuthHeadCoachBtn.disabled, false);
+  Object.assign(nodes, { ghlOAuthLegacyReviewBtn: { disabled: false }, legacySchoolName: { value: "Athletic Develop" },
+    legacyCoachName: { value: "Jenn Moore" }, legacyOwnerEmail: { value: "buyer@example.com" },
+    legacySubscriptionId: { value: "sub_verified" }, legacyProductName: { value: "SMARTCoach Pro 25 - Monthly" }, legacyAmount: { value: "19" } });
+  const safeReview = { preview: true, providerPurchaseVerified: true, locationIdentityVerified: true,
+    accountUnchanged: true, pendingCheckoutUnchanged: true, emailSent: false, recoveryReady: false,
+    automaticFulfillmentReady: false, productName: "SMARTCoach Pro 25 - Monthly", currency: "USD", amount: "19.00", billingCadence: "monthly", blockers: ["Original order pending."] };
+  pageResponse = safeReview;
+  const beforeLegacy = pageCalls.length;
+  await context.reviewHighLevelLegacyPurchase();
+  assert.equal(pageCalls.length, beforeLegacy + 1);
+  assert(pageCalls.at(-1).url.endsWith("ghl-oauth-review-legacy-purchase"));
+  const legacyBody = JSON.parse(pageCalls.at(-1).options.body);
+  assert.equal(legacyBody.preview, true);
+  assert.equal(legacyBody.expectedAmount, "19.00");
+  assert.equal(legacyBody.coachName, "Jenn Moore");
+  assert.equal(legacyBody.expectedBillingCadence, "monthly");
+  assert.match(statuses.pop()[0], /Recovery remains disabled/);
+  for (const change of [{ emailSent: true }, { recoveryReady: true }, { automaticFulfillmentReady: true }, { accountUnchanged: false }, { blockers: null }]) {
+    pageResponse = { ...safeReview, ...change };
+    await context.reviewHighLevelLegacyPurchase();
+    assert.match(statuses.pop()[0], /response could not be verified/);
+    assert.equal(nodes.ghlOAuthLegacyReviewBtn.disabled, false);
+  }
+  nodes.legacyAmount.value = "";
+  const beforeInvalidAmount = pageCalls.length;
+  await context.reviewHighLevelLegacyPurchase();
+  assert.equal(pageCalls.length, beforeInvalidAmount);
+  assert.match(statuses.pop()[0], /recurring subscription amount/);
   console.log("HighLevel OAuth security and renewal tests passed");
 }
 
