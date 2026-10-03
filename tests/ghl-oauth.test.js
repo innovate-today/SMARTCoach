@@ -344,7 +344,7 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
-  for (const mode of ["success", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
+  for (const mode of ["success", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const f = fixture({ executionEnabled: mode !== "disabled" });
     const scopes = "locations.readonly locations/customFields.readonly locations/customValues.readonly locations/customValues.write contacts.readonly contacts.write objects/record.readonly objects/record.write";
     const buyerScopes = scopes + (mode === "missing-scope" ? "" : " objects/schema.readonly");
@@ -362,6 +362,10 @@ async function run() {
       schoolName: "School", coachName: "Buyer", coachEmail: "buyer@example.com", lastMatchedLocationId: locationId,
       lastLocationCreateEvent: { id: locationId, companyId: "agency-one", email: "buyer@example.com" } });
     const mapping = require("../smart_trak_object_mapping.json");
+    assert.deepEqual(Object.keys(mapping.objects.meet.fields), ["meet", "meet_date", "season", "season_year", "status", "source_system", "source_record_id"]);
+    assert.equal(mapping.objects.meet.fields.meet.type, "TEXT");
+    assert(mapping.objects.meet_result.fields.meet_name);
+    assert(mapping.objects.record.fields.meet_name);
     let sends = 0, values = [], valueWrites = 0;
     f.setProvider((url, options) => {
       const path = new URL(url).pathname;
@@ -378,7 +382,7 @@ async function run() {
         assert.equal(new URL(url).searchParams.get("locationId"), locationId);
         assert.equal(options.headers.Authorization, "Bearer private-fulfillment-buyer");
         const object = Object.values(mapping.objects).find(item => item.internalName === decodeURIComponent(path.split("/")[2]));
-        return { object: { key: object.internalName, locationId: mode === "wrong-schema" ? "other" : locationId }, fields: Object.entries(object.fields).map(([key, field]) => ({ id: field.id, locationId, fieldKey: `${object.internalName}.${key}`, dataType: mode === "wrong-field-type" ? "INVALID" : field.type })) };
+        return { object: { key: object.internalName, locationId: mode === "wrong-schema" ? "other" : locationId }, fields: Object.entries(object.fields).filter(([key]) => !(mode === "missing-meet-primary" && object.internalName === "custom_objects.meets" && key === "meet")).map(([key, field]) => ({ id: field.id, locationId, fieldKey: `${object.internalName}.${key}`, dataType: mode === "wrong-field-type" ? "INVALID" : field.type })) };
       }
       if (path === `/locations/${locationId}/customValues`) {
         if (options.method === "POST") { valueWrites++; values = [{ id: "key-value", name: "account_key", value: accountKey, locationId }]; return { customValue: values[0] }; }
@@ -404,7 +408,7 @@ async function run() {
     assert.deepEqual(f.accounts.get(accountKey), original); assert.equal(sends, 0); assert.equal(valueWrites, 0);
     const snapshotReq = f.request(); snapshotReq.body = { accountKey, locationId, dryRun: true, verifySnapshot: true };
     const snapshot = await f.invoke("ghl-oauth-fulfill-buyer", snapshotReq);
-    const invalidSnapshot = ["missing-scope", "missing-fields", "wrong-schema", "wrong-field-type"].includes(mode);
+    const invalidSnapshot = ["missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type"].includes(mode);
     assert.equal(snapshot.statusCode, invalidSnapshot ? mode === "missing-scope" ? 403 : 409 : 200, `${mode}: snapshot`);
     if (!invalidSnapshot) {
       assert.deepEqual(snapshot.body.snapshot, { verified: true,
