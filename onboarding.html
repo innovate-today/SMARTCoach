@@ -215,6 +215,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthSubscriptionBtn" type="button" class="secondary" onclick="checkHighLevelBuyerSubscription()">Check Buyer Subscription</button>
         <button id="ghlOAuthTrialBtn" type="button" class="secondary" onclick="reconcileHighLevelBuyerTrial()">Reconcile Trial Status</button>
         <button id="ghlOAuthFulfillmentBtn" type="button" class="secondary" onclick="previewHighLevelFulfillment()">Preview Fulfillment</button>
+        <button id="ghlOAuthBuyerSetupBtn" type="button" class="secondary" onclick="previewHighLevelBuyerSetup()">Preview Buyer Setup</button>
         <button id="ghlOAuthCheckoutReviewBtn" type="button" class="secondary" onclick="reviewHighLevelCheckoutIdentity()">Review Checkout Identity</button>
         <button id="ghlOAuthWriteBtn" type="button" class="secondary" onclick="verifyHighLevelBuyerWrite()">Verify Account-Key Write</button>
         <button id="ghlOAuthWelcomeBtn" type="button" class="secondary" onclick="sendHighLevelBuyerWelcome()">Send Welcome Link</button>
@@ -1832,6 +1833,21 @@ async function previewHighLevelFulfillment(){
     var summary='Fulfillment preview. '+(data.existingAccessPreserved?'Existing head coach and accepted access email preserved. ':'No coach access created. ');
     summary+='Buyer OAuth: '+(data.buyerOAuthVerified?'verified':'not verified')+'; seller sender: '+(data.sellerSenderVerified?'verified':'not verified')+'. ';
     setStatus(summary+'Automatic fulfillment remains off. '+data.blockers.join(' ')+' No account changes or email sent.','bad');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+
+async function previewHighLevelBuyerSetup(){
+  var button=document.getElementById('ghlOAuthBuyerSetupBtn');
+  button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-fulfill-buyer','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),dryRun:true
+    });
+    if(!data.dryRun||!data.accountUnchanged||data.emailSent!==false||data.automaticFulfillmentReady!==false)throw new Error('Buyer setup dry-run response could not be verified.');
+    var summary=data.nextAction==='preserve_existing_access'?'Buyer setup dry run verified: existing head coach and accepted access email will be preserved. No setup steps needed. ':'Buyer setup dry run verified: '+data.steps.length+' staged steps. Snapshot and permissions must verify before setup. ';
+    if(!data.newBuyerSchemaScopeAvailable)summary+='New-buyer snapshot verification needs the read-only object-schema permission. ';
+    setStatus(summary+'Live execution remains disabled. No account changes or email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }

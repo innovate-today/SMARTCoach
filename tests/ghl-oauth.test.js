@@ -5,7 +5,7 @@ const crypto = require("crypto");
 const { createGhlOAuth, APP_ID, CALLBACK_PATH } = require("../lib/ghl-oauth");
 const { verifySaasCatalogPurchase } = require("../lib/saas-purchase");
 
-function fixture() {
+function fixture(options = {}) {
   let time = 1000000;
   const records = new Map();
   const locks = new Set();
@@ -40,7 +40,7 @@ function fixture() {
       return async () => locks.delete(namespace);
     },
   };
-  const api = createGhlOAuth({ env, registry, now: () => time, fetch: async (url, options) => {
+  const api = createGhlOAuth({ env, registry, fulfillmentExecutionEnabled: options.executionEnabled === true, now: () => time, fetch: async (url, options) => {
     calls.push({ url, options });
     if (new URL(url).pathname === "/oauth/token") assert(locks.has("oauthgrant"));
     else if (provider) {
@@ -256,7 +256,8 @@ async function run() {
       coachStaff: [{ id: "head", active: true, accessType: "full", coachCodeHash: "private-hash" }] };
     preview.accounts.set(accountKey, structuredClone(original));
     preview.records.set("pendingcheckout", { source: "smartcoach-precheckout", lastMatchedLocationId: mode === "wrong-pending" ? "other" : locationId,
-      coachEmail: mode.includes("reconcil") ? "original@example.com" : "buyer@example.com", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 - Monthly", schoolName: "School", coachName: "Buyer" });
+      coachEmail: mode.includes("reconcil") ? "original@example.com" : "buyer@example.com", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 - Monthly", schoolName: "School", coachName: "Buyer",
+      lastLocationCreateEvent: { id: locationId, companyId: "agency-one", email: "buyer@example.com" } });
     preview.records.set(`buyeraccess-${locationId}`, { buyerAccountKey: accountKey, locationId, ownerEmail: "buyer@example.com", productPlan: "pro100",
       senderLocationId: "QxwjWekSyUf7sDOFHPB4", emailFrom: "info@smartcoach-pro.com", messageId: "accepted-message", staffId: "head", status: mode === "uncertain-email" ? "attempted" : "accepted" });
     const history = structuredClone(preview.records.get(`buyeraccess-${locationId}`));
@@ -343,6 +344,85 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
+  for (const mode of ["success", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
+    const f = fixture({ executionEnabled: mode !== "disabled" });
+    const scopes = "locations.readonly locations/customFields.readonly locations/customValues.readonly locations/customValues.write contacts.readonly contacts.write objects/record.readonly objects/record.write";
+    const buyerScopes = scopes + (mode === "missing-scope" ? "" : " objects/schema.readonly");
+    f.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write " + buyerScopes;
+    f.env.SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS = accountKey;
+    f.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-fulfillment-seller";
+    f.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
+    f.setResponse({ ...f.grant(), scope: f.env.SMARTCOACH_GHL_OAUTH_SCOPES });
+    const auth = await f.start(); await f.invoke("crm-connect-callback", f.callbackReq(auth));
+    const original = { accountKey, locationId, token: "", productPlan: "pro100", schoolName: "School", accountOwnerName: "Buyer",
+      accountOwnerEmail: "buyer@example.com", coachStaff: [], coachAccessCodes: [], requireCoachAccess: true,
+      subscription: { status: "incomplete", amount: "29.99", billingCadence: "monthly" } };
+    f.accounts.set(accountKey, structuredClone(original));
+    f.records.set("pendingcheckout", { source: "smartcoach-precheckout", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 - Monthly",
+      schoolName: "School", coachName: "Buyer", coachEmail: "buyer@example.com", lastMatchedLocationId: locationId,
+      lastLocationCreateEvent: { id: locationId, companyId: "agency-one", email: "buyer@example.com" } });
+    const mapping = require("../smart_trak_object_mapping.json");
+    let sends = 0, values = [], valueWrites = 0;
+    f.setProvider((url, options) => {
+      const path = new URL(url).pathname;
+      if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true, subscriptionStatus: "trialing",
+        subscriptionId: "sub", customerId: "cus", productId: "product", priceId: "price", saasPlanId: "plan" };
+      if (path === "/saas/saas-plan/plan") return { planId: "plan", companyId: "agency-one", providerLocationId: "QxwjWekSyUf7sDOFHPB4", productId: "product",
+        isSaaSV2: true, title: "SMARTCoach Pro 100", trialPeriod: 30, prices: [{ id: "price", active: true, amount: 29, currency: "USD", billingInterval: "month" }] };
+      if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: true }] };
+      if (path === "/oauth/location-token") return { access_token: "private-fulfillment-buyer", token_type: "Bearer", locationId, expires_in: 86400, scope: buyerScopes };
+      if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: "agency-one" } };
+      if (path === "/locations/QxwjWekSyUf7sDOFHPB4") return { location: { id: "QxwjWekSyUf7sDOFHPB4", companyId: "agency-one" } };
+      if (path === `/locations/${locationId}/customFields`) return { customFields: mode === "missing-fields" ? [] : Object.values(mapping.contactFields).map(field => ({ ...field, locationId })) };
+      if (path.startsWith("/objects/")) {
+        assert.equal(new URL(url).searchParams.get("locationId"), locationId);
+        assert.equal(options.headers.Authorization, "Bearer private-fulfillment-buyer");
+        const object = Object.values(mapping.objects).find(item => item.internalName === decodeURIComponent(path.split("/")[2]));
+        return { object: { key: object.internalName, locationId: mode === "wrong-schema" ? "other" : locationId }, fields: Object.entries(object.fields).map(([key, field]) => ({ id: field.id, locationId, fieldKey: `${object.internalName}.${key}`, dataType: mode === "wrong-field-type" ? "INVALID" : field.type })) };
+      }
+      if (path === `/locations/${locationId}/customValues`) {
+        if (options.method === "POST") { valueWrites++; values = [{ id: "key-value", name: "account_key", value: accountKey, locationId }]; return { customValue: values[0] }; }
+        return { customValues: mode === "conflicting-value" ? [{ id: "other-key", name: "account_key", value: "sc-other", locationId }] : values };
+      }
+      if (path === "/contacts/") return { contacts: [{ id: "seller-owner", email: "buyer@example.com", locationId: "QxwjWekSyUf7sDOFHPB4" }] };
+      if (path === "/conversations/messages") {
+        sends++; assert.equal(options.headers.Authorization, "Bearer private-fulfillment-seller");
+        const email = JSON.parse(options.body); assert.equal(email.emailFrom, "info@smartcoach-pro.com");
+        assert.equal(email.emailTo, "buyer@example.com"); assert.equal(email.subject, "SMARTCoach Access");
+        assert(!email.html.includes(f.accounts.get(accountKey).coachAccessCodes[0]));
+        if (mode === "failed-send") throw new Error("private-send-error");
+        return mode === "missing-message" ? {} : { messageId: "fulfillment-message" };
+      }
+      throw new Error("Unexpected fulfillment provider request");
+    });
+    const req = f.request(); req.body = { accountKey, locationId, dryRun: true };
+    const preview = await f.invoke("ghl-oauth-fulfill-buyer", req);
+    assert.equal(preview.statusCode, 200, `${mode}: ${preview.body.error || ""}`); assert.equal(preview.body.steps.length, 3);
+    assert.deepEqual(f.accounts.get(accountKey), original); assert.equal(sends, 0); assert.equal(valueWrites, 0);
+    req.body = { ...req.body, dryRun: false, confirmExecution: true, expectedFingerprint: preview.body.fingerprint };
+    if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
+    if (mode === "wrong-origin") req.headers.origin = "https://other.example";
+    if (mode === "wrong-buyer") req.body.accountKey = "sc-other";
+    const result = await f.invoke("ghl-oauth-fulfill-buyer", req);
+    assert.equal(result.statusCode, mode === "success" ? 200 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "wrong-buyer" ? 422 : ["no-admin", "wrong-origin", "missing-scope"].includes(mode) ? 403 : 409, `${mode}: ${result.body.error || ""}`);
+    assert.equal(sends, ["success", "failed-send", "missing-message"].includes(mode) ? 1 : 0);
+    if (mode === "success") {
+      assert.equal(f.accounts.get(accountKey).subscription.amount, "29.00");
+      assert.equal(f.accounts.get(accountKey).subscription.status, "trialing");
+      assert.equal(f.accounts.get(accountKey).token, ""); assert.equal(f.accounts.get(accountKey).coachStaff.length, 1);
+      assert.equal((await f.invoke("ghl-oauth-fulfill-buyer", req)).statusCode, 200);
+      assert.equal(sends, 1); assert.equal(valueWrites, 1);
+    } else if (["failed-send", "missing-message"].includes(mode)) {
+      assert.equal((await f.invoke("ghl-oauth-fulfill-buyer", req)).statusCode, 409);
+      assert.equal(sends, 1); assert.equal(f.records.get(`buyeraccess-${locationId}`).status, "attempted");
+    } else if (mode === "conflicting-value") {
+      assert.equal(valueWrites, 0); assert.equal(f.accounts.get(accountKey).coachStaff.length, 0);
+      assert.equal((await f.invoke("ghl-oauth-fulfill-buyer", req)).statusCode, 409);
+    } else { assert.deepEqual(f.accounts.get(accountKey), original); }
+    for (const secret of ["private-fulfillment-buyer", "private-fulfillment-seller", "private-send-error",
+      ...f.accounts.get(accountKey).coachAccessCodes]) assert(!JSON.stringify(result).includes(secret));
+  }
+
   const catalog = { planId: "plan", companyId: "agency", providerLocationId: "seller", productId: "product", isSaaSV2: true,
     title: "SMARTCoach Pro 100", trialPeriod: 30, prices: [{ id: "price", billingInterval: "month", active: true, amount: 29, currency: "USD" }] };
   assert.equal(verifySaasCatalogPurchase(catalogSubscription, catalog, "agency", "seller").purchaseVerified, true);
