@@ -533,6 +533,9 @@ async function testLocationReferencesReadOnly() {
         };
         const reviewed = await inspectAccountLocationReferences(locationId);
         assert.strictEqual(reviewed.complete, ["found", "empty"].includes(mode));
+        const expectedReasons = { "invalid-scan": "invalid_scan_response", corrupt: "unreadable_account_record",
+          partial: "scan_page_limit_reached", oversize: "account_limit_reached", missing: "invalid_account_batch" };
+        assert.strictEqual(reviewed.reason, expectedReasons[mode]);
         if (mode === "found") assert.deepStrictEqual(reviewed.references, ["old-school"]);
         if (mode === "empty") assert.deepStrictEqual(reviewed.references, []);
         if (mode === "partial") assert.strictEqual(scans, 20);

@@ -181,8 +181,10 @@ async function run() {
   for (const mode of ["valid", "ghl-id", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
-    "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-bad-env", "scan-corrupt-history"]) {
-    const review = fixture(mode === "scan-incomplete" ? { inventory: { complete: false, references: [] } } : { corruptHistory: mode === "scan-corrupt-history" });
+    "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-private-reason", "scan-bad-env", "scan-corrupt-history"]) {
+    const review = fixture(["scan-incomplete", "scan-limit", "scan-private-reason"].includes(mode)
+      ? { inventory: { complete: false, references: [], reason: mode === "scan-limit" ? "scan_page_limit_reached" : "private-inventory-error" } }
+      : { corruptHistory: mode === "scan-corrupt-history" });
     review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " saas/company.read";
     review.setResponse({ ...review.grant(), scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES });
     const auth = await review.start();
@@ -259,9 +261,11 @@ async function run() {
     if (mode === "wrong-amount") assert.match(result.body.error, /blocked: amount\./);
     if (mode === "wrong-cadence") assert.match(result.body.error, /blocked: billingCadence\./);
     if (mode === "bad-catalog") assert.match(result.body.error, /purchaseCatalog.*exact supported SMARTCoach/);
+    if (mode === "scan-limit") assert.match(result.body.error, /\(scan_page_limit_reached\)/);
+    if (mode === "scan-private-reason") assert.match(result.body.error, /\(inventory_incomplete\)/);
     assert.deepEqual([...review.records], recordsBefore, "Review must not persist recovery, grants, audits or checkout records");
     assert.equal(review.accounts.size, ["existing", "race", "scan-alt"].includes(mode) ? 1 : 0);
-    for (const secret of ["private-access", "private-location-token", "private-provider-response", "never-return-me", "keep-pit", "private-hash", "private-history-error"]) assert(!JSON.stringify(result).includes(secret));
+    for (const secret of ["private-access", "private-location-token", "private-provider-response", "never-return-me", "keep-pit", "private-hash", "private-history-error", "private-inventory-error"]) assert(!JSON.stringify(result).includes(secret));
   }
   for (const mode of ["valid", "reconcile", "reconcile-bad-price", "reconcile-bad-confirm", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "wrapped-empty", "wrapped-wrong-buyer", "ambiguous", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
     const check = fixture();
