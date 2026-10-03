@@ -184,7 +184,8 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
-  for (const rawMode of ["recovery-valid", "recovery-no-confirm", "recovery-wrong-buyer", "recovery-fields", "recovery-nx-race", "recovery-grant-fail", "recovery-no-admin", "recovery-wrong-origin", "recovery-get", "recovery-existing",
+  for (const rawMode of ["recovery-activate-valid", "recovery-activate-no-rollout", "recovery-activate-no-confirm", "recovery-activate-stale", "recovery-activate-existing-access", "recovery-activate-failed-send", "recovery-activate-no-admin", "recovery-activate-wrong-origin", "recovery-activate-wrong-buyer",
+    "recovery-valid", "recovery-no-confirm", "recovery-wrong-buyer", "recovery-fields", "recovery-nx-race", "recovery-grant-fail", "recovery-no-admin", "recovery-wrong-origin", "recovery-get", "recovery-existing",
     "valid", "ghl-id", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
@@ -196,6 +197,8 @@ async function run() {
     const locationId = recovery ? "tIz08pPpV3nUaS4nKt63" : "AbCdEfGhIjKlMnOpQrSt";
     const accountKey = `sc-${locationId.toLowerCase()}`;
     const ownerEmail = recovery ? "athleticdevelop@yahoo.com" : "buyer@example.com";
+    const activation = rawMode.startsWith("recovery-activate-");
+    let values = [], sends = 0;
     const review = fixture(["scan-incomplete", "scan-limit", "scan-private-reason"].includes(mode)
       ? { inventory: { complete: false, references: [], reason: mode === "scan-limit" ? "scan_page_limit_reached" : "private-inventory-error" } }
       : { corruptHistory: mode === "scan-corrupt-history", nxRace: rawMode === "recovery-nx-race", failBuyerGrantSave: rawMode === "recovery-grant-fail" });
@@ -203,6 +206,10 @@ async function run() {
     if (mode.startsWith("order-")) review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " oauth.readonly";
     if (mode.startsWith("order-crm-")) review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " contacts.readonly contacts.write locations/customFields.readonly locations/customValues.readonly locations/customValues.write objects/record.readonly objects/record.write objects/schema.readonly";
     if (mode.startsWith("order-") && mode !== "order-missing-token") review.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-token";
+    if (activation) {
+      review.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
+      if (rawMode !== "recovery-activate-no-rollout") review.env.SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS = accountKey;
+    }
     review.setResponse({ ...review.grant(), scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES });
     const auth = await review.start();
     await review.invoke("crm-connect-callback", review.callbackReq(auth));
@@ -221,7 +228,7 @@ async function run() {
       await review.invoke("crm-connect-callback", review.callbackReq(again));
     }
     review.setProvider((url, options) => {
-      assert.equal(options.method, new URL(url).pathname === "/oauth/location-token" ? "POST" : undefined, "Only temporary credential exchange may use POST");
+      if (!activation) assert.equal(options.method, new URL(url).pathname === "/oauth/location-token" ? "POST" : undefined, "Only temporary credential exchange may use POST");
       if (mode === "forbidden") return { mockHttpStatus: 403, secret: "private-provider-response" };
       if (mode === "provider-error") throw new Error("private-provider-response");
       const path = new URL(url).pathname;
@@ -243,8 +250,28 @@ async function run() {
           locationId: mode === "order-crm-token" ? "other" : locationId,
           scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES.split(" ").filter(scope => !scope.startsWith("oauth.") && scope !== "saas/company.read").join(" ") + (mode === "order-crm-scope" ? " users.write" : "") };
       }
-      if (path === "/contacts/") return { contacts: [{ locationId: mode === "order-crm-contact" ? "other" : locationId }] };
-      if (path === `/locations/${locationId}/customValues`) return { customValues: [] };
+      if (path === "/contacts/") return { contacts: options.headers.Authorization === 'Bearer private-seller-token'
+        ? [{ id: 'seller-owner', email: ownerEmail, locationId: 'QxwjWekSyUf7sDOFHPB4' }]
+        : [{ locationId: mode === "order-crm-contact" ? "other" : locationId }] };
+      if (path === `/locations/${locationId}/customValues`) {
+        if (options.method === 'POST') {
+          assert(activation); assert.equal(options.headers.Authorization, 'Bearer private-preview-token');
+          assert.deepEqual(JSON.parse(options.body), { name: 'account_key', value: accountKey });
+          values = [{ id: 'buyer-key', name: 'account_key', value: accountKey, locationId }];
+          return { customValue: values[0] };
+        }
+        return { customValues: values };
+      }
+      if (path === '/conversations/messages') {
+        assert(activation); sends++;
+        assert.equal(options.headers.Authorization, 'Bearer private-seller-token');
+        const email = JSON.parse(options.body);
+        assert.equal(email.emailFrom, 'info@smartcoach-pro.com'); assert.equal(email.emailTo, ownerEmail);
+        assert.equal(email.subject, 'SMARTCoach Access'); assert(email.html.includes('/overview.html?'));
+        assert(!email.html.includes(review.accounts.get(accountKey).coachAccessCodes[0]));
+        if (rawMode === 'recovery-activate-failed-send') throw new Error('private-send-error');
+        return { messageId: 'accepted-legacy-email' };
+      }
       const mapping = require("../smart_trak_object_mapping.json");
       if (path === `/locations/${locationId}/customFields`) return { customFields: mode === "order-crm-fields" ? [] : Object.values(mapping.contactFields).map(field => ({ ...field, locationId })) };
       if (path.startsWith("/objects/")) {
@@ -329,6 +356,38 @@ async function run() {
     }
     let result = await review.invoke(recovery ? "ghl-oauth-recover-legacy-purchase" : "ghl-oauth-review-legacy-purchase", req);
     if (recovery) {
+      if (activation) {
+        assert.equal(result.statusCode, 200, rawMode);
+        const beforeActivation = structuredClone(review.accounts.get(accountKey));
+        const activationReq = review.request(); activationReq.body = { accountKey, locationId, preview: true };
+        const preview = await review.invoke('ghl-oauth-activate-legacy-buyer', activationReq);
+        assert.equal(preview.statusCode, 200, preview.body.error);
+        assert.equal(preview.body.accountUnchanged, true); assert.equal(preview.body.emailSent, false);
+        assert.equal(preview.body.ownerEmail, ownerEmail); assert.equal(preview.body.sellerSenderVerified, true);
+        assert.deepEqual(review.accounts.get(accountKey), beforeActivation); assert.equal(sends, 0);
+        activationReq.body = { accountKey, locationId, confirmActivation: rawMode !== 'recovery-activate-no-confirm',
+          expectedFingerprint: rawMode === 'recovery-activate-stale' ? 'stale' : preview.body.fingerprint };
+        if (rawMode === 'recovery-activate-existing-access') review.accounts.get(accountKey).coachStaff = [{ id: 'preserve' }];
+        if (rawMode === 'recovery-activate-no-admin') delete activationReq.headers['x-smartcoach-setup-code'];
+        if (rawMode === 'recovery-activate-wrong-origin') activationReq.headers.origin = 'https://other.example';
+        if (rawMode === 'recovery-activate-wrong-buyer') activationReq.body.locationId = 'other';
+        const activated = await review.invoke('ghl-oauth-activate-legacy-buyer', activationReq);
+        const success = rawMode === 'recovery-activate-valid';
+        assert.equal(activated.statusCode, success ? 200 : rawMode === 'recovery-activate-failed-send' ? 502
+          : ['recovery-activate-no-admin','recovery-activate-wrong-origin','recovery-activate-wrong-buyer'].includes(rawMode) ? 403 : 409, rawMode + ': ' + activated.body.error);
+        if (success || rawMode === 'recovery-activate-failed-send') {
+          assert.equal(sends, 1); assert.equal(review.accounts.get(accountKey).coachStaff.length, 1);
+          assert.equal(review.accounts.get(accountKey).accessStatus, 'active');
+          assert.equal(review.accounts.get(accountKey).token, '');
+          assert.deepEqual(review.accounts.get(accountKey).subscription, beforeActivation.subscription);
+          assert.equal((await review.invoke('ghl-oauth-activate-legacy-buyer', activationReq)).statusCode, 409);
+          assert.equal(sends, 1);
+        } else { assert.equal(sends, 0); assert.equal(values.length, 0); }
+        if (success) { assert.equal(activated.body.accessEmailAccepted, true); assert.equal(activated.body.deliveryVerified, false); }
+        assert(!JSON.stringify(activated).includes('private-preview-token'));
+        assert(!JSON.stringify(activated).includes('private-send-error'));
+        continue;
+      }
       assert.equal(result.statusCode, rawMode === "recovery-valid" ? 200 : rawMode === "recovery-get" ? 405
         : rawMode === "recovery-grant-fail" ? 503 : ["recovery-fields", "recovery-nx-race", "recovery-existing"].includes(rawMode) ? 409 : 403, rawMode);
       const saved = review.accounts.get(accountKey);
@@ -1179,6 +1238,36 @@ async function run() {
     pageResponse = { ...safeRecovery, ...change };
     await context.reviewHighLevelLegacyPurchase(true, true);
     assert.match(statuses.pop()[0], /Recovery result could not be verified/);
+  }
+  nodes.ghlOAuthLegacyActivateBtn = { disabled: false };
+  nodes.ghlOAuthLegacyActivateConfirmBtn = { hidden: true };
+  pageResponse = { preview: true, fingerprint: 'activation-fingerprint', accountKey: nodes.accountKey.value,
+    locationId: nodes.locationId.value, coachName: 'Jenn Moore', ownerEmail: 'athleticdevelop@yahoo.com',
+    productPlan: 'pro25', amount: '19.00', billingCadence: 'monthly', subscriptionStatus: 'trialing',
+    emailFrom: 'info@smartcoach-pro.com', sellerSenderVerified: true, buyerOAuthVerified: true,
+    snapshotVerified: true, coreOAuthWriteRolloutEnabled: false, accountUnchanged: true, emailSent: false, automaticFulfillmentReady: false };
+  await context.previewLegacyActivation();
+  assert.equal(nodes.ghlOAuthLegacyActivateConfirmBtn.hidden, true);
+  assert.match(statuses.pop()[0], /rollout must be enabled/);
+  const safeActivationPreview = { ...pageResponse, coreOAuthWriteRolloutEnabled: true };
+  pageResponse = safeActivationPreview;
+  await context.previewLegacyActivation();
+  assert.equal(nodes.ghlOAuthLegacyActivateConfirmBtn.hidden, false);
+  const goodActivation = { legacyActivated: true, accountKey: nodes.accountKey.value, locationId: nodes.locationId.value,
+    headCoachCreated: true, accessEmailAccepted: true, ownerEmail: 'athleticdevelop@yahoo.com', emailFrom: 'info@smartcoach-pro.com',
+    accessStatus: 'active', coreOAuthWriteRolloutEnabled: true, accountKeyWriteVerified: true, billingUnchanged: true, automaticFulfillmentReady: false };
+  pageResponse = goodActivation;
+  await context.confirmLegacyActivation();
+  assert.match(statuses.pop()[0], /Inbox delivery and Overview sign-in are not yet verified/);
+  assert.equal(JSON.parse(pageCalls.at(-1).options.body).expectedFingerprint, 'activation-fingerprint');
+  const beforeConsumedConfirmation = pageCalls.length;
+  await context.confirmLegacyActivation();
+  assert.equal(pageCalls.length, beforeConsumedConfirmation);
+  for (const change of [{ emailFrom: 'buyer@example.com' }, { accountUnchanged: false }, { snapshotVerified: false }]) {
+    pageResponse = { ...safeActivationPreview, ...change };
+    await context.previewLegacyActivation();
+    assert.match(statuses.pop()[0], /preview could not be verified/);
+    assert.equal(nodes.ghlOAuthLegacyActivateConfirmBtn.hidden, true);
   }
   nodes.legacyAmount.value = "";
   const beforeInvalidAmount = pageCalls.length;

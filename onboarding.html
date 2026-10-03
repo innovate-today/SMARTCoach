@@ -238,6 +238,8 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthLegacyReviewBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase()">Review Legacy Purchase</button>
         <button id="ghlOAuthLegacyCrmBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase(true)">Preview Legacy Buyer CRM</button>
         <button id="ghlOAuthLegacyRecoverBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase(true,true)">Recover Approved Legacy Account</button>
+        <button id="ghlOAuthLegacyActivateBtn" type="button" class="secondary" onclick="previewLegacyActivation()">Preview Legacy Activation</button>
+        <button id="ghlOAuthLegacyActivateConfirmBtn" type="button" class="secondary" onclick="confirmLegacyActivation()" hidden>Activate &amp; Send Jenn's Access Email</button>
       </details>
       <details>
         <summary>Checkout Identity Approval</summary>
@@ -1936,6 +1938,41 @@ async function reviewHighLevelLegacyPurchase(verifyBuyerCrm,recover){
     setStatus('Legacy provider purchase and location verified. '+data.productName+'; '+data.currency+' '+data.amount+' '+data.billingCadence+'. '+data.blockers.join(' ')+' Recovery remains disabled. No account changes or email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
+}
+
+var legacyActivationPreview=null;
+async function previewLegacyActivation(){
+  var button=document.getElementById('ghlOAuthLegacyActivateBtn');
+  var confirmButton=document.getElementById('ghlOAuthLegacyActivateConfirmBtn');
+  legacyActivationPreview=null;confirmButton.hidden=true;button.disabled=true;
+  try{
+    var request={accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),preview:true};
+    var data=await highLevelConnectionRequest('ghl-oauth-activate-legacy-buyer','POST',request);
+    if(data.preview!==true||data.accountKey!==request.accountKey||data.locationId!==request.locationId
+      ||data.coachName!=='Jenn Moore'||data.ownerEmail!=='athleticdevelop@yahoo.com'||data.productPlan!=='pro25'
+      ||data.amount!=='19.00'||data.billingCadence!=='monthly'||data.emailFrom!=='info@smartcoach-pro.com'
+      ||data.sellerSenderVerified!==true||data.buyerOAuthVerified!==true||data.snapshotVerified!==true
+      ||data.accountUnchanged!==true||data.emailSent!==false||data.automaticFulfillmentReady!==false
+      ||typeof data.fingerprint!=='string'||!data.fingerprint)throw new Error('Legacy activation preview could not be verified.');
+    setStatus('Activation preview: Athletic Develop, Jenn Moore, Pro 25, USD 19.00 monthly; '+data.subscriptionStatus+'. Recipient '+data.ownerEmail+'; seller sender '+data.emailFrom+'. Will verify account-key write, release manual hold, create full head-coach access and send one personal access email with Overview link. Billing and automatic fulfillment unchanged. '+(data.coreOAuthWriteRolloutEnabled?'Ready for explicit activation confirmation.':'Buyer-only OAuth rollout must be enabled first.'),'good');
+    if(data.coreOAuthWriteRolloutEnabled){legacyActivationPreview=data;confirmButton.hidden=false;}
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+async function confirmLegacyActivation(){
+  var button=document.getElementById('ghlOAuthLegacyActivateConfirmBtn');
+  var preview=legacyActivationPreview;legacyActivationPreview=null;button.hidden=true;
+  if(!preview)return;
+  try{
+    if(document.getElementById('accountKey').value.trim()!==preview.accountKey||document.getElementById('locationId').value.trim()!==preview.locationId)throw new Error('Buyer selection changed. Preview activation again.');
+    var data=await highLevelConnectionRequest('ghl-oauth-activate-legacy-buyer','POST',{accountKey:preview.accountKey,
+      locationId:preview.locationId,confirmActivation:true,expectedFingerprint:preview.fingerprint});
+    if(data.legacyActivated!==true||data.accountKey!==preview.accountKey||data.locationId!==preview.locationId
+      ||data.headCoachCreated!==true||data.accessEmailAccepted!==true||data.ownerEmail!==preview.ownerEmail
+      ||data.emailFrom!==preview.emailFrom||data.accessStatus!=='active'||data.coreOAuthWriteRolloutEnabled!==true
+      ||data.accountKeyWriteVerified!==true||data.billingUnchanged!==true||data.automaticFulfillmentReady!==false)throw new Error('Activation result could not be verified. Review saved access and delivery before retrying.');
+    setStatus('Athletic Develop activated. Jenn Moore head-coach access created; one SMARTCoach Access email accepted by HighLevel from '+data.emailFrom+' to '+data.ownerEmail+'. Buyer CRM OAuth enabled; account-key write verified; manual hold released. Billing unchanged; automatic fulfillment remains off. Inbox delivery and Overview sign-in are not yet verified.','good');
+  }catch(error){setStatus(error.message+' Do not resend before reviewing delivery.','bad');}
 }
 
 async function previewHighLevelFulfillment(){
