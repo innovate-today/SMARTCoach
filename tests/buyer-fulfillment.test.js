@@ -1,5 +1,5 @@
 const assert = require("assert/strict");
-const { planBuyerFulfillment, createBuyerFulfillment } = require("../lib/buyer-fulfillment");
+const { planBuyerFulfillment, createBuyerFulfillment, controlledBuyerExecutionAllowed } = require("../lib/buyer-fulfillment");
 
 const locationId = "AbCdEfGhIjKlMnOpQrSt";
 const buyer = { accountKey: `sc-${locationId.toLowerCase()}`, locationId };
@@ -30,6 +30,22 @@ function fixture() {
 }
 
 (async () => {
+  const gate = { SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS: buyer.accountKey,
+    SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS: buyer.accountKey };
+  assert.equal(controlledBuyerExecutionAllowed(gate, buyer), true);
+  assert.equal(controlledBuyerExecutionAllowed({}, buyer), false);
+  assert.equal(controlledBuyerExecutionAllowed({ ...gate, SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS: '' }, buyer), false);
+  for (const value of ['', '*', 'all', 'true', 'sc-other', 'sc-abcdefghijklmnopqrstx',
+    `${buyer.accountKey},*`, `${buyer.accountKey},bad`, buyer.accountKey.toUpperCase(), 'sc-12345678901234567890']) {
+    assert.equal(controlledBuyerExecutionAllowed({ ...gate, SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS: value }, buyer), false, value);
+  }
+  assert.equal(controlledBuyerExecutionAllowed({ ...gate,
+    SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS: `sc-12345678901234567890,\n${buyer.accountKey}` }, buyer), true);
+  assert.equal(controlledBuyerExecutionAllowed(gate, { ...buyer, locationId: 'other' }), false);
+  assert.equal(controlledBuyerExecutionAllowed(gate, { ...buyer, accountKey: 'sc-other' }), false);
+  const sellerBuyer = { accountKey: 'sc-qxwjweksyuf7sdofhpb4', locationId: 'QxwjWekSyUf7sDOFHPB4' };
+  assert.equal(controlledBuyerExecutionAllowed({ SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS: sellerBuyer.accountKey,
+    SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS: sellerBuyer.accountKey }, sellerBuyer), false);
   assert.equal(planBuyerFulfillment(verified).stagedPlanReady, true);
   for (const change of [{ locationId: "QxwjWekSyUf7sDOFHPB4" }, { accountKey: "sc-other" }, { purchaseVerified: false },
     { savedConfigurationMatches: false }, { pendingCheckoutMatched: false }, { providerSubscriptionStatus: "past_due" },

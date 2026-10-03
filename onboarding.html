@@ -2001,7 +2001,8 @@ async function previewHighLevelBuyerSetup(){
     if(!data.newBuyerSchemaScopeAvailable)summary+='New-buyer snapshot verification needs the read-only object-schema permission. ';
     if(!data.snapshot||data.snapshot.verified!==true)throw new Error('Buyer snapshot response could not be verified.');
     summary+='Snapshot verified: '+data.snapshot.contactFieldCount+' contact fields and '+data.snapshot.objectCount+' object schemas. ';
-    setStatus(summary+'Live execution remains disabled. No account changes or email sent.','good');
+    summary+=data.controlledExecutionEnabled===true?'Controlled execution is allowlisted for this buyer; explicit unchanged-evidence confirmation is still required. ':'Live execution remains disabled for this buyer. ';
+    setStatus(summary+'Automatic fulfillment remains off. No account changes or email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }

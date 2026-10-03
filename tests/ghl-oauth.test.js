@@ -650,12 +650,17 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
-  for (const mode of ["success", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
-    const f = fixture({ executionEnabled: mode !== "disabled" });
+  for (const mode of ["success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
+    const controlled = mode.startsWith('controlled-');
+    const success = ['success', 'controlled-success'].includes(mode);
+    const f = fixture({ executionEnabled: !controlled && mode !== "disabled" });
     const scopes = "locations.readonly locations/customFields.readonly locations/customValues.readonly locations/customValues.write contacts.readonly contacts.write objects/record.readonly objects/record.write";
     const buyerScopes = scopes + (mode === "missing-scope" ? "" : " objects/schema.readonly");
     f.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write " + buyerScopes;
     f.env.SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS = accountKey;
+    if (controlled) f.env.SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS = mode === 'controlled-wildcard' ? '*'
+      : mode === 'controlled-other-account' ? 'sc-12345678901234567890'
+      : mode === 'controlled-malformed' ? `${accountKey},*` : accountKey;
     f.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-fulfillment-seller";
     f.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
     f.setResponse({ ...f.grant(), scope: f.env.SMARTCOACH_GHL_OAUTH_SCOPES });
@@ -664,6 +669,8 @@ async function run() {
       accountOwnerEmail: "buyer@example.com", coachStaff: [], coachAccessCodes: [], requireCoachAccess: true,
       subscription: { status: "incomplete", amount: "29.99", billingCadence: "monthly" } };
     f.accounts.set(accountKey, structuredClone(original));
+    const realSave = f.registry.saveAccountRecord;
+    f.registry.saveAccountRecord = (key, record) => realSave(key, { ...record, accountKey: key, updatedAt: '2026-10-03T23:00:00.000Z' });
     f.records.set("pendingcheckout", { source: "smartcoach-precheckout", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 - Monthly",
       schoolName: "School", coachName: "Buyer", coachEmail: "buyer@example.com", lastMatchedLocationId: locationId,
       lastLocationCreateEvent: { id: locationId, companyId: "agency-one", email: "buyer@example.com" } });
@@ -711,6 +718,8 @@ async function run() {
     Object.setPrototypeOf(req, { get headers() { return inheritedHeaders; } });
     const preview = await f.invoke("ghl-oauth-fulfill-buyer", req);
     assert.equal(preview.statusCode, 200, `${mode}: ${preview.body.error || ""}`); assert.equal(preview.body.steps.length, 3);
+    assert.equal(preview.body.controlledExecutionEnabled,
+      !['disabled', 'controlled-wildcard', 'controlled-other-account', 'controlled-malformed'].includes(mode));
     assert.deepEqual(f.accounts.get(accountKey), original); assert.equal(sends, 0); assert.equal(valueWrites, 0);
     const snapshotReq = f.request(); snapshotReq.body = { accountKey, locationId, dryRun: true, verifySnapshot: true };
     const snapshot = await f.invoke("ghl-oauth-fulfill-buyer", snapshotReq);
@@ -734,13 +743,20 @@ async function run() {
     }
     assert(!JSON.stringify(snapshot).includes("private-fulfillment-buyer"));
     req.body = { ...req.body, dryRun: false, confirmExecution: true, expectedFingerprint: preview.body.fingerprint };
+    if (mode === 'controlled-no-confirm') req.body.confirmExecution = false;
+    if (mode === 'controlled-stale') req.body.expectedFingerprint = 'stale';
+    if (mode === 'disabled') req.body.fulfillmentExecutionEnabled = true;
     if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
     if (mode === "wrong-origin") req.headers.origin = "https://other.example";
     if (mode === "wrong-buyer") req.body.accountKey = "sc-other";
+    const beforeExecuteCalls = f.calls.length;
     const result = await f.invoke("ghl-oauth-fulfill-buyer", req);
-    assert.equal(result.statusCode, mode === "success" ? 200 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "wrong-buyer" ? 422 : ["no-admin", "wrong-origin", "missing-scope"].includes(mode) ? 403 : 409, `${mode}: ${result.body.error || ""}`);
-    assert.equal(sends, ["success", "failed-send", "missing-message"].includes(mode) ? 1 : 0);
-    if (mode === "success") {
+    assert.equal(result.statusCode, success ? 200 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "wrong-buyer" ? 422 : ["no-admin", "wrong-origin", "missing-scope"].includes(mode) ? 403 : 409, `${mode}: ${result.body.error || ""}`);
+    assert.equal(sends, success || ["failed-send", "missing-message"].includes(mode) ? 1 : 0);
+    if (['disabled', 'controlled-wildcard', 'controlled-other-account', 'controlled-malformed'].includes(mode)) {
+      assert.equal(f.calls.length, beforeExecuteCalls);
+    }
+    if (success) {
       assert.equal(f.accounts.get(accountKey).subscription.amount, "29.00");
       assert.equal(f.accounts.get(accountKey).subscription.status, "trialing");
       assert.equal(f.accounts.get(accountKey).token, ""); assert.equal(f.accounts.get(accountKey).coachStaff.length, 1);
