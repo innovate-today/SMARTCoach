@@ -1866,7 +1866,7 @@ async function reviewHighLevelLegacyPurchase(){
     var amount=Number(document.getElementById('legacyAmount').value);
     if(!Number.isFinite(amount)||amount<=0)throw new Error('Enter the recurring subscription amount.');
     var data=await highLevelConnectionRequest('ghl-oauth-review-legacy-purchase','POST',{
-      preview:true,accountKey:document.getElementById('accountKey').value.trim(),
+      preview:true,verifyExistingSetup:true,accountKey:document.getElementById('accountKey').value.trim(),
       locationId:document.getElementById('locationId').value.trim(),
       schoolName:document.getElementById('legacySchoolName').value.trim(),
       coachName:document.getElementById('legacyCoachName').value.trim(),
@@ -1877,7 +1877,8 @@ async function reviewHighLevelLegacyPurchase(){
     });
     if(data.preview!==true||data.providerPurchaseVerified!==true||data.locationIdentityVerified!==true
       ||data.accountUnchanged!==true||data.pendingCheckoutUnchanged!==true||data.emailSent!==false
-      ||data.recoveryReady!==false||data.automaticFulfillmentReady!==false||!Array.isArray(data.blockers)){
+      ||data.recoveryReady!==false||data.automaticFulfillmentReady!==false||!Array.isArray(data.blockers)
+      ||!data.existingSetup||data.existingSetup.existingSetupReviewVerified!==true){
       throw new Error('Legacy purchase review response could not be verified.');
     }
     setStatus('Legacy provider purchase and location verified. '+data.productName+'; '+data.currency+' '+data.amount+' '+data.billingCadence+'. '+data.blockers.join(' ')+' Recovery remains disabled. No account changes or email sent.','good');

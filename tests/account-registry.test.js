@@ -4,6 +4,7 @@ const {
   registryHealth,
   saveAccountRecord,
   loadAccountRecord,
+  inspectAccountLocationReferences,
   saveAttendanceRecords,
   loadAttendanceRecords,
   saveKeepTrakNotes,
@@ -504,7 +505,47 @@ async function testCoachDeviceUsageCountsAuthorizedDevices() {
   }
 }
 
+async function testLocationReferencesReadOnly() {
+  const previousFetch = global.fetch;
+  const locationId = "AbCdEfGhIjKlMnOpQrSt";
+  const prefix = "test:account:";
+  try {
+    await withEnv({ SMARTCOACH_REGISTRY_REST_URL: "https://registry.example", SMARTCOACH_REGISTRY_REST_TOKEN: "private-token", SMARTCOACH_REGISTRY_PREFIX: prefix }, async () => {
+      for (const mode of ["found", "empty", "invalid-scan", "corrupt", "partial", "oversize", "missing"]) {
+        let scans = 0;
+        const calls = [];
+        global.fetch = async (url, options) => {
+          const parts = new URL(url).pathname.split("/").slice(1).map(decodeURIComponent);
+          calls.push(parts);
+          assert.strictEqual(options.method, "POST");
+          let result;
+          if (parts[0] === "scan") {
+            scans++;
+            result = mode === "invalid-scan" ? "invalid" : [mode === "partial" || scans === 1 && mode === "found" ? "42" : "0",
+              mode === "oversize" ? Array.from({ length: 501 }, (_, index) => prefix + index)
+                : mode === "empty" || mode === "partial" ? [] : [prefix + "old-school", prefix + "other", prefix + "old-school:records:staff"]];
+          } else {
+            assert.strictEqual(parts[0], "mget");
+            assert(!parts.some(part => part.includes(":records:")));
+            result = mode === "missing" ? [] : [mode === "corrupt" ? "invalid-json" : JSON.stringify({ locationId, token: "never-return-token", coachStaff: [{ coachCodeHash: "private-hash" }] }), JSON.stringify({ locationId: "OtherBuyerLocationId" })];
+          }
+          return { ok: true, text: async () => JSON.stringify({ result }) };
+        };
+        const reviewed = await inspectAccountLocationReferences(locationId);
+        assert.strictEqual(reviewed.complete, ["found", "empty"].includes(mode));
+        if (mode === "found") assert.deepStrictEqual(reviewed.references, ["old-school"]);
+        if (mode === "empty") assert.deepStrictEqual(reviewed.references, []);
+        if (mode === "partial") assert.strictEqual(scans, 20);
+        assert(calls.every(parts => ["scan", "mget"].includes(parts[0])));
+        assert(!JSON.stringify(reviewed).includes("never-return-token"));
+        assert(!JSON.stringify(reviewed).includes("private-hash"));
+      }
+    });
+  } finally { global.fetch = previousFetch; }
+}
+
 (async () => {
+  await testLocationReferencesReadOnly();
   await testVercelKvAliases();
   await testUpstashAliasesAndCustomPrefix();
   await testSchoolRecordsMirrorManifestFallback();

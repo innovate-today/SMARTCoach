@@ -26,6 +26,8 @@ function fixture(options = {}) {
   };
   const registry = {
     registryConfigured: () => true,
+    inspectAccountLocationReferences: async locationId => options.inventory || ({ complete: true,
+      references: [...accounts].filter(([, record]) => record.locationId === locationId).map(([key]) => key) }),
     loadAccountRecord: async (key) => ({ found: accounts.has(key), record: accounts.get(key) }),
     saveAccountRecord: async (key, record) => { accounts.set(key, structuredClone(record)); return { saved: true }; },
     loadAccountScopedRecord: async (account, namespace) => ({ record: records.get(namespace) }),
@@ -177,13 +179,20 @@ async function run() {
   const accountKey = `sc-${locationId.toLowerCase()}`;
   for (const mode of ["valid", "ghl-id", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
-    "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error"]) {
-    const review = fixture();
+    "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
+    "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-bad-env"]) {
+    const review = fixture(mode === "scan-incomplete" ? { inventory: { complete: false, references: [] } } : {});
     review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " saas/company.read";
     review.setResponse({ ...review.grant(), scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES });
     const auth = await review.start();
     await review.invoke("crm-connect-callback", review.callbackReq(auth));
     if (mode === "existing") review.accounts.set(accountKey, { locationId, coachStaff: [{ id: "preserve" }] });
+    if (mode === "scan-alt") review.accounts.set("older-school", { locationId, token: "keep-pit", coachStaff: [{ coachCodeHash: "private-hash" }] });
+    if (mode === "scan-env") review.env.SMARTCOACH_ACCOUNTS = JSON.stringify({ "older-school": { ghlLocationId: locationId, token: "keep-pit" } });
+    if (mode === "scan-env-suffix") review.env.GHL_LOCATION_ID_OLD_SCHOOL = locationId;
+    if (mode === "scan-bad-env") review.env.SMARTCOACH_ACCOUNTS = "invalid-json";
+    if (mode === "scan-access") review.records.set(`buyeraccess-${locationId}`, { status: "attempted", staffId: "keep" });
+    if (mode === "scan-fulfillment") review.records.set(`buyerfulfillment-${locationId}`, { status: "uncertain" });
     if (mode === "missing-scope") {
       review.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write locations.readonly";
       const again = await review.start();
@@ -210,6 +219,7 @@ async function run() {
     const req = review.request(mode === "get" ? "GET" : "POST");
     req.body = { preview: true, accountKey, locationId, schoolName: "Athletic Develop", coachName: "Jenn Moore", ownerEmail: "BUYER@example.com",
       expectedSubscriptionId: "sub_verified", expectedProductName: "SMARTCoach Pro 25 - Monthly", expectedBillingCadence: "monthly", expectedAmount: "19.00" };
+    if (mode.startsWith("scan-")) req.body.verifyExistingSetup = true;
     if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
     if (mode === "wrong-origin") req.headers.origin = "https://other.example";
     if (mode === "execute") req.body.confirmRecovery = true;
@@ -224,7 +234,7 @@ async function run() {
     if (mode === "wrong-cadence") req.body.expectedBillingCadence = "annual";
     const recordsBefore = structuredClone([...review.records]);
     const result = await review.invoke("ghl-oauth-review-legacy-purchase", req);
-    if (["valid", "ghl-id"].includes(mode)) {
+    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment"].includes(mode)) {
       assert.equal(result.statusCode, 200);
       assert.equal(result.body.providerPurchaseVerified, true);
       assert.equal(result.body.ownerEmail, "buyer@example.com");
@@ -236,6 +246,10 @@ async function run() {
       for (const key of ["originalOrderVerified", "alternateAccountHistoryVerified", "buyerOAuthVerified", "recoveryReady", "emailSent", "automaticFulfillmentReady"]) assert.equal(result.body[key], false);
       assert.equal(result.body.accountUnchanged, true);
       assert.equal(result.body.pendingCheckoutUnchanged, true);
+      if (mode.startsWith("scan-")) {
+        assert.equal(result.body.existingSetup.existingSetupReviewVerified, true);
+        assert.equal(result.body.existingSetup.existingSetupOrHistoryPresent, mode !== "scan-empty");
+      }
       const normal = await review.invoke("ghl-oauth-check-subscription", { ...req, body: { accountKey, locationId } });
       assert.equal(normal.statusCode, 422, "Normal provisioning must still require saved buyer mapping");
     } else assert(result.statusCode >= 400, mode);
@@ -245,8 +259,8 @@ async function run() {
     if (mode === "wrong-cadence") assert.match(result.body.error, /blocked: billingCadence\./);
     if (mode === "bad-catalog") assert.match(result.body.error, /purchaseCatalog.*exact supported SMARTCoach/);
     assert.deepEqual([...review.records], recordsBefore, "Review must not persist recovery, grants, audits or checkout records");
-    assert.equal(review.accounts.size, ["existing", "race"].includes(mode) ? 1 : 0);
-    for (const secret of ["private-access", "private-location-token", "private-provider-response", "never-return-me"]) assert(!JSON.stringify(result).includes(secret));
+    assert.equal(review.accounts.size, ["existing", "race", "scan-alt"].includes(mode) ? 1 : 0);
+    for (const secret of ["private-access", "private-location-token", "private-provider-response", "never-return-me", "keep-pit", "private-hash"]) assert(!JSON.stringify(result).includes(secret));
   }
   for (const mode of ["valid", "reconcile", "reconcile-bad-price", "reconcile-bad-confirm", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "wrapped-empty", "wrapped-wrong-buyer", "ambiguous", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
     const check = fixture();
@@ -945,7 +959,7 @@ async function run() {
     legacySubscriptionId: { value: "sub_verified" }, legacyProductName: { value: "SMARTCoach Pro 25 - Monthly" }, legacyAmount: { value: "19" } });
   const safeReview = { preview: true, providerPurchaseVerified: true, locationIdentityVerified: true,
     accountUnchanged: true, pendingCheckoutUnchanged: true, emailSent: false, recoveryReady: false,
-    automaticFulfillmentReady: false, productName: "SMARTCoach Pro 25 - Monthly", currency: "USD", amount: "19.00", billingCadence: "monthly", blockers: ["Original order pending."] };
+    automaticFulfillmentReady: false, existingSetup: { existingSetupReviewVerified: true }, productName: "SMARTCoach Pro 25 - Monthly", currency: "USD", amount: "19.00", billingCadence: "monthly", blockers: ["Original order pending."] };
   pageResponse = safeReview;
   const beforeLegacy = pageCalls.length;
   await context.reviewHighLevelLegacyPurchase();
@@ -953,11 +967,12 @@ async function run() {
   assert(pageCalls.at(-1).url.endsWith("ghl-oauth-review-legacy-purchase"));
   const legacyBody = JSON.parse(pageCalls.at(-1).options.body);
   assert.equal(legacyBody.preview, true);
+  assert.equal(legacyBody.verifyExistingSetup, true);
   assert.equal(legacyBody.expectedAmount, "19.00");
   assert.equal(legacyBody.coachName, "Jenn Moore");
   assert.equal(legacyBody.expectedBillingCadence, "monthly");
   assert.match(statuses.pop()[0], /Recovery remains disabled/);
-  for (const change of [{ emailSent: true }, { recoveryReady: true }, { automaticFulfillmentReady: true }, { accountUnchanged: false }, { blockers: null }]) {
+  for (const change of [{ emailSent: true }, { recoveryReady: true }, { automaticFulfillmentReady: true }, { accountUnchanged: false }, { blockers: null }, { existingSetup: null }, { existingSetup: { existingSetupReviewVerified: false } }]) {
     pageResponse = { ...safeReview, ...change };
     await context.reviewHighLevelLegacyPurchase();
     assert.match(statuses.pop()[0], /response could not be verified/);
