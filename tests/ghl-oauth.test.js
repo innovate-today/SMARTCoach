@@ -237,6 +237,11 @@ async function run() {
       const normal = await review.invoke("ghl-oauth-check-subscription", { ...req, body: { accountKey, locationId } });
       assert.equal(normal.statusCode, 422, "Normal provisioning must still require saved buyer mapping");
     } else assert(result.statusCode >= 400, mode);
+    if (mode === "wrong-subscription") assert.match(result.body.error, /blocked: subscriptionId\./);
+    if (mode === "wrong-product") assert.match(result.body.error, /blocked: productName\./);
+    if (mode === "wrong-amount") assert.match(result.body.error, /blocked: amount\./);
+    if (mode === "wrong-cadence") assert.match(result.body.error, /blocked: billingCadence\./);
+    if (mode === "bad-catalog") assert.match(result.body.error, /purchaseCatalog.*exact supported SMARTCoach/);
     assert.deepEqual([...review.records], recordsBefore, "Review must not persist recovery, grants, audits or checkout records");
     assert.equal(review.accounts.size, ["existing", "race"].includes(mode) ? 1 : 0);
     for (const secret of ["private-access", "private-location-token", "private-provider-response", "never-return-me"]) assert(!JSON.stringify(result).includes(secret));
