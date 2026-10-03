@@ -396,6 +396,9 @@ async function run() {
       throw new Error("Unexpected fulfillment provider request");
     });
     const req = f.request(); req.body = { accountKey, locationId, dryRun: true };
+    const inheritedHeaders = req.headers;
+    delete req.headers;
+    Object.setPrototypeOf(req, { get headers() { return inheritedHeaders; } });
     const preview = await f.invoke("ghl-oauth-fulfill-buyer", req);
     assert.equal(preview.statusCode, 200, `${mode}: ${preview.body.error || ""}`); assert.equal(preview.body.steps.length, 3);
     assert.deepEqual(f.accounts.get(accountKey), original); assert.equal(sends, 0); assert.equal(valueWrites, 0);
