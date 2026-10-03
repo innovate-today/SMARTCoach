@@ -236,6 +236,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="legacySaleLinkId" type="text" maxlength="24">
         </div>
         <button id="ghlOAuthLegacyReviewBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase()">Review Legacy Purchase</button>
+        <button id="ghlOAuthLegacyCrmBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase(true)">Preview Legacy Buyer CRM</button>
       </details>
       <details>
         <summary>Checkout Identity Approval</summary>
@@ -1866,8 +1867,8 @@ async function checkHighLevelBuyerSubscription(){
   finally{button.disabled=false;}
 }
 
-async function reviewHighLevelLegacyPurchase(){
-  var button=document.getElementById('ghlOAuthLegacyReviewBtn');
+async function reviewHighLevelLegacyPurchase(verifyBuyerCrm){
+  var button=document.getElementById(verifyBuyerCrm===true?'ghlOAuthLegacyCrmBtn':'ghlOAuthLegacyReviewBtn');
   button.disabled=true;
   try{
     var productName=document.getElementById('legacyProductName').value;
@@ -1887,6 +1888,10 @@ async function reviewHighLevelLegacyPurchase(){
     var orderId=document.getElementById('legacyOrderId').value.trim();
     var saleLinkId=document.getElementById('legacySaleLinkId').value.trim();
     if(orderId||saleLinkId){request.expectedOrderId=orderId;request.expectedSaleLinkId=saleLinkId;}
+    if(verifyBuyerCrm===true){
+      if(!orderId||!saleLinkId)throw new Error('Original order and sale-link IDs are required for buyer CRM preview.');
+      request.verifyBuyerCrm=true;
+    }
     for(var batch=0;batch<100;batch++){
       data=await highLevelConnectionRequest('ghl-oauth-review-legacy-purchase','POST',request);
       if(data.inventoryComplete!==false)break;
@@ -1908,6 +1913,10 @@ async function reviewHighLevelLegacyPurchase(){
       ||data.orderReview.subscriptionId!==request.expectedSubscriptionId||data.orderReview.saleLinkId!==saleLinkId)){
       throw new Error('Original order verification response could not be verified.');
     }
+    if(verifyBuyerCrm===true&&(!data.buyerCrmReview||data.buyerCrmReview.accountKey!==request.accountKey
+      ||data.buyerCrmReview.locationId!==request.locationId||data.buyerCrmReview.crmReadsVerified!==true
+      ||data.buyerCrmReview.snapshot?.verified!==true||data.buyerCrmReview.buyerTokenPersisted!==false
+      ||data.buyerCrmReview.consumerAccessEnabled!==false))throw new Error('Buyer CRM preview response could not be verified.');
     setStatus('Legacy provider purchase and location verified. '+data.productName+'; '+data.currency+' '+data.amount+' '+data.billingCadence+'. '+data.blockers.join(' ')+' Recovery remains disabled. No account changes or email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}

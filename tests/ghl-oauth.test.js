@@ -182,12 +182,14 @@ async function run() {
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
     "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-resume", "scan-private-reason", "scan-bad-env", "scan-corrupt-history",
+    "order-crm-valid", "order-crm-token", "order-crm-scope", "order-crm-contact", "order-crm-fields", "order-crm-schema", "order-crm-no-inventory", "order-crm-missing-install",
     "order-valid", "order-install-missing", "order-install-future", "order-install-ambiguous", "order-usd-lower", "order-currency-other", "order-denied", "order-bad-request", "order-validation", "order-seller", "order-link", "order-email", "order-source", "order-test", "order-product", "order-price", "order-cadence", "order-shape", "order-missing-token"]) {
     const review = fixture(["scan-incomplete", "scan-limit", "scan-private-reason"].includes(mode)
       ? { inventory: { complete: false, references: [], reason: mode === "scan-limit" ? "scan_page_limit_reached" : "private-inventory-error" } }
       : { corruptHistory: mode === "scan-corrupt-history" });
     review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " saas/company.read";
     if (mode.startsWith("order-")) review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " oauth.readonly";
+    if (mode.startsWith("order-crm-")) review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " contacts.readonly contacts.write locations/customFields.readonly locations/customValues.readonly locations/customValues.write objects/record.readonly objects/record.write objects/schema.readonly";
     if (mode.startsWith("order-") && mode !== "order-missing-token") review.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-token";
     review.setResponse({ ...review.grant(), scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES });
     const auth = await review.start();
@@ -206,7 +208,7 @@ async function run() {
       await review.invoke("crm-connect-callback", review.callbackReq(again));
     }
     review.setProvider((url, options) => {
-      assert.equal(options.method, undefined, "Review must only read provider data");
+      assert.equal(options.method, new URL(url).pathname === "/oauth/location-token" ? "POST" : undefined, "Only temporary credential exchange may use POST");
       if (mode === "forbidden") return { mockHttpStatus: 403, secret: "private-provider-response" };
       if (mode === "provider-error") throw new Error("private-provider-response");
       const path = new URL(url).pathname;
@@ -216,9 +218,28 @@ async function run() {
         assert.equal(new URL(url).searchParams.get("versionId"), APP_ID);
         assert.equal(options.headers.Authorization, "Bearer private-access");
         return { installToFutureLocations: mode === "order-install-future",
-          items: mode === "order-install-missing" ? [{ _id: "other", isInstalled: true }]
+          items: ["order-install-missing", "order-crm-missing-install"].includes(mode) ? [{ _id: "other", isInstalled: true }]
             : mode === "order-install-ambiguous" ? [{ _id: locationId, isInstalled: true }, { _id: locationId, isInstalled: true }]
               : [{ _id: locationId, isInstalled: true }] };
+      }
+      if (path === "/oauth/location-token") {
+        assert.equal(new URLSearchParams(options.body).get("locationId"), locationId);
+        assert.equal(new URLSearchParams(options.body).get("companyId"), "agency-one");
+        assert.equal(options.headers.Authorization, "Bearer private-access");
+        return { access_token: "private-preview-token", token_type: "Bearer", expires_in: 86400,
+          locationId: mode === "order-crm-token" ? "other" : locationId,
+          scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES.split(" ").filter(scope => !scope.startsWith("oauth.") && scope !== "saas/company.read").join(" ") + (mode === "order-crm-scope" ? " users.write" : "") };
+      }
+      if (path === "/contacts/") return { contacts: [{ locationId: mode === "order-crm-contact" ? "other" : locationId }] };
+      if (path === `/locations/${locationId}/customValues`) return { customValues: [] };
+      const mapping = require("../smart_trak_object_mapping.json");
+      if (path === `/locations/${locationId}/customFields`) return { customFields: mode === "order-crm-fields" ? [] : Object.values(mapping.contactFields).map(field => ({ ...field, locationId })) };
+      if (path.startsWith("/objects/")) {
+        assert.equal(options.headers.Authorization, "Bearer private-preview-token");
+        assert.equal(new URL(url).searchParams.get("locationId"), locationId);
+        const object = Object.values(mapping.objects).find(item => item.internalName === decodeURIComponent(path.split("/")[2]));
+        return { object: { key: object.internalName, locationId: mode === "order-crm-schema" ? "other" : locationId },
+          fields: Object.entries(object.fields).map(([key, field]) => ({ id: field.id, locationId, fieldKey: `${object.internalName}.${key}`, dataType: field.type })) };
       }
       if (path === "/locations/QxwjWekSyUf7sDOFHPB4") {
         assert.equal(options.headers.Authorization, "Bearer private-seller-token");
@@ -274,6 +295,7 @@ async function run() {
     if (mode === "ghl-id") req.body.expectedSubscriptionId = "6abd897d66ad43f827dbaa4e";
     if (mode.startsWith("order-")) Object.assign(req.body, { expectedSubscriptionId: "6abd897d66ad43f827dbaa4e",
       expectedOrderId: "6abd8977b229ab130b0f3c93", expectedSaleLinkId: "6a1b37c203b17c94f5713b61" });
+    if (mode.startsWith("order-crm-")) Object.assign(req.body, { verifyBuyerCrm: true, verifyExistingSetup: mode !== "order-crm-no-inventory" });
     if (mode === "wrong-product") req.body.expectedProductName = "SMARTCoach Pro 100 - Monthly";
     if (mode === "wrong-amount") req.body.expectedAmount = "29.00";
     if (mode === "wrong-cadence") req.body.expectedBillingCadence = "annual";
@@ -304,7 +326,7 @@ async function run() {
       review.advance(10 * 60 * 1000);
       assert.equal((await review.invoke("ghl-oauth-review-legacy-purchase", req)).statusCode, 409);
     }
-    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-resume", "order-valid", "order-install-missing", "order-usd-lower"].includes(mode)) {
+    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-resume", "order-crm-valid", "order-valid", "order-install-missing", "order-usd-lower"].includes(mode)) {
       assert.equal(result.statusCode, 200);
       assert.equal(result.body.providerPurchaseVerified, true);
       assert.equal(result.body.ownerEmail, "buyer@example.com");
@@ -313,7 +335,13 @@ async function run() {
       assert.equal(result.body.amount, "19.00");
       assert.equal(result.body.planTrialDays, 30);
       assert.equal(result.body.subscriptionId, req.body.expectedSubscriptionId);
-      assert.equal(result.body.originalOrderVerified, ["order-valid", "order-install-missing", "order-usd-lower"].includes(mode));
+      assert.equal(result.body.originalOrderVerified, ["order-crm-valid", "order-valid", "order-install-missing", "order-usd-lower"].includes(mode));
+      if (mode === "order-crm-valid") {
+        assert.equal(result.body.buyerCrmReview.crmReadsVerified, true);
+        assert.equal(result.body.buyerCrmReview.snapshot.verified, true);
+        assert.equal(result.body.buyerCrmReview.buyerTokenPersisted, false);
+        assert.equal(result.body.buyerCrmReview.consumerAccessEnabled, false);
+      }
       if (mode.startsWith("order-")) {
         assert.equal(result.body.connectorInstallation.installed, mode !== "order-install-missing");
         assert.equal(result.body.connectorInstallation.buyerTokenRequested, false);
@@ -339,10 +367,11 @@ async function run() {
     if (mode === "order-bad-request") assert.match(result.body.error, /\(order, HTTP 400\)/);
     if (mode === "order-validation") assert.match(result.body.error, /Validation fields: altType, locationId\./);
     if (mode === "order-currency-other") assert.match(result.body.error, /blocked: currency\./);
+    if (["order-crm-missing-install", "order-crm-no-inventory"].includes(mode)) assert(!review.calls.some(call => new URL(call.url).pathname === "/oauth/location-token"));
     if (mode === "scan-private-reason") assert.match(result.body.error, /\(inventory_incomplete\)/);
     assert.deepEqual([...review.records], recordsBefore, "Review must not persist recovery, grants, audits or checkout records");
     assert.equal(review.accounts.size, ["existing", "race", "scan-alt"].includes(mode) ? 1 : 0);
-    for (const secret of ["private-access", "private-location-token", "private-provider-response", "never-return-me", "keep-pit", "private-hash", "private-history-error", "private-inventory-error", "private-seller-token"]) assert(!JSON.stringify(result).includes(secret));
+    for (const secret of ["private-preview-token", "private-access", "private-location-token", "private-provider-response", "never-return-me", "keep-pit", "private-hash", "private-history-error", "private-inventory-error", "private-seller-token"]) assert(!JSON.stringify(result).includes(secret));
   }
   for (const mode of ["valid", "reconcile", "reconcile-bad-price", "reconcile-bad-confirm", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "wrapped-empty", "wrapped-wrong-buyer", "ambiguous", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
     const check = fixture();
@@ -1036,7 +1065,7 @@ async function run() {
   assert.equal(createBody.confirmCreate, true); assert.equal(createBody.expectedProductPlan, "pro100");
   assert.equal(createBody.expectedOwnerEmail, "support@example.com");
   assert.equal(nodes.ghlOAuthHeadCoachBtn.disabled, false);
-  Object.assign(nodes, { ghlOAuthLegacyReviewBtn: { disabled: false }, legacySchoolName: { value: "Athletic Develop" },
+  Object.assign(nodes, { ghlOAuthLegacyReviewBtn: { disabled: false }, ghlOAuthLegacyCrmBtn: { disabled: false }, legacySchoolName: { value: "Athletic Develop" },
     legacyCoachName: { value: "Jenn Moore" }, legacyOwnerEmail: { value: "buyer@example.com" },
     legacySubscriptionId: { value: "sub_verified" }, legacyProductName: { value: "SMARTCoach Pro 25 - Monthly" }, legacyAmount: { value: "19" },
     legacyOrderId: { value: "" }, legacySaleLinkId: { value: "" } });
@@ -1072,6 +1101,21 @@ async function run() {
   await context.reviewHighLevelLegacyPurchase();
   assert.match(statuses.pop()[0], /Recovery remains disabled/);
   assert.equal(JSON.parse(pageCalls.at(-1).options.body).expectedOrderId, nodes.legacyOrderId.value);
+  const verifiedOrderReview = pageResponse;
+  await context.reviewHighLevelLegacyPurchase(true);
+  assert.match(statuses.pop()[0], /Buyer CRM preview response could not be verified/);
+  const buyerCrmReview = { accountKey: nodes.accountKey.value, locationId: nodes.locationId.value,
+    crmReadsVerified: true, snapshot: { verified: true }, buyerTokenPersisted: false, consumerAccessEnabled: false };
+  pageResponse = { ...verifiedOrderReview, buyerCrmReview };
+  await context.reviewHighLevelLegacyPurchase(true);
+  assert.match(statuses.pop()[0], /Recovery remains disabled/);
+  assert.equal(JSON.parse(pageCalls.at(-1).options.body).verifyBuyerCrm, true);
+  for (const change of [{ buyerTokenPersisted: true }, { consumerAccessEnabled: true }, { locationId: "wrong" }, { snapshot: { verified: false } }]) {
+    pageResponse = { ...verifiedOrderReview, buyerCrmReview: { ...buyerCrmReview, ...change } };
+    await context.reviewHighLevelLegacyPurchase(true);
+    assert.match(statuses.pop()[0], /Buyer CRM preview response could not be verified/);
+    assert.equal(nodes.ghlOAuthLegacyCrmBtn.disabled, false);
+  }
   nodes.legacyAmount.value = "";
   const beforeInvalidAmount = pageCalls.length;
   await context.reviewHighLevelLegacyPurchase();
