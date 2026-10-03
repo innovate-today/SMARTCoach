@@ -1842,11 +1842,13 @@ async function previewHighLevelBuyerSetup(){
   button.disabled=true;
   try{
     var data=await highLevelConnectionRequest('ghl-oauth-fulfill-buyer','POST',{
-      accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),dryRun:true
+      accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),dryRun:true,verifySnapshot:true
     });
     if(!data.dryRun||!data.accountUnchanged||data.emailSent!==false||data.automaticFulfillmentReady!==false)throw new Error('Buyer setup dry-run response could not be verified.');
     var summary=data.nextAction==='preserve_existing_access'?'Buyer setup dry run verified: existing head coach and accepted access email will be preserved. No setup steps needed. ':'Buyer setup dry run verified: '+data.steps.length+' staged steps. Snapshot and permissions must verify before setup. ';
     if(!data.newBuyerSchemaScopeAvailable)summary+='New-buyer snapshot verification needs the read-only object-schema permission. ';
+    if(!data.snapshot||data.snapshot.verified!==true)throw new Error('Buyer snapshot response could not be verified.');
+    summary+='Snapshot verified: '+data.snapshot.contactFieldCount+' contact fields and '+data.snapshot.objectCount+' object schemas. ';
     setStatus(summary+'Live execution remains disabled. No account changes or email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}

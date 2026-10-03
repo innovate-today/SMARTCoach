@@ -402,6 +402,27 @@ async function run() {
     const preview = await f.invoke("ghl-oauth-fulfill-buyer", req);
     assert.equal(preview.statusCode, 200, `${mode}: ${preview.body.error || ""}`); assert.equal(preview.body.steps.length, 3);
     assert.deepEqual(f.accounts.get(accountKey), original); assert.equal(sends, 0); assert.equal(valueWrites, 0);
+    const snapshotReq = f.request(); snapshotReq.body = { accountKey, locationId, dryRun: true, verifySnapshot: true };
+    const snapshot = await f.invoke("ghl-oauth-fulfill-buyer", snapshotReq);
+    const invalidSnapshot = ["missing-scope", "missing-fields", "wrong-schema", "wrong-field-type"].includes(mode);
+    assert.equal(snapshot.statusCode, invalidSnapshot ? mode === "missing-scope" ? 403 : 409 : 200, `${mode}: snapshot`);
+    if (!invalidSnapshot) {
+      assert.deepEqual(snapshot.body.snapshot, { verified: true,
+        contactFieldCount: Object.keys(mapping.contactFields).length, objectCount: Object.keys(mapping.objects).length });
+      assert.equal(snapshot.body.accountUnchanged, true); assert.equal(snapshot.body.emailSent, false);
+      assert.equal(snapshot.body.automaticFulfillmentReady, false);
+    }
+    assert.deepEqual(f.accounts.get(accountKey), original); assert.equal(sends, 0); assert.equal(valueWrites, 0);
+    for (const denied of ["no-admin", "wrong-origin", "wrong-buyer"]) {
+      const rejected = f.request(); rejected.body = { ...snapshotReq.body };
+      if (denied === "no-admin") delete rejected.headers["x-smartcoach-setup-code"];
+      if (denied === "wrong-origin") rejected.headers.origin = "https://other.example";
+      if (denied === "wrong-buyer") rejected.body.accountKey = "sc-other";
+      const before = f.calls.length;
+      assert.equal((await f.invoke("ghl-oauth-fulfill-buyer", rejected)).statusCode, denied === "wrong-buyer" ? 422 : 403);
+      assert.equal(f.calls.length, before);
+    }
+    assert(!JSON.stringify(snapshot).includes("private-fulfillment-buyer"));
     req.body = { ...req.body, dryRun: false, confirmExecution: true, expectedFingerprint: preview.body.fingerprint };
     if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
     if (mode === "wrong-origin") req.headers.origin = "https://other.example";
