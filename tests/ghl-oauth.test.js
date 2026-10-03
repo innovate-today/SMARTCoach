@@ -182,7 +182,7 @@ async function run() {
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
     "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-resume", "scan-private-reason", "scan-bad-env", "scan-corrupt-history",
-    "order-valid", "order-denied", "order-bad-request", "order-seller", "order-link", "order-email", "order-source", "order-test", "order-product", "order-price", "order-cadence", "order-shape", "order-missing-token"]) {
+    "order-valid", "order-denied", "order-bad-request", "order-validation", "order-seller", "order-link", "order-email", "order-source", "order-test", "order-product", "order-price", "order-cadence", "order-shape", "order-missing-token"]) {
     const review = fixture(["scan-incomplete", "scan-limit", "scan-private-reason"].includes(mode)
       ? { inventory: { complete: false, references: [], reason: mode === "scan-limit" ? "scan_page_limit_reached" : "private-inventory-error" } }
       : { corruptHistory: mode === "scan-corrupt-history" });
@@ -220,6 +220,8 @@ async function run() {
         assert.equal(new URL(url).searchParams.get("altId"), "QxwjWekSyUf7sDOFHPB4");
         if (mode === "order-denied") return { mockHttpStatus: 403, secret: "private-provider-response" };
         if (mode === "order-bad-request") return { mockHttpStatus: 400, secret: "private-provider-response" };
+        if (mode === "order-validation") return { mockHttpStatus: 422,
+          message: ["altType must be a string private-provider-response", "private-provider-response", "altType should not be empty", "locationId must be a string"] };
         if (mode === "order-shape") return { data: { secret: "private-provider-response" } };
         const common = { altId: "QxwjWekSyUf7sDOFHPB4", altType: "location", contactId: "customer",
           contactSnapshot: { email: mode === "order-email" ? "other@example.com" : "buyer@example.com" }, currency: "USD",
@@ -318,6 +320,7 @@ async function run() {
     if (mode === "scan-limit") assert.match(result.body.error, /\(scan_page_limit_reached\)/);
     if (mode === "order-denied") assert.match(result.body.error, /\(order, HTTP 403\)/);
     if (mode === "order-bad-request") assert.match(result.body.error, /\(order, HTTP 400\)/);
+    if (mode === "order-validation") assert.match(result.body.error, /Validation fields: altType, locationId\./);
     if (mode === "scan-private-reason") assert.match(result.body.error, /\(inventory_incomplete\)/);
     assert.deepEqual([...review.records], recordsBefore, "Review must not persist recovery, grants, audits or checkout records");
     assert.equal(review.accounts.size, ["existing", "race", "scan-alt"].includes(mode) ? 1 : 0);
