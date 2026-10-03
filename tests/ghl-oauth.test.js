@@ -182,7 +182,7 @@ async function run() {
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
     "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-resume", "scan-private-reason", "scan-bad-env", "scan-corrupt-history",
-    "order-valid", "order-denied", "order-bad-request", "order-validation", "order-seller", "order-link", "order-email", "order-source", "order-test", "order-product", "order-price", "order-cadence", "order-shape", "order-missing-token"]) {
+    "order-valid", "order-usd-lower", "order-currency-other", "order-denied", "order-bad-request", "order-validation", "order-seller", "order-link", "order-email", "order-source", "order-test", "order-product", "order-price", "order-cadence", "order-shape", "order-missing-token"]) {
     const review = fixture(["scan-incomplete", "scan-limit", "scan-private-reason"].includes(mode)
       ? { inventory: { complete: false, references: [], reason: mode === "scan-limit" ? "scan_page_limit_reached" : "private-inventory-error" } }
       : { corruptHistory: mode === "scan-corrupt-history" });
@@ -225,7 +225,7 @@ async function run() {
           message: ["altType must be a string private-provider-response", "private-provider-response", "altType should not be empty", "locationId must be a string"] };
         if (mode === "order-shape") return { data: { secret: "private-provider-response" } };
         const common = { altId: "QxwjWekSyUf7sDOFHPB4", altType: "location", contactId: "customer",
-          contactSnapshot: { email: mode === "order-email" ? "other@example.com" : "buyer@example.com" }, currency: "USD",
+          contactSnapshot: { email: mode === "order-email" ? "other@example.com" : "buyer@example.com" }, currency: mode === "order-usd-lower" ? "usd" : mode === "order-currency-other" ? "CAD" : "USD",
           liveMode: mode !== "order-test", markAsTest: false };
         const source = { type: "payment_link", subType: "payments_dashboard", id: mode === "order-source" ? "other" : "6a1b37c203b17c94f5713b61" };
         if (path.startsWith("/payments/orders/")) return { ...common, _id: "6abd8977b229ab130b0f3c93", status: "completed", amount: 0, source,
@@ -293,7 +293,7 @@ async function run() {
       review.advance(10 * 60 * 1000);
       assert.equal((await review.invoke("ghl-oauth-review-legacy-purchase", req)).statusCode, 409);
     }
-    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-resume", "order-valid"].includes(mode)) {
+    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-resume", "order-valid", "order-usd-lower"].includes(mode)) {
       assert.equal(result.statusCode, 200);
       assert.equal(result.body.providerPurchaseVerified, true);
       assert.equal(result.body.ownerEmail, "buyer@example.com");
@@ -302,7 +302,7 @@ async function run() {
       assert.equal(result.body.amount, "19.00");
       assert.equal(result.body.planTrialDays, 30);
       assert.equal(result.body.subscriptionId, req.body.expectedSubscriptionId);
-      assert.equal(result.body.originalOrderVerified, mode === "order-valid");
+      assert.equal(result.body.originalOrderVerified, ["order-valid", "order-usd-lower"].includes(mode));
       for (const key of ["alternateAccountHistoryVerified", "buyerOAuthVerified", "recoveryReady", "emailSent", "automaticFulfillmentReady"]) assert.equal(result.body[key], false);
       assert.equal(result.body.accountUnchanged, true);
       assert.equal(result.body.pendingCheckoutUnchanged, true);
@@ -322,6 +322,7 @@ async function run() {
     if (mode === "order-denied") assert.match(result.body.error, /\(order, HTTP 403\)/);
     if (mode === "order-bad-request") assert.match(result.body.error, /\(order, HTTP 400\)/);
     if (mode === "order-validation") assert.match(result.body.error, /Validation fields: altType, locationId\./);
+    if (mode === "order-currency-other") assert.match(result.body.error, /blocked: currency\./);
     if (mode === "scan-private-reason") assert.match(result.body.error, /\(inventory_incomplete\)/);
     assert.deepEqual([...review.records], recordsBefore, "Review must not persist recovery, grants, audits or checkout records");
     assert.equal(review.accounts.size, ["existing", "race", "scan-alt"].includes(mode) ? 1 : 0);
