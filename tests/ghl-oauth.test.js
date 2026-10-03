@@ -175,7 +175,7 @@ async function run() {
 
   const locationId = "AbCdEfGhIjKlMnOpQrSt";
   const accountKey = `sc-${locationId.toLowerCase()}`;
-  for (const mode of ["valid", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
+  for (const mode of ["valid", "ghl-id", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error"]) {
     const review = fixture();
@@ -199,7 +199,7 @@ async function run() {
         companyId: mode === "wrong-agency" ? "other" : "agency-one", email: mode === "wrong-email" ? "other@example.com" : "buyer@example.com",
         token: "private-location-token" } };
       if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true,
-        subscriptionStatus: mode === "past-due" ? "past_due" : "trialing", subscriptionId: "sub_verified",
+        subscriptionStatus: mode === "past-due" ? "past_due" : "trialing", subscriptionId: mode === "ghl-id" ? "6abd897d66ad43f827dbaa4e" : "sub_verified",
         customerId: "cus_verified", productId: "product", priceId: "price", saasPlanId: "plan", access_token: "never-return-me" };
       assert.equal(path, "/saas/saas-plan/plan");
       if (mode === "race") review.accounts.set(accountKey, { locationId, coachStaff: [{ id: "preserve" }] });
@@ -218,12 +218,13 @@ async function run() {
     if (mode === "wrong-key") req.body.accountKey = "other";
     if (mode === "missing-coach") req.body.coachName = "";
     if (mode === "wrong-subscription") req.body.expectedSubscriptionId = "sub_other";
+    if (mode === "ghl-id") req.body.expectedSubscriptionId = "6abd897d66ad43f827dbaa4e";
     if (mode === "wrong-product") req.body.expectedProductName = "SMARTCoach Pro 100 - Monthly";
     if (mode === "wrong-amount") req.body.expectedAmount = "29.00";
     if (mode === "wrong-cadence") req.body.expectedBillingCadence = "annual";
     const recordsBefore = structuredClone([...review.records]);
     const result = await review.invoke("ghl-oauth-review-legacy-purchase", req);
-    if (mode === "valid") {
+    if (["valid", "ghl-id"].includes(mode)) {
       assert.equal(result.statusCode, 200);
       assert.equal(result.body.providerPurchaseVerified, true);
       assert.equal(result.body.ownerEmail, "buyer@example.com");
@@ -231,6 +232,7 @@ async function run() {
       assert.equal(result.body.productName, "SMARTCoach Pro 25 - Monthly");
       assert.equal(result.body.amount, "19.00");
       assert.equal(result.body.planTrialDays, 30);
+      assert.equal(result.body.subscriptionId, req.body.expectedSubscriptionId);
       for (const key of ["originalOrderVerified", "alternateAccountHistoryVerified", "buyerOAuthVerified", "recoveryReady", "emailSent", "automaticFulfillmentReady"]) assert.equal(result.body[key], false);
       assert.equal(result.body.accountUnchanged, true);
       assert.equal(result.body.pendingCheckoutUnchanged, true);
