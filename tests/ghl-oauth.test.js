@@ -214,6 +214,7 @@ async function run() {
         return { location: { id: mode === "order-seller" ? "other" : "QxwjWekSyUf7sDOFHPB4", companyId: "agency-one" } };
       }
       if (path.startsWith("/payments/")) {
+        assert.equal(options.headers.Version, "2021-07-28");
         assert.equal(options.headers.Authorization, "Bearer private-seller-token");
         assert.equal(new URL(url).searchParams.get("altId"), "QxwjWekSyUf7sDOFHPB4");
         if (mode === "order-denied") return { mockHttpStatus: 403, secret: "private-provider-response" };
