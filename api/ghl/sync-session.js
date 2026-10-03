@@ -810,6 +810,7 @@ function formatCoachNote({ run, session, athlete }) {
     athlete && athlete.plannedVolume ? `Planned volume: ${athlete.plannedVolume}` : "",
     workout ? `Workout: ${workout}` : "",
     ...targetLines,
+    (athlete && athlete.athleteSubmittedNote || session.athleteSubmittedNote) ? `Athlete note: ${clean(athlete && athlete.athleteSubmittedNote || session.athleteSubmittedNote)}` : "",
     run.note,
   ].filter(Boolean).join("\n");
 }
@@ -1393,6 +1394,7 @@ function energySystemValue(value) {
 
 module.exports.energySystemValue = energySystemValue;
 module.exports.performanceRecordFallbackProperties = performanceRecordFallbackProperties;
+module.exports.formatCoachNote = formatCoachNote;
 
 function phaseValue(value) {
   const normalized = optionValue(value);

@@ -5621,6 +5621,21 @@ function checkAthleteCalendarSubmittedStatusPill() {
 }
 
 function checkAthleteCalendarSelfReportedWorkouts() {
+  const { formatCoachNote } = require("../api/ghl/sync-session");
+  const { performanceAthleteNote } = require("../api/ghl/dashboard");
+  const note = "Synthetic test note";
+  const context = { workoutPrescription: "Athlete Added Workout", groupName: "Athlete Added" };
+  for (const athleteNote of [note, ""]) {
+    const coachNote = formatCoachNote({ session: { completedVolume: "0.1 mi", athleteSubmittedNote: athleteNote }, athlete: { trainingPlanDayTitle: context.workoutPrescription }, run: { note: "Athlete added workout\nTotal time: 1:00\n" + athleteNote } });
+    if (performanceAthleteNote({ ...context, coachNote }) !== athleteNote) throw new Error("Athlete-added note serialization/display round trip failed");
+  }
+  const legacyNote = "Completed volume: 0.1 mi\nWorkout: Athlete Added Workout\nAthlete added workout\nTotal time: 1:00\n" + note;
+  if (performanceAthleteNote({ ...context, coachNote: legacyNote + "\nCorrection Date: today\nCorrection Reason: test" }) !== note) throw new Error("Legacy athlete-added note should exclude correction metadata");
+  if (performanceAthleteNote({ ...context, groupName: "Coach Group", coachNote: legacyNote }) !== "") throw new Error("Legacy note fallback must not reclassify coach notes");
+  if (performanceAthleteNote({ ...context, workoutPrescription: "Athlete Added Quality Session", coachNote: legacyNote }) !== "") throw new Error("Legacy note fallback must not mistake quality summaries for athlete notes");
+  if (performanceAthleteNote({ ...context, coachNote: legacyNote + "\nAthlete note: Labeled note" }) !== "Labeled note") throw new Error("Explicit athlete note must take precedence");
+  const athleteSpecific = formatCoachNote({ session: { athleteSubmittedNote: "Session note" }, athlete: { athleteSubmittedNote: "Athlete-specific note" }, run: {} });
+  if (performanceAthleteNote({ coachNote: athleteSpecific }) !== "Athlete-specific note") throw new Error("Per-athlete note must take precedence over session note");
   const calendar = fs.readFileSync("athlete-calendar.html", "utf8");
   const lib = fs.readFileSync("lib/athlete-calendar.js", "utf8");
   [

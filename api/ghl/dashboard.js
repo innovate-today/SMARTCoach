@@ -2485,7 +2485,7 @@ function normalizePerformanceRecord(record) {
     completedVolumeMiles: effectiveVolume.miles || parseVolumeToMiles(completedVolume),
     plannedVolumeMiles: parseVolumeToMiles(plannedVolume),
     currentFitnessSnapshot: noteValue(coachNote, "Current fitness"),
-    athleteNote: noteValue(coachNote, "Athlete note") || noteValue(coachNote, "Athlete notes"),
+    athleteNote: performanceAthleteNote({ coachNote, workoutPrescription, groupName: prop(props, "group_name") }),
     weather: noteValue(coachNote, "Weather"),
     correctionDate: noteValue(coachNote, "Correction Date"),
     correctionReason: noteValue(coachNote, "Correction Reason"),
@@ -2509,6 +2509,22 @@ function isVoidedPerformanceRecord(record) {
   const note = prop(recordProperties(record), "coach_note").toLowerCase();
   return note.indexOf("smartcoach status: voided") >= 0;
 }
+
+function performanceAthleteNote({ coachNote, workoutPrescription, groupName }) {
+  const labeled = noteValue(coachNote, "Athlete note") || noteValue(coachNote, "Athlete notes");
+  if (labeled) return labeled;
+  // Older athlete-added easy runs appended athlete text after this exact marker.
+  if (groupName !== "Athlete Added" || workoutPrescription !== "Athlete Added Workout") return "";
+  const lines = clean(coachNote).split(/\r?\n/);
+  const marker = lines.findIndex((line) => line.trim() === "Athlete added workout");
+  if (marker < 0) return "";
+  const remaining = lines.slice(marker + 1);
+  if (/^Total time:/i.test(remaining[0] || "")) remaining.shift();
+  const boundary = remaining.findIndex((line) => /^(Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim()));
+  return remaining.slice(0, boundary < 0 ? remaining.length : boundary).join("\n").trim();
+}
+
+module.exports.performanceAthleteNote = performanceAthleteNote;
 
 function noteValue(note, label) {
   const prefix = `${label}:`;
