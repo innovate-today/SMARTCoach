@@ -244,7 +244,7 @@ async function run() {
     if (["no-admin", "wrong-origin"].includes(mode)) assert.equal(check.calls.length, 1);
   }
   const catalogSubscription = { saasPlanId: "plan", productId: "product", priceId: "price" };
-  for (const mode of ["pilot", "wrong-pending", "uncertain-email", "uninstalled", "wrong-seller", "bad-price", "no-admin", "wrong-origin"]) {
+  for (const mode of ["pilot", "wrong-pending", "uncertain-email", "uninstalled", "wrong-seller", "bad-price", "no-admin", "wrong-origin", "reconciled", "stale-reconciliation"]) {
     const preview = fixture();
     preview.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-preview";
     preview.env.SMARTCOACH_WELCOME_FROM_EMAIL = "info@smartcoach-pro.com";
@@ -255,7 +255,7 @@ async function run() {
       coachStaff: [{ id: "head", active: true, accessType: "full", coachCodeHash: "private-hash" }] };
     preview.accounts.set(accountKey, structuredClone(original));
     preview.records.set("pendingcheckout", { source: "smartcoach-precheckout", lastMatchedLocationId: mode === "wrong-pending" ? "other" : locationId,
-      coachEmail: "buyer@example.com", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 Monthly", schoolName: "School", coachName: "Buyer" });
+      coachEmail: mode.includes("reconcil") ? "original@example.com" : "buyer@example.com", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 Monthly", schoolName: "School", coachName: "Buyer" });
     preview.records.set(`buyeraccess-${locationId}`, { buyerAccountKey: accountKey, locationId, ownerEmail: "buyer@example.com", productPlan: "pro100",
       senderLocationId: "QxwjWekSyUf7sDOFHPB4", emailFrom: "info@smartcoach-pro.com", messageId: "accepted-message", staffId: "head", status: mode === "uncertain-email" ? "attempted" : "accepted" });
     const history = structuredClone(preview.records.get(`buyeraccess-${locationId}`));
@@ -273,6 +273,45 @@ async function run() {
       throw new Error("Preview made an unexpected provider request");
     });
     const req = preview.request(); req.body = { accountKey, locationId };
+    if (mode.includes("reconcil")) {
+      preview.records.get("pendingcheckout").lastLocationCreateEvent = { id: locationId, companyId: "agency-one", email: "original@example.com" };
+      const pendingBefore = structuredClone(preview.records.get("pendingcheckout"));
+      const review = { ...req, body: { ...req.body, originalEmail: "original@example.com", preview: true } };
+      assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", { ...review, method: "GET" })).statusCode, 405);
+      assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", { ...review, headers: {} })).statusCode, 403);
+      assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", { ...review, headers: { ...req.headers, origin: "https://other.example" } })).statusCode, 403);
+      const reviewed = await preview.invoke("ghl-oauth-reconcile-checkout", review);
+      assert.equal(reviewed.statusCode, 200);
+      assert.equal(reviewed.body.preview, true);
+      assert.equal(reviewed.body.ownerEmail, "buyer@example.com");
+      assert.equal(reviewed.body.originalEmail, "original@example.com");
+      assert(!preview.records.has(`checkoutidentity-${locationId}`));
+      const approve = { ...req, body: { ...review.body, preview: false, confirmReconciliation: true, expectedFingerprint: reviewed.body.fingerprint,
+        reviewedBy: "Support reviewer", reason: "Owner explicitly verified the corrected account email." } };
+      for (const change of [{ confirmReconciliation: false }, { expectedFingerprint: "stale" }, { reviewedBy: "" }, { reason: "" }]) {
+        assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", { ...approve, body: { ...approve.body, ...change } })).statusCode, 409);
+      }
+      assert(!preview.records.has(`checkoutidentity-${locationId}`));
+      assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", approve)).statusCode, 200);
+      const auditBefore = structuredClone(preview.records.get(`checkoutidentity-${locationId}`));
+      assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", approve)).body.alreadyApproved, true);
+      assert.deepEqual(preview.records.get(`checkoutidentity-${locationId}`), auditBefore);
+      assert.deepEqual(preview.records.get("pendingcheckout"), pendingBefore);
+      assert.deepEqual(preview.accounts.get(accountKey), original);
+      assert.equal(auditBefore.status, "approved");
+      assert.equal(auditBefore.reason, approve.body.reason);
+      for (const field of ["lastMatchedLocationId", "plan", "productName", "coachEmail"]) {
+        preview.records.set("pendingcheckout", { ...pendingBefore, [field]: "changed" });
+        assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", review)).statusCode, 409);
+        preview.records.set("pendingcheckout", structuredClone(pendingBefore));
+      }
+      for (const field of ["id", "companyId", "email"]) {
+        preview.records.set("pendingcheckout", { ...pendingBefore, lastLocationCreateEvent: { ...pendingBefore.lastLocationCreateEvent, [field]: "other" } });
+        assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", review)).statusCode, 409);
+        preview.records.set("pendingcheckout", structuredClone(pendingBefore));
+      }
+      if (mode === "stale-reconciliation") preview.records.set("pendingcheckout", { ...pendingBefore, schoolName: "Changed school" });
+    }
     if (mode === "no-admin") delete req.headers["x-smartcoach-setup-code"];
     if (mode === "wrong-origin") req.headers.origin = "https://other.example";
     const result = await preview.invoke("ghl-oauth-preview-fulfillment", req);
@@ -286,7 +325,8 @@ async function run() {
       assert.equal(result.body.existingAccessPreserved, mode !== "uncertain-email");
       assert.equal(result.body.buyerOAuthVerified, mode !== "uninstalled");
       assert.equal(result.body.sellerSenderVerified, mode !== "wrong-seller");
-      assert.equal(result.body.pendingCheckoutMatched, !["wrong-pending", "bad-price"].includes(mode));
+      assert.equal(result.body.pendingCheckoutMatched, !["wrong-pending", "bad-price", "stale-reconciliation"].includes(mode));
+      assert.equal(result.body.checkoutIdentityReconciled, mode === "reconciled");
       assert(result.body.blockers.some(item => item.includes("manual PIT")));
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));

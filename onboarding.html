@@ -199,6 +199,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthSubscriptionBtn" type="button" class="secondary" onclick="checkHighLevelBuyerSubscription()">Check Buyer Subscription</button>
         <button id="ghlOAuthTrialBtn" type="button" class="secondary" onclick="reconcileHighLevelBuyerTrial()">Reconcile Trial Status</button>
         <button id="ghlOAuthFulfillmentBtn" type="button" class="secondary" onclick="previewHighLevelFulfillment()">Preview Fulfillment</button>
+        <button id="ghlOAuthCheckoutReviewBtn" type="button" class="secondary" onclick="reviewHighLevelCheckoutIdentity()">Review Checkout Identity</button>
         <button id="ghlOAuthWriteBtn" type="button" class="secondary" onclick="verifyHighLevelBuyerWrite()">Verify Account-Key Write</button>
         <button id="ghlOAuthWelcomeBtn" type="button" class="secondary" onclick="sendHighLevelBuyerWelcome()">Send Welcome Link</button>
         <button id="ghlOAuthHeadCoachBtn" type="button" class="secondary" onclick="createHighLevelHeadCoach()">Create Head Coach &amp; Send Access</button>
@@ -1815,6 +1816,21 @@ async function previewHighLevelFulfillment(){
     var summary='Fulfillment preview. '+(data.existingAccessPreserved?'Existing head coach and accepted access email preserved. ':'No coach access created. ');
     summary+='Buyer OAuth: '+(data.buyerOAuthVerified?'verified':'not verified')+'; seller sender: '+(data.sellerSenderVerified?'verified':'not verified')+'. ';
     setStatus(summary+'Automatic fulfillment remains off. '+data.blockers.join(' ')+' No account changes or email sent.','bad');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+
+async function reviewHighLevelCheckoutIdentity(){
+  var button=document.getElementById('ghlOAuthCheckoutReviewBtn');
+  var originalEmail=prompt('Original checkout email to review. This preview will not change the account or approve reconciliation.');
+  if(!originalEmail)return;
+  button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-reconcile-checkout','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),
+      originalEmail:originalEmail.trim().toLowerCase(),preview:true
+    });
+    setStatus('Checkout identity preview verified. Original: '+data.originalEmail+'; saved owner: '+data.ownerEmail+'. '+data.productName+'; USD '+data.amount+'. '+(data.alreadyApproved?'Existing support approval verified. ':'Support approval has not been recorded. ')+'Original checkout and buyer account unchanged. Automatic fulfillment remains off. No email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }
