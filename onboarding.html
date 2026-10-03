@@ -194,6 +194,18 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <label for="originalCheckoutEmail">Original Checkout Email</label>
         <input id="originalCheckoutEmail" type="email" maxlength="254" autocomplete="off">
       </div>
+      <details>
+        <summary>Checkout Identity Approval</summary>
+        <div class="field">
+          <label for="checkoutReviewer">Reviewer</label>
+          <input id="checkoutReviewer" type="text" maxlength="120" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="checkoutReviewReason">Reason</label>
+          <input id="checkoutReviewReason" type="text" maxlength="1000" autocomplete="off">
+        </div>
+        <button id="ghlOAuthCheckoutApproveBtn" type="button" class="secondary" onclick="approveHighLevelCheckoutIdentity()">Record Identity Approval</button>
+      </details>
       <div class="formactions">
         <button type="button" class="secondary" onclick="generateAccountKey()">Generate Account Key</button>
         <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Shared Code</button>
@@ -1835,6 +1847,29 @@ async function reviewHighLevelCheckoutIdentity(){
       originalEmail:originalEmail.trim().toLowerCase(),preview:true
     });
     setStatus('Checkout identity preview verified. Original: '+data.originalEmail+'; saved owner: '+data.ownerEmail+'. '+data.productName+'; USD '+data.amount+'. '+(data.alreadyApproved?'Existing support approval verified. ':'Support approval has not been recorded. ')+'Original checkout and buyer account unchanged. Automatic fulfillment remains off. No email sent.','good');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+
+async function approveHighLevelCheckoutIdentity(){
+  var button=document.getElementById('ghlOAuthCheckoutApproveBtn');
+  var buyer={accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),
+    originalEmail:document.getElementById('originalCheckoutEmail').value.trim().toLowerCase()};
+  var reviewedBy=document.getElementById('checkoutReviewer').value.trim();
+  var reason=document.getElementById('checkoutReviewReason').value.trim();
+  if(!buyer.originalEmail||reviewedBy.length<3||reason.length<20){setStatus('Enter the original checkout email, reviewer and a reason of at least 20 characters.','bad');return;}
+  button.disabled=true;
+  try{
+    var preview=await highLevelConnectionRequest('ghl-oauth-reconcile-checkout','POST',Object.assign({},buyer,{preview:true}));
+    if(!preview.preview||!preview.fingerprint||preview.buyerAccountKey!==buyer.accountKey||preview.locationId!==buyer.locationId
+      ||preview.originalEmail!==buyer.originalEmail)throw new Error('Checkout identity preview does not match this account. No approval recorded.');
+    if(!window.confirm('Record a separate identity audit for '+buyer.accountKey+' linking '+preview.originalEmail+' to '+preview.ownerEmail+' for '+preview.productName+', USD '+preview.amount+'? Original checkout, buyer setup, coach access and email history remain unchanged. Automatic fulfillment stays off.'))return;
+    var data=await highLevelConnectionRequest('ghl-oauth-reconcile-checkout','POST',Object.assign({},buyer,{
+      preview:false,confirmReconciliation:true,expectedFingerprint:preview.fingerprint,reviewedBy:reviewedBy,reason:reason
+    }));
+    if(!data.reconciliationApproved||!data.accountUnchanged||!data.pendingCheckoutUnchanged||data.emailSent!==false
+      ||data.automaticFulfillmentReady!==false)throw new Error('Identity approval response is incomplete. Review before retrying.');
+    setStatus('Separate checkout identity approval recorded. Original checkout, buyer account, coach access and email history unchanged. Automatic fulfillment remains off. No email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
   finally{button.disabled=false;}
 }
