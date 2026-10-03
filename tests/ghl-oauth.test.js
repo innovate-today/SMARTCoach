@@ -181,11 +181,13 @@ async function run() {
   for (const mode of ["valid", "ghl-id", "no-admin", "wrong-origin", "get", "execute", "missing-preview", "seller", "wrong-key", "missing-coach",
     "existing", "race", "missing-scope", "wrong-location", "wrong-agency", "wrong-email", "wrong-subscription",
     "wrong-product", "wrong-amount", "wrong-cadence", "past-due", "bad-catalog", "forbidden", "provider-error",
-    "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-resume", "scan-private-reason", "scan-bad-env", "scan-corrupt-history"]) {
+    "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-incomplete", "scan-limit", "scan-resume", "scan-private-reason", "scan-bad-env", "scan-corrupt-history",
+    "order-valid", "order-denied", "order-seller", "order-link", "order-email", "order-source", "order-test", "order-product", "order-price", "order-cadence", "order-shape", "order-missing-token"]) {
     const review = fixture(["scan-incomplete", "scan-limit", "scan-private-reason"].includes(mode)
       ? { inventory: { complete: false, references: [], reason: mode === "scan-limit" ? "scan_page_limit_reached" : "private-inventory-error" } }
       : { corruptHistory: mode === "scan-corrupt-history" });
     review.env.SMARTCOACH_GHL_OAUTH_SCOPES += " saas/company.read";
+    if (mode.startsWith("order-") && mode !== "order-missing-token") review.env.SMARTCOACH_WELCOME_SELLER_TOKEN = "private-seller-token";
     review.setResponse({ ...review.grant(), scope: review.env.SMARTCOACH_GHL_OAUTH_SCOPES });
     const auth = await review.start();
     await review.invoke("crm-connect-callback", review.callbackReq(auth));
@@ -207,11 +209,32 @@ async function run() {
       if (mode === "forbidden") return { mockHttpStatus: 403, secret: "private-provider-response" };
       if (mode === "provider-error") throw new Error("private-provider-response");
       const path = new URL(url).pathname;
+      if (path === "/locations/QxwjWekSyUf7sDOFHPB4") {
+        assert.equal(options.headers.Authorization, "Bearer private-seller-token");
+        return { location: { id: mode === "order-seller" ? "other" : "QxwjWekSyUf7sDOFHPB4", companyId: "agency-one" } };
+      }
+      if (path.startsWith("/payments/")) {
+        assert.equal(options.headers.Authorization, "Bearer private-seller-token");
+        assert.equal(new URL(url).searchParams.get("altId"), "QxwjWekSyUf7sDOFHPB4");
+        if (mode === "order-denied") return { mockHttpStatus: 403, secret: "private-provider-response" };
+        if (mode === "order-shape") return { data: { secret: "private-provider-response" } };
+        const common = { altId: "QxwjWekSyUf7sDOFHPB4", altType: "location", contactId: "customer",
+          contactSnapshot: { email: mode === "order-email" ? "other@example.com" : "buyer@example.com" }, currency: "USD",
+          liveMode: mode !== "order-test", markAsTest: false };
+        const source = { type: "payment_link", subType: "payments_dashboard", id: mode === "order-source" ? "other" : "6a1b37c203b17c94f5713b61" };
+        if (path.startsWith("/payments/orders/")) return { ...common, _id: "6abd8977b229ab130b0f3c93", status: "completed", amount: 0, source,
+          items: [{ qty: 1, product: { _id: mode === "order-product" ? "other" : "product", name: "SMARTCoach Pro 25" },
+            price: { _id: "price", amount: mode === "order-price" ? 29 : 19,
+              recurring: { interval: mode === "order-cadence" ? "year" : "month", intervalCount: 1 } } }] };
+        return { ...common, _id: "6abd897d66ad43f827dbaa4e", entityType: "order",
+          entityId: mode === "order-link" ? "other" : "6abd8977b229ab130b0f3c93", entitySource: source,
+          status: "trialing", amount: 19, subscriptionId: "sub_provider" };
+      }
       if (path === `/locations/${locationId}`) return { location: { id: mode === "wrong-location" ? "other" : locationId,
         companyId: mode === "wrong-agency" ? "other" : "agency-one", email: mode === "wrong-email" ? "other@example.com" : "buyer@example.com",
         token: "private-location-token" } };
       if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true,
-        subscriptionStatus: mode === "past-due" ? "past_due" : "trialing", subscriptionId: mode === "ghl-id" ? "6abd897d66ad43f827dbaa4e" : "sub_verified",
+        subscriptionStatus: mode === "past-due" ? "past_due" : "trialing", subscriptionId: mode === "ghl-id" || mode.startsWith("order-") ? "6abd897d66ad43f827dbaa4e" : "sub_verified",
         customerId: "cus_verified", productId: "product", priceId: "price", saasPlanId: "plan", access_token: "never-return-me" };
       assert.equal(path, "/saas/saas-plan/plan");
       if (mode === "race") review.accounts.set(accountKey, { locationId, coachStaff: [{ id: "preserve" }] });
@@ -232,6 +255,8 @@ async function run() {
     if (mode === "missing-coach") req.body.coachName = "";
     if (mode === "wrong-subscription") req.body.expectedSubscriptionId = "sub_other";
     if (mode === "ghl-id") req.body.expectedSubscriptionId = "6abd897d66ad43f827dbaa4e";
+    if (mode.startsWith("order-")) Object.assign(req.body, { expectedSubscriptionId: "6abd897d66ad43f827dbaa4e",
+      expectedOrderId: "6abd8977b229ab130b0f3c93", expectedSaleLinkId: "6a1b37c203b17c94f5713b61" });
     if (mode === "wrong-product") req.body.expectedProductName = "SMARTCoach Pro 100 - Monthly";
     if (mode === "wrong-amount") req.body.expectedAmount = "29.00";
     if (mode === "wrong-cadence") req.body.expectedBillingCadence = "annual";
@@ -262,7 +287,7 @@ async function run() {
       review.advance(10 * 60 * 1000);
       assert.equal((await review.invoke("ghl-oauth-review-legacy-purchase", req)).statusCode, 409);
     }
-    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-resume"].includes(mode)) {
+    if (["valid", "ghl-id", "scan-empty", "scan-alt", "scan-env", "scan-env-suffix", "scan-access", "scan-fulfillment", "scan-resume", "order-valid"].includes(mode)) {
       assert.equal(result.statusCode, 200);
       assert.equal(result.body.providerPurchaseVerified, true);
       assert.equal(result.body.ownerEmail, "buyer@example.com");
@@ -271,7 +296,8 @@ async function run() {
       assert.equal(result.body.amount, "19.00");
       assert.equal(result.body.planTrialDays, 30);
       assert.equal(result.body.subscriptionId, req.body.expectedSubscriptionId);
-      for (const key of ["originalOrderVerified", "alternateAccountHistoryVerified", "buyerOAuthVerified", "recoveryReady", "emailSent", "automaticFulfillmentReady"]) assert.equal(result.body[key], false);
+      assert.equal(result.body.originalOrderVerified, mode === "order-valid");
+      for (const key of ["alternateAccountHistoryVerified", "buyerOAuthVerified", "recoveryReady", "emailSent", "automaticFulfillmentReady"]) assert.equal(result.body[key], false);
       assert.equal(result.body.accountUnchanged, true);
       assert.equal(result.body.pendingCheckoutUnchanged, true);
       if (mode.startsWith("scan-")) {
@@ -290,7 +316,7 @@ async function run() {
     if (mode === "scan-private-reason") assert.match(result.body.error, /\(inventory_incomplete\)/);
     assert.deepEqual([...review.records], recordsBefore, "Review must not persist recovery, grants, audits or checkout records");
     assert.equal(review.accounts.size, ["existing", "race", "scan-alt"].includes(mode) ? 1 : 0);
-    for (const secret of ["private-access", "private-location-token", "private-provider-response", "never-return-me", "keep-pit", "private-hash", "private-history-error", "private-inventory-error"]) assert(!JSON.stringify(result).includes(secret));
+    for (const secret of ["private-access", "private-location-token", "private-provider-response", "never-return-me", "keep-pit", "private-hash", "private-history-error", "private-inventory-error", "private-seller-token"]) assert(!JSON.stringify(result).includes(secret));
   }
   for (const mode of ["valid", "reconcile", "reconcile-bad-price", "reconcile-bad-confirm", "wrong-location", "wrong-company", "not-v2", "empty", "wrapped", "wrapped-empty", "wrapped-wrong-buyer", "ambiguous", "missing-price", "unknown-status", "no-admin", "wrong-origin", "provider-error", "forbidden"]) {
     const check = fixture();
@@ -986,7 +1012,8 @@ async function run() {
   assert.equal(nodes.ghlOAuthHeadCoachBtn.disabled, false);
   Object.assign(nodes, { ghlOAuthLegacyReviewBtn: { disabled: false }, legacySchoolName: { value: "Athletic Develop" },
     legacyCoachName: { value: "Jenn Moore" }, legacyOwnerEmail: { value: "buyer@example.com" },
-    legacySubscriptionId: { value: "sub_verified" }, legacyProductName: { value: "SMARTCoach Pro 25 - Monthly" }, legacyAmount: { value: "19" } });
+    legacySubscriptionId: { value: "sub_verified" }, legacyProductName: { value: "SMARTCoach Pro 25 - Monthly" }, legacyAmount: { value: "19" },
+    legacyOrderId: { value: "" }, legacySaleLinkId: { value: "" } });
   const safeReview = { preview: true, providerPurchaseVerified: true, locationIdentityVerified: true,
     accountUnchanged: true, pendingCheckoutUnchanged: true, emailSent: false, recoveryReady: false,
     automaticFulfillmentReady: false, existingSetup: { existingSetupReviewVerified: true }, productName: "SMARTCoach Pro 25 - Monthly", currency: "USD", amount: "19.00", billingCadence: "monthly", blockers: ["Original order pending."] };
@@ -1008,6 +1035,17 @@ async function run() {
     assert.match(statuses.pop()[0], /response could not be verified/);
     assert.equal(nodes.ghlOAuthLegacyReviewBtn.disabled, false);
   }
+  nodes.legacyOrderId.value = "6abd8977b229ab130b0f3c93";
+  nodes.legacySaleLinkId.value = "6a1b37c203b17c94f5713b61";
+  nodes.legacySubscriptionId.value = "6abd897d66ad43f827dbaa4e";
+  pageResponse = safeReview;
+  await context.reviewHighLevelLegacyPurchase();
+  assert.match(statuses.pop()[0], /Original order verification response could not be verified/);
+  pageResponse = { ...safeReview, originalOrderVerified: true, orderReview: { orderId: nodes.legacyOrderId.value,
+    subscriptionId: nodes.legacySubscriptionId.value, saleLinkId: nodes.legacySaleLinkId.value } };
+  await context.reviewHighLevelLegacyPurchase();
+  assert.match(statuses.pop()[0], /Recovery remains disabled/);
+  assert.equal(JSON.parse(pageCalls.at(-1).options.body).expectedOrderId, nodes.legacyOrderId.value);
   nodes.legacyAmount.value = "";
   const beforeInvalidAmount = pageCalls.length;
   await context.reviewHighLevelLegacyPurchase();

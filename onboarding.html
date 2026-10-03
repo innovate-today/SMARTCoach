@@ -227,6 +227,14 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <label for="legacyAmount">Recurring Amount (USD)</label>
           <input id="legacyAmount" type="number" min="0.01" step="0.01" inputmode="decimal">
         </div>
+        <div class="field">
+          <label for="legacyOrderId">Original HighLevel Order ID</label>
+          <input id="legacyOrderId" type="text" maxlength="24">
+        </div>
+        <div class="field">
+          <label for="legacySaleLinkId">Original SaaS Sale-Link ID</label>
+          <input id="legacySaleLinkId" type="text" maxlength="24">
+        </div>
         <button id="ghlOAuthLegacyReviewBtn" type="button" class="secondary" onclick="reviewHighLevelLegacyPurchase()">Review Legacy Purchase</button>
       </details>
       <details>
@@ -1876,6 +1884,9 @@ async function reviewHighLevelLegacyPurchase(){
       expectedAmount:amount.toFixed(2)
     };
     var data;
+    var orderId=document.getElementById('legacyOrderId').value.trim();
+    var saleLinkId=document.getElementById('legacySaleLinkId').value.trim();
+    if(orderId||saleLinkId){request.expectedOrderId=orderId;request.expectedSaleLinkId=saleLinkId;}
     for(var batch=0;batch<100;batch++){
       data=await highLevelConnectionRequest('ghl-oauth-review-legacy-purchase','POST',request);
       if(data.inventoryComplete!==false)break;
@@ -1892,6 +1903,10 @@ async function reviewHighLevelLegacyPurchase(){
       ||data.recoveryReady!==false||data.automaticFulfillmentReady!==false||!Array.isArray(data.blockers)
       ||!data.existingSetup||data.existingSetup.existingSetupReviewVerified!==true){
       throw new Error('Legacy purchase review response could not be verified.');
+    }
+    if(orderId&&(data.originalOrderVerified!==true||!data.orderReview||data.orderReview.orderId!==orderId
+      ||data.orderReview.subscriptionId!==request.expectedSubscriptionId||data.orderReview.saleLinkId!==saleLinkId)){
+      throw new Error('Original order verification response could not be verified.');
     }
     setStatus('Legacy provider purchase and location verified. '+data.productName+'; '+data.currency+' '+data.amount+' '+data.billingCadence+'. '+data.blockers.join(' ')+' Recovery remains disabled. No account changes or email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
