@@ -255,7 +255,7 @@ async function run() {
       coachStaff: [{ id: "head", active: true, accessType: "full", coachCodeHash: "private-hash" }] };
     preview.accounts.set(accountKey, structuredClone(original));
     preview.records.set("pendingcheckout", { source: "smartcoach-precheckout", lastMatchedLocationId: mode === "wrong-pending" ? "other" : locationId,
-      coachEmail: mode.includes("reconcil") ? "original@example.com" : "buyer@example.com", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 Monthly", schoolName: "School", coachName: "Buyer" });
+      coachEmail: mode.includes("reconcil") ? "original@example.com" : "buyer@example.com", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 - Monthly", schoolName: "School", coachName: "Buyer" });
     preview.records.set(`buyeraccess-${locationId}`, { buyerAccountKey: accountKey, locationId, ownerEmail: "buyer@example.com", productPlan: "pro100",
       senderLocationId: "QxwjWekSyUf7sDOFHPB4", emailFrom: "info@smartcoach-pro.com", messageId: "accepted-message", staffId: "head", status: mode === "uncertain-email" ? "attempted" : "accepted" });
     const history = structuredClone(preview.records.get(`buyeraccess-${locationId}`));
@@ -300,9 +300,16 @@ async function run() {
       assert.deepEqual(preview.accounts.get(accountKey), original);
       assert.equal(auditBefore.status, "approved");
       assert.equal(auditBefore.reason, approve.body.reason);
-      for (const field of ["lastMatchedLocationId", "plan", "productName", "coachEmail"]) {
+      preview.records.set("pendingcheckout", { ...pendingBefore, productName: "SMARTCoach Pro 100 Monthly" });
+      assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", review)).body.error,
+        "Checkout identity review blocked: checkoutProductName. No reconciliation approved.");
+      preview.records.set("pendingcheckout", structuredClone(pendingBefore));
+      for (const [field, diagnostic] of Object.entries({ lastMatchedLocationId: "checkoutLocation", plan: "checkoutPlan",
+        productName: "checkoutProductName", coachEmail: "checkoutEmail", cadence: "checkoutCadence", source: "checkoutSource" })) {
         preview.records.set("pendingcheckout", { ...pendingBefore, [field]: "changed" });
-        assert.equal((await preview.invoke("ghl-oauth-reconcile-checkout", review)).statusCode, 409);
+        const blocked = await preview.invoke("ghl-oauth-reconcile-checkout", review);
+        assert.equal(blocked.statusCode, 409);
+        assert.equal(blocked.body.error, `Checkout identity review blocked: ${diagnostic}. No reconciliation approved.`);
         preview.records.set("pendingcheckout", structuredClone(pendingBefore));
       }
       for (const field of ["id", "companyId", "email"]) {
