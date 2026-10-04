@@ -735,8 +735,36 @@ async function run() {
       const rejectedEvent = ["automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency"].includes(mode);
       assert.equal(result.status, succeeds ? "complete" : rejectedEvent ? "event_rejected"
         : mode === "automatic-disabled" ? "disabled" : mode === "automatic-missing-mapping" ? "waiting_for_mapping"
+          : mode === "automatic-uninstalled" ? "waiting_for_installation"
           : ["automatic-email", "automatic-pending"].includes(mode) ? "checkout_review_required" : "support_review_required", mode);
       assert.equal(result.deliveryVerified, false); assert.equal(result.automaticFulfillmentReady, false);
+      const readinessReq = f.request(); readinessReq.body = { accountKey, locationId };
+      const providerCalls = f.calls.length;
+      const readinessPreview = await f.invoke("ghl-oauth-process-readiness", readinessReq);
+      assert.equal(readinessPreview.statusCode, 200);
+      assert.equal(f.calls.length, providerCalls, "readiness status must not contact the provider");
+      if (!rejectedEvent && mode !== "automatic-disabled") {
+        const job = f.records.get(`buyerreadiness-${locationId}`);
+        assert.equal(job.buyerAccountKey, accountKey);
+        assert.equal(job.signatureVerified, true);
+        assert.equal(job.attempts, 1);
+        assert(!JSON.stringify(job).includes("private-fulfillment"));
+        if (["automatic-missing-mapping", "automatic-uninstalled"].includes(mode)) {
+          assert(job.nextAttemptAt > 1000000);
+          const earlyReq = f.request(); earlyReq.body = { accountKey, locationId, dryRun: false, confirmExecution: true };
+          assert.equal((await f.invoke("ghl-oauth-process-readiness", earlyReq)).body.status, result.status);
+          assert.equal(f.calls.length, providerCalls, "backoff must not make provider calls");
+        }
+      }
+      for (const invalid of ["no-admin", "wrong-origin", "get", "unconfirmed"]) {
+        const req = f.request(); req.body = { accountKey, locationId };
+        if (invalid === "no-admin") delete req.headers["x-smartcoach-setup-code"];
+        if (invalid === "wrong-origin") req.headers.origin = "https://other.example";
+        if (invalid === "get") req.method = "GET";
+        if (invalid === "unconfirmed") req.body.dryRun = false;
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", req)).statusCode,
+          invalid === "get" ? 405 : invalid === "unconfirmed" ? 409 : 403);
+      }
       assert.equal(sends, succeeds || mode === "automatic-failed-send" ? 1 : 0);
       if (succeeds) {
         assert.equal(f.accounts.get(accountKey).subscription.status, "trialing");
@@ -755,12 +783,16 @@ async function run() {
       if (mode === "automatic-missing-mapping") {
         // INSTALL arriving first must not invent a checkout or location mapping.
         f.accounts.set(accountKey, structuredClone(original));
-        assert.equal((await f.api.dispatchProvisioningEvent({ ...event, type: "LocationCreate", appId: "6abed80821f5efd8466abccb" }, verification)).status, "complete");
+        f.advance(60000);
+        const resume = f.request(); resume.body = { accountKey, locationId, dryRun: false, confirmExecution: true };
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", resume)).body.status, "complete");
         assert.equal(sends, 1);
       }
       if (mode === "automatic-uninstalled") {
         installed = true;
-        assert.equal((await f.api.dispatchProvisioningEvent({ ...event, type: "INSTALL", appId: APP_ID }, verification)).status, "complete");
+        f.advance(60000);
+        const resume = f.request(); resume.body = { accountKey, locationId, dryRun: false, confirmExecution: true };
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", resume)).body.status, "complete");
         assert.equal(sends, 1);
       }
       for (const secret of ["private-fulfillment-buyer", "private-fulfillment-seller", "private-admin", "private-send-error"]) {

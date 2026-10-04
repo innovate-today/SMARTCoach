@@ -6,6 +6,8 @@ const checkoutApprovalTests = spawnSync(process.execPath, ["tests/onboarding-che
 if (checkoutApprovalTests.status !== 0) throw new Error("Onboarding checkout approval controls failed.");
 const buyerFulfillmentTests = spawnSync(process.execPath, ["tests/buyer-fulfillment.test.js"], { stdio: "inherit" });
 if (buyerFulfillmentTests.status !== 0) throw new Error("Buyer fulfillment tests failed.");
+const buyerReadinessTests = spawnSync(process.execPath, ["tests/buyer-readiness.test.js"], { stdio: "inherit" });
+if (buyerReadinessTests.status !== 0) throw new Error("Buyer readiness tests failed.");
 const controlledSetupTests = spawnSync(process.execPath, ["tests/onboarding-controlled-setup.test.js"], { stdio: "inherit" });
 if (controlledSetupTests.status !== 0) throw new Error("Controlled onboarding UI tests failed.");
 const ghlOAuthConsumerTests = spawnSync(process.execPath, ["tests/ghl-oauth-consumer.test.js"], { stdio: "inherit" });
