@@ -96,6 +96,24 @@ async function run() {
   assert.equal(accountSetupReady({ ...oauthAccount, accountKey: "sc-qxwjweksyuf7sdofhpb4", locationId: "QxwjWekSyUf7sDOFHPB4" }, { accountKey: "sc-qxwjweksyuf7sdofhpb4", locationId: "QxwjWekSyUf7sDOFHPB4", token: "seller" }), false);
   assert.equal(accountSetupReady({ ...oauthAccount, token: "manual-pit" }), true);
   const crmAccount = { accountKey, locationId, token: "manual-pit" };
+  for (const approved of [true, false, "unavailable"]) {
+    const policyDeps = { ...writeDeps, env: { SMARTCOACH_GHL_NEW_BUYER_PLANS: "pro25", SMARTCOACH_GHL_NEW_BUYER_OAUTH_PLANS: "pro25" },
+      oauth: { ...writeDeps.oauth, approvedBuyerOAuth: async (key, location) => {
+        assert.equal(key, accountKey); assert.equal(location, locationId);
+        if (approved === "unavailable") throw new Error("private-policy-error");
+        return approved;
+      } } };
+    const req = { ...request(), method: "POST" }, res = response();
+    assert.equal(await attachBuyerOAuthContext(req, res, "sync-session", policyDeps), approved !== "unavailable");
+    if (approved === "unavailable") {
+      assert.equal(res.statusCode, 503);
+      assert(!JSON.stringify(res).includes("private-policy-error"));
+      await assert.rejects(buyerCrmToken(crmAccount, [], policyDeps), error => error.statusCode === 503);
+    } else {
+      assert.equal(getGhlContext(req).token, approved ? "private-write-oauth" : "manual-pit");
+      assert.equal(await buyerCrmToken(crmAccount, ["contacts.write"], policyDeps), approved ? "private-write-oauth" : "manual-pit");
+    }
+  }
   assert.equal(await buyerCrmToken(crmAccount, ["contacts.write"], writeDeps), "private-write-oauth");
   assert.equal(await buyerCrmToken(crmAccount, ["ungranted.write"], { ...writeDeps, env: {} }), "manual-pit");
   await assert.rejects(buyerCrmToken(crmAccount, ["ungranted.write"], writeDeps), /connection could not be verified/);

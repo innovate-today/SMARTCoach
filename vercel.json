@@ -1,4 +1,7 @@
 {
+  "crons": [
+    { "path": "/api/smart-trak/ghl-oauth-readiness-cron", "schedule": "* * * * *" }
+  ],
   "rewrites": [
     {
       "source": "/api/strava/oauth/callback",

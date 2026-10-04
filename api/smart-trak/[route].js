@@ -124,6 +124,9 @@ function enforcePowerRackMutation(req, rackSession, payload) {
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
+  if (route === "ghl-oauth-readiness-cron") {
+    return require("../../lib/ghl-oauth").createGhlOAuth({ onAccountUpdated: clearAccountStatusCacheForAccount }).handle(route, req, res);
+  }
   if (["ghl-oauth-start", "crm-connect-callback", "ghl-oauth-status", "ghl-oauth-verify-buyer", "ghl-oauth-verify-write", "ghl-oauth-send-welcome", "ghl-oauth-update-owner-email", "ghl-oauth-create-head-coach", "ghl-oauth-check-subscription", "ghl-oauth-preview-fulfillment", "ghl-oauth-reconcile-checkout", "ghl-oauth-check-state", "ghl-oauth-fulfill-buyer", "ghl-oauth-process-readiness", "ghl-oauth-review-legacy-purchase", "ghl-oauth-recover-legacy-purchase", "ghl-oauth-activate-legacy-buyer"].includes(route)) {
     return require("../../lib/ghl-oauth").createGhlOAuth({ onAccountUpdated: clearAccountStatusCacheForAccount }).handle(route, req, res);
   }
@@ -6811,6 +6814,7 @@ async function ghlLocationCreateWebhook(req, res) {
         name: cleanSetupText(payload.name),
         email,
         stripeProductId: stripeProductId || "",
+        signatureVerified: verification.signatureVerified === true && verification.automationSecretFallback !== true,
         receivedAt: now,
       },
     };

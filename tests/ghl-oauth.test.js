@@ -650,9 +650,10 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
-  for (const mode of ["automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
+  for (const mode of ["automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const controlled = mode.startsWith('controlled-');
     const automatic = mode.startsWith('automatic-');
+    const policy = mode.startsWith('automatic-policy-');
     const success = ['success', 'controlled-success'].includes(mode);
     const f = fixture({ executionEnabled: !automatic && !controlled && mode !== "disabled" });
     const scopes = "locations.readonly locations/customFields.readonly locations/customValues.readonly locations/customValues.write contacts.readonly contacts.write objects/record.readonly objects/record.write";
@@ -662,6 +663,13 @@ async function run() {
     if (automatic) {
       f.env.SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS = accountKey;
       if (mode !== "automatic-disabled") f.env.SMARTCOACH_GHL_AUTOMATIC_FULFILLMENT_ACCOUNTS = accountKey;
+    }
+    if (policy) {
+      delete f.env.SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS;
+      delete f.env.SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS;
+      delete f.env.SMARTCOACH_GHL_AUTOMATIC_FULFILLMENT_ACCOUNTS;
+      f.env.SMARTCOACH_GHL_NEW_BUYER_PLANS = "pro25";
+      f.env.SMARTCOACH_GHL_NEW_BUYER_OAUTH_PLANS = "pro25";
     }
     if (controlled) f.env.SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS = mode === 'controlled-wildcard' ? '*'
       : mode === 'controlled-other-account' ? 'sc-12345678901234567890'
@@ -679,23 +687,33 @@ async function run() {
     f.records.set("pendingcheckout", { source: "smartcoach-precheckout", plan: "pro100", cadence: "monthly", productName: "SMARTCoach Pro 100 - Monthly",
       schoolName: "School", coachName: "Buyer", coachEmail: "buyer@example.com", lastMatchedLocationId: locationId,
       lastLocationCreateEvent: { id: locationId, companyId: "agency-one", email: "buyer@example.com" } });
+    if (policy) {
+      original.productPlan = "pro25";
+      original.subscription.amount = "19.00";
+      if (mode === "automatic-policy-manual") original.token = "preserve-manual-token";
+      f.accounts.set(accountKey, structuredClone(original));
+      Object.assign(f.records.get("pendingcheckout"), { plan: "pro25", productName: "SMARTCoach Pro 25 - Monthly" });
+      f.records.get("pendingcheckout").lastLocationCreateEvent.signatureVerified = mode !== "automatic-policy-unsigned-mapping";
+      if (mode === "automatic-policy-alias") f.registry.inspectAccountLocationReferences = async () => ({ complete: true, references: [accountKey, "legacy-alias"] });
+      assert.equal(await f.api.approvedBuyerOAuth(accountKey, locationId), false);
+    }
     const mapping = require("../smart_trak_object_mapping.json");
     assert.deepEqual(Object.keys(mapping.objects.meet.fields), ["meet", "meet_date", "season", "season_year", "status", "source_system", "source_record_id"]);
     assert.equal(mapping.objects.meet.fields.meet.type, "TEXT");
     assert(mapping.objects.meet_result.fields.meet_name);
     assert(mapping.objects.record.fields.meet_name);
-    let sends = 0, values = [], valueWrites = 0, installed = mode !== "automatic-uninstalled", staleValueRead = mode === 'delayed-readback';
+    let sends = 0, values = [], valueWrites = 0, installed = !["automatic-uninstalled", "automatic-policy-worker"].includes(mode), staleValueRead = mode === 'delayed-readback';
     f.setProvider((url, options) => {
       const path = new URL(url).pathname;
       if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true, subscriptionStatus: "trialing",
         subscriptionId: "sub", customerId: "cus", productId: "product", priceId: "price", saasPlanId: "plan" };
       if (path === "/saas/saas-plan/plan") return { planId: "plan", companyId: "agency-one", providerLocationId: "QxwjWekSyUf7sDOFHPB4", productId: "product",
-        isSaaSV2: true, title: mode === "automatic-wrong-product" ? "Unrelated Product" : "SMARTCoach Pro 100", trialPeriod: 30, prices: [{ id: "price", active: true, amount: 29, currency: "USD", billingInterval: "month" }] };
+        isSaaSV2: true, title: mode === "automatic-wrong-product" ? "Unrelated Product" : policy ? "SMARTCoach Pro 25" : "SMARTCoach Pro 100", trialPeriod: 30, prices: [{ id: "price", active: true, amount: policy ? 19 : 29, currency: "USD", billingInterval: "month" }] };
       if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: installed }] };
       if (path === "/oauth/location-token") return { access_token: "private-fulfillment-buyer", token_type: "Bearer", locationId, expires_in: 86400, scope: buyerScopes };
       if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: "agency-one" } };
       if (path === "/locations/QxwjWekSyUf7sDOFHPB4") return { location: { id: "QxwjWekSyUf7sDOFHPB4", companyId: "agency-one" } };
-      if (path === `/locations/${locationId}/customFields`) return { customFields: ["missing-fields", "automatic-missing-fields"].includes(mode) ? [] : Object.values(mapping.contactFields).map(field => ({ ...field, locationId })) };
+      if (path === `/locations/${locationId}/customFields`) return { customFields: ["missing-fields", "automatic-missing-fields", "automatic-policy-missing-fields"].includes(mode) ? [] : Object.values(mapping.contactFields).map(field => ({ ...field, locationId })) };
       if (path.startsWith("/objects/")) {
         assert.equal(new URL(url).searchParams.get("locationId"), locationId);
         assert.equal(options.headers.Authorization, "Bearer private-fulfillment-buyer");
@@ -713,7 +731,7 @@ async function run() {
         const email = JSON.parse(options.body); assert.equal(email.emailFrom, "info@smartcoach-pro.com");
         assert.equal(email.emailTo, "buyer@example.com"); assert.equal(email.subject, "SMARTCoach Access");
         assert(!email.html.includes(f.accounts.get(accountKey).coachAccessCodes[0]));
-        if (["failed-send", "automatic-failed-send"].includes(mode)) throw new Error("private-send-error");
+        if (["failed-send", "automatic-failed-send", "automatic-policy-failed-send"].includes(mode)) throw new Error("private-send-error");
         return mode === "missing-message" ? {} : { messageId: "fulfillment-message" };
       }
       throw new Error("Unexpected fulfillment provider request");
@@ -731,12 +749,12 @@ async function run() {
       if (mode === "automatic-missing-mapping") f.accounts.delete(accountKey);
       const before = f.calls.length;
       const result = await f.api.dispatchProvisioningEvent(event, verification);
-      const succeeds = ["automatic-success", "automatic-install-success"].includes(mode);
+      const succeeds = ["automatic-success", "automatic-install-success", "automatic-policy-success"].includes(mode);
       const rejectedEvent = ["automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency"].includes(mode);
       assert.equal(result.status, succeeds ? "complete" : rejectedEvent ? "event_rejected"
         : mode === "automatic-disabled" ? "disabled" : mode === "automatic-missing-mapping" ? "waiting_for_mapping"
-          : mode === "automatic-uninstalled" ? "waiting_for_installation"
-          : ["automatic-email", "automatic-pending"].includes(mode) ? "checkout_review_required" : "support_review_required", mode);
+          : ["automatic-uninstalled", "automatic-policy-worker"].includes(mode) ? "waiting_for_installation"
+          : ["automatic-email", "automatic-pending", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias"].includes(mode) ? "checkout_review_required" : "support_review_required", mode);
       assert.equal(result.deliveryVerified, false); assert.equal(result.automaticFulfillmentReady, false);
       const readinessReq = f.request(); readinessReq.body = { accountKey, locationId };
       const providerCalls = f.calls.length;
@@ -765,16 +783,22 @@ async function run() {
         assert.equal((await f.invoke("ghl-oauth-process-readiness", req)).statusCode,
           invalid === "get" ? 405 : invalid === "unconfirmed" ? 409 : 403);
       }
-      assert.equal(sends, succeeds || mode === "automatic-failed-send" ? 1 : 0);
+      assert.equal(sends, succeeds || ["automatic-failed-send", "automatic-policy-failed-send"].includes(mode) ? 1 : 0);
       if (succeeds) {
         assert.equal(f.accounts.get(accountKey).subscription.status, "trialing");
-        assert.equal(f.accounts.get(accountKey).subscription.amount, "29.00");
+        assert.equal(f.accounts.get(accountKey).subscription.amount, policy ? "19.00" : "29.00");
+        if (policy) {
+          assert.equal(f.records.get(`buyerpolicy-${locationId}`).status, "complete");
+          assert.equal(await f.api.approvedBuyerOAuth(accountKey, locationId), true);
+          assert.equal(await f.api.approvedBuyerOAuth("sc-12345678901234567890", "12345678901234567890"), false);
+        }
         assert.equal((await f.api.dispatchProvisioningEvent(event, verification)).status, "existing_access_preserved");
         assert.equal(sends, 1); assert.equal(valueWrites, 1);
-      } else if (mode === "automatic-failed-send") {
+      } else if (["automatic-failed-send", "automatic-policy-failed-send"].includes(mode)) {
         assert.equal(f.records.get(`buyeraccess-${locationId}`).status, "attempted");
         assert.equal((await f.api.dispatchProvisioningEvent(event, verification)).status, "support_review_required");
         assert.equal(sends, 1);
+        if (policy) assert.equal(await f.api.approvedBuyerOAuth(accountKey, locationId), false);
       } else {
         assert.equal(valueWrites, 0);
         if (mode !== "automatic-missing-mapping") assert.deepEqual(f.accounts.get(accountKey), original);
@@ -793,6 +817,26 @@ async function run() {
         f.advance(60000);
         const resume = f.request(); resume.body = { accountKey, locationId, dryRun: false, confirmExecution: true };
         assert.equal((await f.invoke("ghl-oauth-process-readiness", resume)).body.status, "complete");
+        assert.equal(sends, 1);
+      }
+      if (mode === "automatic-policy-worker") {
+        f.env.CRON_SECRET = "private-cron-secret-at-least-32-characters";
+        const cron = f.request("GET"); cron.headers = { authorization: `Bearer ${f.env.CRON_SECRET}` };
+        const beforeWorker = f.calls.length;
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.status, "disabled");
+        assert.equal(f.calls.length, beforeWorker);
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", { ...cron, headers: {} })).statusCode, 403);
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", { ...cron, method: "POST" })).statusCode, 405);
+        f.env.SMARTCOACH_GHL_READINESS_WORKER_ENABLED = "true";
+        f.registry.scanBuyerReadinessJobs = async () => ({ cursor: "0", namespaces: [`buyerreadiness-${locationId.toLowerCase()}`] });
+        const realLoad = f.registry.loadAccountScopedRecord;
+        f.registry.loadAccountScopedRecord = (key, namespace) => realLoad(key, namespace === `buyerreadiness-${locationId.toLowerCase()}` ? `buyerreadiness-${locationId}` : namespace);
+        installed = true; f.advance(60000);
+        const processed = await f.invoke("ghl-oauth-readiness-cron", cron);
+        assert.equal(processed.body.buyerStatus, "complete", JSON.stringify(processed.body));
+        assert.equal(sends, 1);
+        assert.equal(await f.api.approvedBuyerOAuth(accountKey, locationId), true);
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "existing_access_preserved");
         assert.equal(sends, 1);
       }
       for (const secret of ["private-fulfillment-buyer", "private-fulfillment-seller", "private-admin", "private-send-error"]) {
