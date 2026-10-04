@@ -56,6 +56,14 @@ function fixture() {
   assert.equal((await failed.run({ event })).status, "support_review_required");
   assert.equal(failed.counts().executions, 1);
   assert.deepEqual(uncertain.failure, { stage: "fulfillment_execution", kind: "exception" });
+  const keyFailure = fixture(); keyFailure.ready({ status: "ready" });
+  keyFailure.deps.execute = async () => {
+    throw Object.assign(new Error("private provider response"), { readinessFailure: {
+      stage: "key_provider_write", kind: "exception", token: "private-secret", message: "private response"
+    } });
+  };
+  assert.deepEqual((await keyFailure.run({ event })).failure, { stage: "key_provider_write", kind: "exception" });
+  assert(!JSON.stringify(keyFailure.job()).includes("private"));
 
   const diagnostic = fixture();
   diagnostic.deps.inspect = async (_, __, reportStage) => {

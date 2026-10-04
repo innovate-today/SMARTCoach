@@ -650,7 +650,7 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
-  for (const mode of ["automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
+  for (const mode of ["automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const controlled = mode.startsWith('controlled-');
     const automatic = mode.startsWith('automatic-');
     const policy = mode.startsWith('automatic-policy-');
@@ -702,7 +702,7 @@ async function run() {
     assert.equal(mapping.objects.meet.fields.meet.type, "TEXT");
     assert(mapping.objects.meet_result.fields.meet_name);
     assert(mapping.objects.record.fields.meet_name);
-    let sends = 0, values = [], valueWrites = 0, installed = !["automatic-uninstalled", "automatic-policy-worker"].includes(mode), staleValueRead = mode === 'delayed-readback';
+    let sends = 0, values = [], valueWrites = 0, installed = !["automatic-uninstalled", "automatic-policy-worker"].includes(mode), staleValueRead = ['delayed-readback', 'automatic-policy-key-readback'].includes(mode);
     f.setProvider((url, options) => {
       const path = new URL(url).pathname;
       if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true, subscriptionStatus: "trialing",
@@ -761,6 +761,15 @@ async function run() {
         assert(["exception", "blocked"].includes(result.failure.kind));
       }
       if (succeeds) assert.equal(result.failure, null);
+      if (mode === "automatic-policy-key-readback") {
+        assert.deepEqual(result.failure, { stage: "key_provider_readback", kind: "exception" });
+        assert.equal(valueWrites, 1);
+        assert.equal(sends, 0);
+        const repeated = await f.api.dispatchProvisioningEvent(event, verification);
+        assert.equal(repeated.status, "support_review_required");
+        assert.equal(valueWrites, 1, "uncertain readback must never repeat the write");
+        assert.equal(sends, 0);
+      }
       const readinessReq = f.request(); readinessReq.body = { accountKey, locationId };
       const providerCalls = f.calls.length;
       const storedBeforeInspection = JSON.stringify(Array.from(f.records.entries()));
@@ -771,7 +780,7 @@ async function run() {
       if (mode !== "automatic-disabled") {
         assert(readinessPreview.body.savedEvidence);
         assert.equal(readinessPreview.body.savedEvidence.fulfillmentStatus, succeeds ? "complete"
-          : ["automatic-failed-send", "automatic-policy-failed-send"].includes(mode) ? "pending" : "not_recorded");
+          : ["automatic-failed-send", "automatic-policy-failed-send", "automatic-policy-key-readback"].includes(mode) ? "pending" : "not_recorded");
         assert(!JSON.stringify(readinessPreview.body).includes("private-fulfillment"));
         assert(!JSON.stringify(readinessPreview.body.savedEvidence).includes("fingerprint"));
       } else assert.equal(readinessPreview.body.savedEvidence, undefined);
@@ -821,6 +830,10 @@ async function run() {
         assert.equal((await f.api.dispatchProvisioningEvent(event, verification)).status, "support_review_required");
         assert.equal(sends, 1);
         if (policy) assert.equal(await f.api.approvedBuyerOAuth(accountKey, locationId), false);
+      } else if (mode === "automatic-policy-key-readback") {
+        assert.equal(valueWrites, 1);
+        assert.equal(f.records.get(`buyerfulfillment-${locationId}`).steps.ensure_buyer_account_key.status, "attempted");
+        assert.equal(await f.api.approvedBuyerOAuth(accountKey, locationId), false);
       } else {
         assert.equal(valueWrites, 0);
         if (mode !== "automatic-missing-mapping") assert.deepEqual(f.accounts.get(accountKey), original);
