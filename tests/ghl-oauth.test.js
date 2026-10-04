@@ -878,8 +878,29 @@ async function run() {
           : ["automatic-failed-send", "automatic-policy-failed-send", "automatic-policy-key-readback"].includes(mode) ? "pending" : "not_recorded");
         assert(!JSON.stringify(readinessPreview.body).includes("private-fulfillment"));
         assert(!JSON.stringify(readinessPreview.body.savedEvidence).includes("fingerprint"));
+        assert.equal(readinessPreview.body.savedEvidence.schoolNameStatus, mode === "automatic-policy-success" ? "confirmed" : "not_recorded");
       } else assert.equal(readinessPreview.body.savedEvidence, undefined);
       if (succeeds) {
+        const schoolKey = `buyerschoolname-${locationId}`;
+        const savedSchool = f.records.get(schoolKey);
+        for (const status of ["attempted", "confirmed", "private-provider-error"]) {
+          f.records.set(schoolKey, { buyerAccountKey: accountKey, locationId, companyId: "agency-one", status,
+            schoolName: "private-school-name", fingerprint: "private-fingerprint", token: "private-school-token" });
+          const before = JSON.stringify(Array.from(f.records.entries()));
+          const readback = await f.invoke("ghl-oauth-process-readiness", readinessReq);
+          assert.equal(readback.statusCode, 200);
+          assert.equal(readback.body.savedEvidence.schoolNameStatus, status.startsWith("private-") ? "not_recorded" : status);
+          assert(!JSON.stringify(readback.body).includes("private-school"));
+          assert(!JSON.stringify(readback.body).includes("private-fingerprint"));
+          assert.equal(JSON.stringify(Array.from(f.records.entries())), before);
+        }
+        for (const conflict of [{ buyerAccountKey: "sc-other-buyer" }, { locationId: "other-location" }, { companyId: "other-agency" }]) {
+          f.records.set(schoolKey, { buyerAccountKey: accountKey, locationId, companyId: "agency-one", status: "confirmed", ...conflict });
+          assert.equal((await f.invoke("ghl-oauth-process-readiness", readinessReq)).statusCode, 503);
+        }
+        if (savedSchool) f.records.set(schoolKey, savedSchool);
+        else f.records.delete(schoolKey);
+        assert.equal(f.calls.length, providerCalls, "School name ledger inspection must not contact the provider");
         const key = `buyerfulfillment-${locationId}`;
         const savedJob = f.records.get(key);
         f.records.set(key, { ...savedJob, buyerAccountKey: "sc-other-buyer" });

@@ -2081,6 +2081,7 @@ async function checkHighLevelReadiness(){
     if(data.nextAttemptAt)summary+='Next check: '+new Date(data.nextAttemptAt).toISOString()+'. ';
     if(data.savedEvidence){
       summary+='Saved buyer approval: '+data.savedEvidence.policyStatus+'; snapshot verified: '+(data.savedEvidence.snapshotVerified?'yes':'no')+'; fulfillment: '+data.savedEvidence.fulfillmentStatus+'. ';
+      summary+='School name ledger: '+(data.savedEvidence.schoolNameStatus || 'not_recorded')+'. ';
       Object.keys(data.savedEvidence.steps).forEach(function(step){summary+=step+': '+data.savedEvidence.steps[step]+'. ';});
     }
     if(data.prerequisites){
