@@ -27,6 +27,35 @@ function fixture() {
   assert.deepEqual(disabled.counts(), { executions: 0, inspections: 0, reads: 0, writes: 0 });
   assert.equal(disabled.locked(), false);
 
+  const deferred = fixture(); deferred.ready({ status: "ready" });
+  const queued = await deferred.run({ event, deferFirstInspection: true });
+  assert.equal(queued.status, "waiting_for_provisioning");
+  assert.equal(queued.attempts, 0); assert.equal(queued.nextAttemptAt, 61000);
+  const queuedJob = structuredClone(deferred.job());
+  for (const options of [{ event }, {}, { inspectOnly: true }]) {
+    assert.equal((await deferred.run(options)).status, "waiting_for_provisioning");
+    assert.deepEqual(deferred.job(), queuedJob);
+  }
+  assert.equal(deferred.counts().inspections, 0); assert.equal(deferred.counts().executions, 0);
+  deferred.advance(59999);
+  assert.equal((await deferred.run({ event })).status, "waiting_for_provisioning");
+  deferred.advance(1);
+  assert.equal((await deferred.run()).status, "complete");
+  assert.equal(deferred.job().attempts, 1); assert.equal(deferred.job().expiresAt, queuedJob.expiresAt);
+  assert.equal((await deferred.run({ event, deferFirstInspection: true })).status, "existing_access_preserved");
+  assert.equal(deferred.counts().executions, 1);
+  const deferredConflict = fixture();
+  deferredConflict.ready({ status: "support_review_required", failure: {
+    stage: "purchase_subscription_identity", kind: "exception", identityReason: "conflicting_identity"
+  } });
+  await deferredConflict.run({ event, deferFirstInspection: true }); deferredConflict.advance(60000);
+  assert.equal((await deferredConflict.run()).status, "support_review_required");
+  const stoppedDeferred = structuredClone(deferredConflict.job());
+  deferredConflict.ready({ status: "ready" });
+  await deferredConflict.run({ event, deferFirstInspection: true });
+  assert.deepEqual(deferredConflict.job(), stoppedDeferred);
+  assert.equal(deferredConflict.counts().executions, 0);
+
   const f = fixture();
   assert.equal((await f.run({ inspectOnly: true })).status, "not_queued");
   assert.equal(f.counts().writes, 0);

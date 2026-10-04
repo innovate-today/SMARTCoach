@@ -650,14 +650,16 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
-  const identityModes = ["missing", "empty", "conflict", "agency-conflict", "v2-conflict", "ambiguous", "malformed", "wrong-live", "manual", "alias", "unsigned"]
+  const identityModes = ["provisioning-delay", "missing", "empty", "conflict", "agency-conflict", "v2-conflict", "ambiguous", "malformed", "wrong-live", "manual", "alias", "unsigned"]
     .map(kind => `automatic-policy-identity-${kind}`);
   for (const mode of [...identityModes, "automatic-policy-subscription-wait", "automatic-policy-subscription-wrong-location", "automatic-policy-subscription-malformed", "automatic-policy-subscription-unknown-status", "automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const controlled = mode.startsWith('controlled-');
     const automatic = mode.startsWith('automatic-');
     const policy = mode.startsWith('automatic-policy-');
+    const provisioningDelay = mode === "automatic-policy-identity-provisioning-delay";
     const success = ['success', 'controlled-success'].includes(mode);
     const f = fixture({ executionEnabled: !automatic && !controlled && mode !== "disabled" });
+    if (provisioningDelay) f.env.SMARTCOACH_GHL_INITIAL_PROVISIONING_WAIT_ENABLED = "true";
     const scopes = "locations.readonly locations/customFields.readonly locations/customValues.readonly locations/customValues.write contacts.readonly contacts.write objects/record.readonly objects/record.write";
     const buyerScopes = scopes + (mode === "missing-scope" ? "" : " objects/schema.readonly");
     f.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write " + buyerScopes;
@@ -784,8 +786,34 @@ async function run() {
       if (mode === "automatic-pending") f.records.get("pendingcheckout").lastMatchedLocationId = "other-location";
       if (mode === "automatic-missing-mapping") f.accounts.delete(accountKey);
       const before = f.calls.length;
-      const result = await f.api.dispatchProvisioningEvent(event, verification);
-      const succeeds = ["automatic-success", "automatic-install-success", "automatic-policy-success"].includes(mode);
+      let result = await f.api.dispatchProvisioningEvent(event, verification);
+      if (provisioningDelay) {
+        assert.equal(result.status, "waiting_for_provisioning"); assert.equal(result.attempts, 0);
+        assert.equal(f.calls.length, before, "Initial signed creation must not inspect provider metadata");
+        const queued = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
+        assert.equal((await f.api.dispatchProvisioningEvent(event, verification)).status, "waiting_for_provisioning");
+        assert.equal(f.calls.length, before); assert.equal(valueWrites, 0); assert.equal(sends, 0);
+        assert.deepEqual(f.records.get(`buyerreadiness-${locationId}`), queued);
+        f.env.CRON_SECRET = "private-cron-secret-at-least-32-characters";
+        f.env.SMARTCOACH_GHL_READINESS_WORKER_ENABLED = "true";
+        f.registry.scanBuyerReadinessJobs = async () => ({ cursor: "0", namespaces: [`buyerreadiness-${locationId.toLowerCase()}`] });
+        const realLoad = f.registry.loadAccountScopedRecord;
+        f.registry.loadAccountScopedRecord = (key, namespace) => realLoad(key,
+          namespace === `buyerreadiness-${locationId.toLowerCase()}` ? `buyerreadiness-${locationId}` : namespace);
+        const cron = f.request("GET"); cron.headers = { authorization: `Bearer ${f.env.CRON_SECRET}` };
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "waiting_for_provisioning");
+        assert.equal(f.calls.length, before); assert.equal(sends, 0);
+        subscriptionReady = true; f.advance(60000);
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "complete");
+        const check = f.request(); check.body = { accountKey, locationId, dryRun: true };
+        result = (await f.invoke("ghl-oauth-process-readiness", check)).body;
+        assert.equal(result.status, "complete"); assert.equal(result.attempts, 1);
+        assert.equal(f.records.get(`buyerreadiness-${locationId}`).expiresAt, queued.expiresAt);
+        assert.equal(valueWrites, 1); assert.equal(sends, 1);
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "existing_access_preserved");
+        assert.equal(valueWrites, 1); assert.equal(sends, 1);
+      }
+      const succeeds = provisioningDelay || ["automatic-success", "automatic-install-success", "automatic-policy-success"].includes(mode);
       const rejectedEvent = ["automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency"].includes(mode);
       assert.equal(result.status, succeeds ? "complete" : rejectedEvent ? "event_rejected"
         : ["automatic-policy-identity-missing", "automatic-policy-identity-empty"].includes(mode) ? "waiting_for_subscription_identity"
@@ -942,7 +970,7 @@ async function run() {
         assert.equal(valueWrites, 1); assert.equal(sends, 1);
         assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "existing_access_preserved");
         assert.equal(valueWrites, 1); assert.equal(sends, 1);
-      } else if (identityModes.includes(mode)) {
+      } else if (identityModes.includes(mode) && !provisioningDelay) {
         subscriptionReady = true; f.advance(60000);
         assert.equal((await f.api.dispatchProvisioningEvent(event, verification)).status, "support_review_required");
         assert.equal(valueWrites, 0); assert.equal(sends, 0);
