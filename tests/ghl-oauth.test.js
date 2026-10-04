@@ -659,6 +659,10 @@ async function run() {
     const scopes = "locations.readonly locations/customFields.readonly locations/customValues.readonly locations/customValues.write contacts.readonly contacts.write objects/record.readonly objects/record.write";
     const buyerScopes = scopes + (mode === "missing-scope" ? "" : " objects/schema.readonly");
     f.env.SMARTCOACH_GHL_OAUTH_SCOPES = "oauth.write " + buyerScopes;
+    if (mode === "automatic-policy-success") {
+      f.env.SMARTCOACH_GHL_BUYER_SCHOOL_NAME_SYNC_ENABLED = "true";
+      f.env.SMARTCOACH_GHL_OAUTH_SCOPES += " locations.write";
+    }
     f.env.SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS = accountKey;
     if (automatic) {
       f.env.SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS = accountKey;
@@ -703,6 +707,7 @@ async function run() {
     assert(mapping.objects.meet_result.fields.meet_name);
     assert(mapping.objects.record.fields.meet_name);
     let sends = 0, values = [], valueWrites = 0, installed = !["automatic-uninstalled", "automatic-policy-worker"].includes(mode), staleValueRead = ['delayed-readback', 'automatic-policy-key-readback'].includes(mode);
+    let locationName = "Buyer's Account", nameWrites = 0;
     f.setProvider((url, options) => {
       const path = new URL(url).pathname;
       if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true, subscriptionStatus: "trialing",
@@ -711,7 +716,15 @@ async function run() {
         isSaaSV2: true, title: mode === "automatic-wrong-product" ? "Unrelated Product" : policy ? "SMARTCoach Pro 25" : "SMARTCoach Pro 100", trialPeriod: 30, prices: [{ id: "price", active: true, amount: policy ? 19 : 29, currency: "USD", billingInterval: "month" }] };
       if (path === "/oauth/installed-locations") return { items: [{ _id: locationId, isInstalled: installed }] };
       if (path === "/oauth/location-token") return { access_token: "private-fulfillment-buyer", token_type: "Bearer", locationId, expires_in: 86400, scope: buyerScopes };
-      if (path === `/locations/${locationId}`) return { location: { id: locationId, companyId: "agency-one" } };
+      if (path === `/locations/${locationId}`) {
+        if (options.method === "PUT") {
+          assert.equal(mode, "automatic-policy-success", "Name synchronization must be explicitly enabled");
+          assert.equal(options.headers.Authorization, "Bearer private-access");
+          assert.deepEqual(JSON.parse(options.body), { companyId: "agency-one", name: "School" });
+          nameWrites++; locationName = JSON.parse(options.body).name;
+        }
+        return { location: { id: locationId, companyId: "agency-one", name: locationName, email: "buyer@example.com" } };
+      }
       if (path === "/locations/QxwjWekSyUf7sDOFHPB4") return { location: { id: "QxwjWekSyUf7sDOFHPB4", companyId: "agency-one" } };
       if (path === `/locations/${locationId}/customFields`) return { customFields: ["missing-fields", "automatic-missing-fields", "automatic-policy-missing-fields"].includes(mode) ? [] : Object.values(mapping.contactFields).map(field => ({ ...field, locationId })) };
       if (path.startsWith("/objects/")) {
@@ -761,6 +774,14 @@ async function run() {
         assert(["exception", "blocked"].includes(result.failure.kind));
       }
       if (succeeds) assert.equal(result.failure, null);
+      if (mode === "automatic-policy-success") {
+        assert.equal(locationName, "School");
+        assert.equal(nameWrites, 1);
+        assert.equal(f.records.get(`buyerschoolname-${locationId}`).status, "confirmed");
+        await f.api.dispatchProvisioningEvent(event, verification);
+        assert.equal(nameWrites, 1, "Repeated events must not rename again");
+        assert.equal(sends, 1, "Name synchronization must not duplicate access emails");
+      } else assert.equal(nameWrites, 0);
       if (mode === "automatic-policy-key-readback") {
         assert.deepEqual(result.failure, { stage: "key_provider_readback", kind: "exception" });
         assert.equal(valueWrites, 1);
