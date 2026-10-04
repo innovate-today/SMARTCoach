@@ -263,6 +263,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthTrialBtn" type="button" class="secondary" onclick="reconcileHighLevelBuyerTrial()">Reconcile Trial Status</button>
         <button id="ghlOAuthFulfillmentBtn" type="button" class="secondary" onclick="previewHighLevelFulfillment()">Preview Fulfillment</button>
         <button id="ghlOAuthBuyerSetupBtn" type="button" class="secondary" onclick="previewHighLevelBuyerSetup()">Preview Buyer Setup</button>
+        <button id="ghlOAuthControlledSetupBtn" type="button" class="secondary" onclick="completeHighLevelBuyerSetup()">Complete Controlled Setup</button>
         <button id="ghlOAuthCheckoutReviewBtn" type="button" class="secondary" onclick="reviewHighLevelCheckoutIdentity()">Review Checkout Identity</button>
         <button id="ghlOAuthWriteBtn" type="button" class="secondary" onclick="verifyHighLevelBuyerWrite()">Verify Account-Key Write</button>
         <button id="ghlOAuthWelcomeBtn" type="button" class="secondary" onclick="sendHighLevelBuyerWelcome()">Send Welcome Link</button>
@@ -2004,6 +2005,30 @@ async function previewHighLevelBuyerSetup(){
     summary+=data.controlledExecutionEnabled===true?'Controlled execution is allowlisted for this buyer; explicit unchanged-evidence confirmation is still required. ':'Live execution remains disabled for this buyer. ';
     setStatus(summary+'Automatic fulfillment remains off. No account changes or email sent.','good');
   }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+
+async function completeHighLevelBuyerSetup(){
+  var button=document.getElementById('ghlOAuthControlledSetupBtn');
+  var buyer={accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim()};
+  var email=document.getElementById('originalCheckoutEmail').value.trim().toLowerCase();
+  var coach=document.getElementById('buyerHeadCoachName').value.trim();
+  if(!email||!coach){setStatus('Enter the expected buyer head coach and original checkout email before controlled setup.','bad');return;}
+  button.disabled=true;
+  try{
+    var preview=await highLevelConnectionRequest('ghl-oauth-fulfill-buyer','POST',Object.assign({},buyer,{dryRun:true,verifySnapshot:true}));
+    var identity=preview.buyer;
+    if(preview.dryRun!==true||preview.accountUnchanged!==true||preview.emailSent!==false||preview.automaticFulfillmentReady!==false
+      ||preview.controlledExecutionEnabled!==true||preview.stagedPlanReady!==true||!preview.fingerprint||preview.snapshot?.verified!==true
+      ||!identity||identity.accountKey!==buyer.accountKey||identity.locationId!==buyer.locationId
+      ||identity.ownerEmail!==email||identity.coachName!==coach)throw new Error('Controlled buyer evidence does not match. No setup executed.');
+    if(preview.existingAccessPreserved===true){setStatus('Existing coach access and accepted email preserved. No setup or resend needed.','good');return;}
+    if(JSON.stringify(preview.steps)!==JSON.stringify(['verify_buyer_setup','ensure_buyer_account_key','create_head_coach_and_send_seller_access']))throw new Error('Controlled setup steps do not match. No setup executed.');
+    if(!window.confirm('Complete controlled setup for '+identity.schoolName+' / '+identity.coachName+' ('+buyer.accountKey+')? Save verified '+identity.productName+', USD '+identity.amount+' '+identity.billingCadence+', '+identity.subscriptionStatus+'; verify the buyer account key; create head-coach access and send one access email to '+identity.ownerEmail+' from info@smartcoach-pro.com through the SMARTCoach seller account. HighLevel billing is unchanged. Automatic fulfillment remains off.'))return;
+    var result=await highLevelConnectionRequest('ghl-oauth-fulfill-buyer','POST',Object.assign({},buyer,{dryRun:false,confirmExecution:true,expectedFingerprint:preview.fingerprint}));
+    if(result.complete!==true||result.emailAccepted!==true||result.deliveryVerified!==false||result.automaticFulfillmentReady!==false)throw new Error('Controlled setup outcome requires review.');
+    setStatus('Controlled buyer setup completed and read back. Head-coach access created; one access email accepted from info@smartcoach-pro.com to '+identity.ownerEmail+'. Inbox delivery and Overview sign-in are not yet verified. HighLevel billing unchanged. Automatic fulfillment remains off.','good');
+  }catch(error){setStatus(error.message+' Do not retry or resend before reviewing saved setup and delivery.','bad');}
   finally{button.disabled=false;}
 }
 
