@@ -1984,7 +1984,7 @@ async function checkHighLevelReadiness(){
   try{
     var data=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
       accountKey:document.getElementById('accountKey').value.trim(),
-      locationId:document.getElementById('locationId').value.trim(),dryRun:true
+      locationId:document.getElementById('locationId').value.trim(),dryRun:true,inspectPrerequisites:true
     });
     var summary='Saved automation status: '+data.status+'. ';
     if(Number.isInteger(data.attempts))summary+='Attempts: '+data.attempts+'. ';
@@ -1992,6 +1992,12 @@ async function checkHighLevelReadiness(){
     if(data.savedEvidence){
       summary+='Saved buyer approval: '+data.savedEvidence.policyStatus+'; snapshot verified: '+(data.savedEvidence.snapshotVerified?'yes':'no')+'; fulfillment: '+data.savedEvidence.fulfillmentStatus+'. ';
       Object.keys(data.savedEvidence.steps).forEach(function(step){summary+=step+': '+data.savedEvidence.steps[step]+'. ';});
+    }
+    if(data.prerequisites){
+      summary+='Current prerequisites: '+(data.prerequisites.verified?'verified':'failed at '+data.prerequisites.stage)+'. ';
+      if(data.prerequisites.blockers)summary+='Checks: '+data.prerequisites.blockers.join(', ')+'. ';
+      if(data.prerequisites.reason)summary+=data.prerequisites.reason+' ';
+      if(data.prerequisites.providerStatus)summary+='Provider HTTP '+data.prerequisites.providerStatus+'. ';
     }
     summary+='Access email accepted: '+(data.emailAccepted===true?'yes':'no')+'. Inbox delivery and coach sign-in are not verified by this check. ';
     setStatus(summary+'Read-only check; no retry, account changes, or email sent.',data.outcomeRequiresReview?'bad':'good');

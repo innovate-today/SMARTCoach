@@ -859,6 +859,20 @@ async function run() {
       for (const secret of ["private-fulfillment-buyer", "private-fulfillment-seller", "private-admin", "private-send-error"]) {
         assert(!JSON.stringify(result).includes(secret));
       }
+      if (["automatic-policy-success", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping"].includes(mode)) {
+        const diagnosticsReq = f.request(); diagnosticsReq.body = { accountKey, locationId, dryRun: true, inspectPrerequisites: true };
+        const jobsBefore = JSON.stringify(Array.from(f.records.entries()).filter(([key]) => /buyer(readiness|policy|fulfillment|access)-/.test(key)));
+        const accountBefore = structuredClone(f.accounts.get(accountKey));
+        const writesBefore = valueWrites, sendsBefore = sends;
+        const diagnostics = await f.invoke("ghl-oauth-process-readiness", diagnosticsReq);
+        assert.equal(diagnostics.statusCode, 200);
+        assert.equal(diagnostics.body.prerequisites.stage, mode === "automatic-policy-success" ? "verified"
+          : mode === "automatic-policy-missing-fields" ? "snapshot" : "qualification");
+        assert.equal(sends, sendsBefore); assert.equal(valueWrites, writesBefore);
+        assert.deepEqual(f.accounts.get(accountKey), accountBefore);
+        assert.equal(JSON.stringify(Array.from(f.records.entries()).filter(([key]) => /buyer(readiness|policy|fulfillment|access)-/.test(key))), jobsBefore);
+        assert(!JSON.stringify(diagnostics.body).includes("private-fulfillment"));
+      }
       continue;
     }
     const req = f.request(); req.body = { accountKey, locationId, dryRun: true };
@@ -1325,7 +1339,7 @@ async function run() {
   pageResponse = { status: 'support_review_required', attempts: 1, emailAccepted: false, outcomeRequiresReview: true };
   await context.checkHighLevelReadiness();
   assert.equal(pageCalls[0].url, '/api/smart-trak/ghl-oauth-process-readiness');
-  assert.deepEqual(JSON.parse(pageCalls[0].options.body), { accountKey: nodes.accountKey.value, locationId: nodes.locationId.value, dryRun: true });
+  assert.deepEqual(JSON.parse(pageCalls[0].options.body), { accountKey: nodes.accountKey.value, locationId: nodes.locationId.value, dryRun: true, inspectPrerequisites: true });
   assert.match(statuses.pop()[0], /support_review_required.*no retry, account changes, or email sent/);
   assert.equal(nodes.ghlOAuthReadinessBtn.disabled, false);
   assert.equal(navigations.length, 0);
