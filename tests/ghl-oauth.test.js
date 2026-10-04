@@ -1038,6 +1038,20 @@ async function run() {
   const catalog = { planId: "plan", companyId: "agency", providerLocationId: "seller", productId: "product", isSaaSV2: true,
     title: "SMARTCoach Pro 100", trialPeriod: 30, prices: [{ id: "price", billingInterval: "month", active: true, amount: 29, currency: "USD" }] };
   assert.equal(verifySaasCatalogPurchase(catalogSubscription, catalog, "agency", "seller").purchaseVerified, true);
+  for (const [title, monthly, annual] of [["SMARTCoach Pro 25", 19, 199], ["SMARTCoach Pro 100", 29, 299], ["SMARTCoach Pro 200", 39, 399]]) {
+    for (const [interval, amount] of [["month", monthly], ["year", annual]]) {
+      for (const trialDays of [0, 7, 14, 30, 365]) {
+        const offer = structuredClone(catalog);
+        offer.title = title;
+        offer.trialPeriod = trialDays;
+        offer.prices[0].billingInterval = interval;
+        offer.prices[0].amount = amount;
+        const verified = verifySaasCatalogPurchase(catalogSubscription, offer, "agency", "seller");
+        assert.equal(verified.purchaseVerified, true);
+        assert.equal(verified.planTrialDays, trialDays);
+      }
+    }
+  }
   for (const mutate of [
     c => { c.planId = "other"; }, c => { c.companyId = "other"; }, c => { c.providerLocationId = "buyer"; },
     c => { c.productId = "other"; }, c => { c.isSaaSV2 = false; }, c => { c.title += " Monthly"; },

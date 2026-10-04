@@ -237,7 +237,7 @@ async function testSaasWorkflowRequiresRealBuyerLocationAndProduct() {
   }
 }
 
-async function testPendingCheckoutStoresOnboardingAndReturnsSaleLink() {
+async function testPendingCheckoutStoresOnboardingAndReturnsSaleLink(plan = "pro100", cadence = "annual", phone = "(555) 123-4567") {
   const previousFetch = global.fetch;
   let savedRecord = null;
   global.fetch = async (url) => {
@@ -264,26 +264,38 @@ async function testPendingCheckoutStoresOnboardingAndReturnsSaleLink() {
         query: { route: "pending-checkout" },
         headers: {},
         body: {
-          plan: "pro100",
-          cadence: "annual",
+          plan,
+          cadence,
           schoolName: "North Track Club",
-          firstName: "Taylor",
-          lastName: "Coach",
-          email: "Taylor.Coach@example.com",
-          phone: "(555) 123-4567",
+          firstName: "Taylor Ann",
+          lastName: "O'Coach",
+          email: "Taylor.Coach+checkout@example.com",
+          phone,
           teamType: "Track & Field",
         },
       }, res);
       assert.strictEqual(res.statusCode, 200);
       assert.strictEqual(res.body.success, true);
-      assert.strictEqual(res.body.plan, "pro100");
-      assert.strictEqual(res.body.cadence, "annual");
-      assert.strictEqual(res.body.productName, "SMARTCoach Pro 100 - Annual");
-      assert.strictEqual(res.body.redirectUrl, "https://link.fastpaydirect.com/payment-link/6a1b382203b17c94f5713b65");
+      assert.strictEqual(res.body.plan, plan);
+      assert.strictEqual(res.body.cadence, cadence);
+      const tier = { pro25: "25", pro100: "100", pro200: "200" }[plan];
+      assert.strictEqual(res.body.productName, `SMARTCoach Pro ${tier} - ${cadence === "annual" ? "Annual" : "Monthly"}`);
+      const links = { pro25: { monthly: "6a1b37c203b17c94f5713b61", annual: "6a1b37e503b17c94f5713b63" },
+        pro100: { monthly: "6a1b380671d2406ac8cf9ebc", annual: "6a1b382203b17c94f5713b65" },
+        pro200: { monthly: "6a1b383c71d2406ac8cf9ebd", annual: "6a1b384971d2406ac8cf9ebe" } };
+      const personalizedUrl = new URL(res.body.redirectUrl);
+      assert.strictEqual(personalizedUrl.origin, "https://link.fastpaydirect.com");
+      assert.strictEqual(personalizedUrl.pathname, "/payment-link/" + links[plan][cadence]);
+      assert.strictEqual(personalizedUrl.searchParams.get("firstName"), "Taylor Ann");
+      assert.strictEqual(personalizedUrl.searchParams.get("lastName"), "O'Coach");
+      assert.strictEqual(personalizedUrl.searchParams.get("email"), "taylor.coach+checkout@example.com");
+      assert.strictEqual(personalizedUrl.searchParams.get("phone"), phone ? "5551234567" : null);
+      assert.strictEqual(savedRecord.redirectUrl, "https://link.fastpaydirect.com/payment-link/" + links[plan][cadence]);
+      assert.strictEqual([...personalizedUrl.searchParams.keys()].length, phone ? 4 : 3);
       assert.ok(savedRecord);
       assert.strictEqual(savedRecord.schoolName, "North Track Club");
-      assert.strictEqual(savedRecord.coachEmail, "taylor.coach@example.com");
-      assert.strictEqual(savedRecord.coachPhone, "5551234567");
+      assert.strictEqual(savedRecord.coachEmail, "taylor.coach+checkout@example.com");
+      assert.strictEqual(savedRecord.coachPhone, phone ? "5551234567" : "");
       assert.strictEqual(savedRecord.status, "pending_payment");
       assert.strictEqual(JSON.stringify(savedRecord).includes("registry-token"), false);
     });
@@ -1928,7 +1940,10 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
   await testCheckoutProductOverridesLegacyWorkflowFields();
   await testCheckoutProductCorrectsExistingFallbackAmount();
   await testSaasWorkflowRequiresRealBuyerLocationAndProduct();
-  await testPendingCheckoutStoresOnboardingAndReturnsSaleLink();
+  for (const plan of ["pro25", "pro100", "pro200"]) {
+    for (const cadence of ["monthly", "annual"]) await testPendingCheckoutStoresOnboardingAndReturnsSaleLink(plan, cadence);
+  }
+  await testPendingCheckoutStoresOnboardingAndReturnsSaleLink("pro25", "monthly", "");
   await testPendingCheckoutValidatesRequiredFields();
   await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation();
   await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation("stale-readback");

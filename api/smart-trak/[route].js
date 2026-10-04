@@ -6683,6 +6683,11 @@ async function pendingCheckout(req, res) {
     };
     const registry = await saveAccountScopedRecord(pendingKey, PENDING_CHECKOUT_NAMESPACE, record);
     if (!registry.saved) throw httpError(503, registry.reason || "Pending checkout could not be saved.");
+    const personalizedUrl = new URL(redirectUrl);
+    personalizedUrl.searchParams.set("firstName", firstName);
+    personalizedUrl.searchParams.set("lastName", lastName);
+    personalizedUrl.searchParams.set("email", email);
+    if (phone) personalizedUrl.searchParams.set("phone", phone);
     res.status(200).json({
       success: true,
       pendingCheckoutSaved: true,
@@ -6690,7 +6695,7 @@ async function pendingCheckout(req, res) {
       plan,
       cadence,
       productName: record.productName,
-      redirectUrl,
+      redirectUrl: personalizedUrl.toString(),
       registry: { saved: true, configured: true },
     });
   } catch (error) {
