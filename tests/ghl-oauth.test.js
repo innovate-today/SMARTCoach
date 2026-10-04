@@ -896,6 +896,56 @@ async function run() {
           }
           f.records.set(namespace, oldJob);
           values = correct;
+          const recoveryJob = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
+          Object.assign(recoveryJob, { status: "support_review_required", attempts: 1, emailAccepted: false });
+          const recoveryAudit = { buyerAccountKey: accountKey, locationId, status: "approved", fingerprint: 'a'.repeat(64),
+            approvedAt: 1000000, originalJob: recoveryJob };
+          f.records.set(`buyerrecovery-${locationId}`, recoveryAudit);
+          f.records.set(`buyerreadiness-${locationId}`, { ...recoveryJob, attempts: 4,
+            recovery: { fingerprint: recoveryAudit.fingerprint, approvedAt: recoveryAudit.approvedAt,
+              originalStatus: recoveryJob.status, originalAttempts: 1 } });
+          f.records.get(`buyerpolicy-${locationId}`).status = "approved";
+          const stoppedFulfillment = structuredClone(oldJob);
+          stoppedFulfillment.status = "pending";
+          stoppedFulfillment.steps.ensure_buyer_account_key.status = "attempted";
+          delete stoppedFulfillment.steps.create_head_coach_and_send_seller_access;
+          f.records.set(namespace, stoppedFulfillment);
+          f.records.delete(`buyeraccess-${locationId}`);
+          const stoppedAccount = f.accounts.get(accountKey);
+          stoppedAccount.coachStaff = []; delete stoppedAccount.accessCode; delete stoppedAccount.lastStaffSync;
+          const beforeKeyRecovery = JSON.stringify(keyReviewRecords());
+          const buyerBeforeKeyRecovery = structuredClone(stoppedAccount);
+          const recoveryReq = f.request(); recoveryReq.body = { accountKey, locationId, reviewKeyRecovery: true, dryRun: true };
+          const keyPreview = await f.invoke("ghl-oauth-process-readiness", recoveryReq);
+          assert.equal(keyPreview.statusCode, 200, keyPreview.body.error);
+          assert.equal(keyPreview.body.keyRecoveryReady, true);
+          assert.equal(keyPreview.body.providerWritePerformed, false);
+          assert.equal(JSON.stringify(keyReviewRecords()), beforeKeyRecovery);
+          assert.deepEqual(f.accounts.get(accountKey), buyerBeforeKeyRecovery);
+          assert.equal(valueWrites, writesBefore); assert.equal(sends, sendsBefore);
+          for (const invalid of ["no-admin", "wrong-origin", "get", "unconfirmed", "stale"]) {
+            const request = f.request(); request.body = { ...recoveryReq.body };
+            if (invalid === "no-admin") delete request.headers["x-smartcoach-setup-code"];
+            if (invalid === "wrong-origin") request.headers.origin = "https://other.example";
+            if (invalid === "get") request.method = "GET";
+            if (["unconfirmed", "stale"].includes(invalid)) Object.assign(request.body, { dryRun: false,
+              confirmRecovery: invalid === "stale", expectedFingerprint: "stale" });
+            assert.equal((await f.invoke("ghl-oauth-process-readiness", request)).statusCode,
+              invalid === "get" ? 405 : ["unconfirmed", "stale"].includes(invalid) ? 409 : 403);
+            assert.equal(JSON.stringify(keyReviewRecords()), beforeKeyRecovery);
+          }
+          recoveryReq.body = { ...recoveryReq.body, dryRun: false, confirmRecovery: true, expectedFingerprint: keyPreview.body.fingerprint };
+          const recovered = await f.invoke("ghl-oauth-process-readiness", recoveryReq);
+          assert.equal(recovered.statusCode, 200, recovered.body.error);
+          assert.equal(recovered.body.status, "complete");
+          assert.equal(recovered.body.emailAccepted, true);
+          assert.equal(valueWrites, writesBefore, "key recovery must not repeat a provider write");
+          assert.equal(sends, sendsBefore + 1);
+          assert.equal(f.records.get(`buyerkeyreview-${locationId}`).originalReadiness.attempts, 4);
+          assert.equal(f.records.get(`buyerreadiness-${locationId}`).attempts, 5);
+          assert.deepEqual(f.records.get(`buyerrecovery-${locationId}`), recoveryAudit);
+          assert.equal((await f.invoke("ghl-oauth-process-readiness", recoveryReq)).statusCode, 409);
+          assert.equal(sends, sendsBefore + 1);
         }
       }
       continue;
@@ -1368,6 +1418,39 @@ async function run() {
   assert.match(statuses.pop()[0], /support_review_required.*no retry, account changes, or email sent/);
   assert.equal(nodes.ghlOAuthReadinessBtn.disabled, false);
   assert.equal(navigations.length, 0);
+  pageCalls.length = 0;
+  nodes.ghlOAuthKeyRecoveryPreviewBtn = { disabled: false };
+  nodes.ghlOAuthKeyRecoveryConfirmBtn = { hidden: true };
+  const keyRecoveryPreview = { keyRecoveryReady: true, accountUnchanged: true, emailSent: false,
+    providerWritePerformed: false, jobHistoryPreserved: true, fingerprint: 'b'.repeat(64), currentAttempts: 4,
+    buyer: { buyerAccountKey: nodes.accountKey.value, locationId: nodes.locationId.value,
+      schoolName: 'Mustang', coachName: 'Steve Bronco', ownerEmail: 'buyer@example.com',
+      productName: 'SMARTCoach Pro 25 - Monthly', amount: '19.00', billingCadence: 'monthly' } };
+  pageResponse = keyRecoveryPreview;
+  await context.previewBuyerKeyRecovery();
+  assert.equal(JSON.parse(pageCalls.at(-1).options.body).dryRun, true);
+  assert.equal(JSON.parse(pageCalls.at(-1).options.body).reviewKeyRecovery, true);
+  assert.equal(nodes.ghlOAuthKeyRecoveryConfirmBtn.hidden, false);
+  assert.match(statuses.pop()[0], /without repeating its provider write/);
+  const beforeChangedKeyBuyer = pageCalls.length;
+  nodes.locationId.value = 'other';
+  await context.confirmBuyerKeyRecovery();
+  assert.equal(pageCalls.length, beforeChangedKeyBuyer);
+  assert.equal(nodes.ghlOAuthKeyRecoveryConfirmBtn.hidden, true);
+  nodes.locationId.value = keyRecoveryPreview.buyer.locationId;
+  pageResponse = { ...keyRecoveryPreview, providerWritePerformed: true };
+  await context.previewBuyerKeyRecovery();
+  assert.equal(nodes.ghlOAuthKeyRecoveryConfirmBtn.hidden, true);
+  pageResponse = keyRecoveryPreview;
+  await context.previewBuyerKeyRecovery();
+  pageResponse = { keyRecoveryApproved: true, providerWritePerformed: false, jobHistoryPreserved: true, status: 'complete', emailAccepted: true };
+  await context.confirmBuyerKeyRecovery();
+  assert.deepEqual(JSON.parse(pageCalls.at(-1).options.body), { accountKey: nodes.accountKey.value,
+    locationId: nodes.locationId.value, reviewKeyRecovery: true, dryRun: false, confirmRecovery: true, expectedFingerprint: keyRecoveryPreview.fingerprint });
+  const afterKeyRecovery = pageCalls.length;
+  await context.confirmBuyerKeyRecovery();
+  assert.equal(pageCalls.length, afterKeyRecovery);
+  assert.match(statuses.pop()[0], /No repeat key write/);
   pageCalls.length = 0;
   nodes.ghlOAuthRecoveryPreviewBtn = { disabled: false };
   nodes.ghlOAuthRecoveryConfirmBtn = { hidden: true };

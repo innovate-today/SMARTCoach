@@ -274,6 +274,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthHeadCoachBtn" type="button" class="secondary" onclick="createHighLevelHeadCoach()">Create Head Coach &amp; Send Access</button>
         <button id="ghlOAuthOwnerBtn" type="button" class="secondary" onclick="updateHighLevelBuyerOwnerEmail()">Update Owner Email Only</button>
       </div>
+      <div class="formactions">
+        <button id="ghlOAuthKeyRecoveryPreviewBtn" type="button" class="secondary" onclick="previewBuyerKeyRecovery()">Preview Verified Key Recovery</button>
+        <button id="ghlOAuthKeyRecoveryConfirmBtn" type="button" hidden onclick="confirmBuyerKeyRecovery()">Confirm Verified Key &amp; Send Access</button>
+      </div>
       <div id="accountKeyWarning" class="setupnote" hidden><b>Account keys do not match</b>The setup form and account lookup are pointing at different customers. Match the account keys before saving or running live checks.</div>
       <div id="status" class="status"></div>
     </div>
@@ -1981,6 +1985,46 @@ async function confirmLegacyActivation(){
 }
 
 var readinessRecoveryPreview=null;
+var buyerKeyRecoveryPreview=null;
+async function previewBuyerKeyRecovery(){
+  var button=document.getElementById('ghlOAuthKeyRecoveryPreviewBtn');
+  var confirmButton=document.getElementById('ghlOAuthKeyRecoveryConfirmBtn');
+  buyerKeyRecoveryPreview=null;confirmButton.hidden=true;button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),
+      reviewKeyRecovery:true,dryRun:true
+    });
+    if(data.keyRecoveryReady!==true||data.accountUnchanged!==true||data.emailSent!==false||data.providerWritePerformed!==false
+      ||data.jobHistoryPreserved!==true||!data.buyer||!/^[a-f0-9]{64}$/.test(data.fingerprint)
+      ||data.buyer.buyerAccountKey!==document.getElementById('accountKey').value.trim()
+      ||data.buyer.locationId!==document.getElementById('locationId').value.trim())throw new Error('Verified-key recovery preview could not be verified.');
+    buyerKeyRecoveryPreview=data;confirmButton.hidden=false;
+    setStatus('Verified-key recovery preview: '+data.buyer.schoolName+' / '+data.buyer.coachName+' / '+data.buyer.ownerEmail+'. '
+      +data.buyer.productName+', USD '+data.buyer.amount+' '+data.buyer.billingCadence+'. '
+      +'Exact CRM key verified. Confirmation will audit the attempted key step as completed without repeating its provider write, '
+      +'then resume only head-coach access and SMARTCoach Access email from info@smartcoach-pro.com. '
+      +'Job history, '+data.currentAttempts+' attempts and original deadline preserved. Preview changed no setup or email.','good');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+async function confirmBuyerKeyRecovery(){
+  var preview=buyerKeyRecoveryPreview;buyerKeyRecoveryPreview=null;
+  document.getElementById('ghlOAuthKeyRecoveryConfirmBtn').hidden=true;
+  if(!preview)return;
+  try{
+    if(preview.buyer.buyerAccountKey!==document.getElementById('accountKey').value.trim()
+      ||preview.buyer.locationId!==document.getElementById('locationId').value.trim())throw new Error('Buyer selection changed. Preview again.');
+    var result=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
+      accountKey:preview.buyer.buyerAccountKey,locationId:preview.buyer.locationId,reviewKeyRecovery:true,dryRun:false,
+      confirmRecovery:true,expectedFingerprint:preview.fingerprint
+    });
+    if(result.keyRecoveryApproved!==true||result.providerWritePerformed!==false||result.jobHistoryPreserved!==true)throw new Error('Verified-key recovery outcome requires review.');
+    setStatus('Verified-key recovery status: '+result.status+'. Access email accepted: '+(result.emailAccepted===true?'yes':'no')
+      +'. No repeat key write. Original history preserved. Recovered signup, not an unattended signup pass. '
+      +'Inbox delivery, Overview sign-in and first workout sync still require verification. Do not retry or resend.',result.status==='complete'?'good':'bad');
+  }catch(error){setStatus(error.message+' Do not retry or resend before reviewing saved outcomes.','bad');}
+}
 async function previewReadinessRecovery(){
   var button=document.getElementById('ghlOAuthRecoveryPreviewBtn');
   var confirmButton=document.getElementById('ghlOAuthRecoveryConfirmBtn');
