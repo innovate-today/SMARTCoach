@@ -944,6 +944,30 @@ async function run() {
           assert.deepEqual(f.accounts.get(accountKey), original);
         }
         f.registry.loadAccountScopedRecord = scopedLoad;
+        for (const [stage, namespace, occurrence] of [
+          ["stored_history", `buyerreadiness-${locationId}`, 1],
+          ["confirmed_school_name", `buyerschoolname-${locationId}`, 3],
+          ["fulfillment_inspection", `checkoutidentity-${locationId}`, 2],
+        ]) {
+          let reads = 0;
+          f.registry.loadAccountScopedRecord = async (storage, key) => {
+            if (key === namespace && ++reads === occurrence) throw new TypeError("private-token and buyer@example.com");
+            return scopedLoad(storage, key);
+          };
+          const unavailable = await f.invoke("ghl-oauth-process-readiness", setupReq);
+          assert.equal(unavailable.statusCode, 503);
+          assert.equal(unavailable.body.error, `Setup recovery requires review at ${stage} (TypeError). Do not repeat recovery.`);
+          assert(!JSON.stringify(unavailable.body).includes("private-token"));
+          assert(!JSON.stringify(unavailable.body).includes("buyer@example.com"));
+          assert.deepEqual(f.accounts.get(accountKey), original);
+          assert.equal(f.records.get(`buyersetupreview-${locationId}`), undefined);
+          f.registry.loadAccountScopedRecord = scopedLoad;
+        }
+        const acquireLock = f.registry.acquireAccountScopedLock;
+        f.registry.acquireAccountScopedLock = async () => { throw new Error("private storage details"); };
+        const lockFailure = await f.invoke("ghl-oauth-process-readiness", setupReq);
+        assert.equal(lockFailure.body.error, "Setup recovery requires review at history_lock (unexpected_exception). Do not repeat recovery.");
+        f.registry.acquireAccountScopedLock = acquireLock;
         locationName = "Changed name";
         assert.equal((await f.invoke("ghl-oauth-process-readiness", setupReq)).statusCode, 409);
         locationName = "School";
