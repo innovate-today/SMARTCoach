@@ -94,6 +94,26 @@ function fixture() {
   assert.deepEqual((await keyFailure.run({ event })).failure, { stage: "key_provider_write", kind: "exception" });
   assert(!JSON.stringify(keyFailure.job()).includes("private"));
 
+  for (const stage of ["setup_grant", "setup_snapshot", "setup_lock", "setup_evidence", "setup_name_permission",
+    "school_validation", "school_history", "school_location_read", "school_intent_save", "school_intent_readback",
+    "school_prewrite_read", "school_provider_write", "school_provider_readback", "school_identity_readback",
+    "school_name_readback", "school_completion_save", "school_completion_readback",
+    "setup_account_save", "setup_account_readback", "setup_account_notification"]) {
+    const setupFailure = fixture(); setupFailure.ready({ status: "ready" });
+    setupFailure.deps.execute = async () => {
+      throw Object.assign(new Error("private provider response"), { readinessFailure: {
+        stage, kind: "exception", token: "private-secret", message: "private response",
+        identityReason: "conflicting_identity", identityChecks: { locationId: "mismatched" }
+      } });
+    };
+    assert.deepEqual((await setupFailure.run({ event })).failure, { stage, kind: "exception" });
+    assert(!JSON.stringify(setupFailure.job()).includes("private"));
+    const history = structuredClone(setupFailure.job());
+    await setupFailure.run({ event });
+    assert.deepEqual(setupFailure.job(), history);
+    assert.deepEqual((await setupFailure.run({ inspectOnly: true })).failure, { stage, kind: "exception" });
+  }
+
   const diagnostic = fixture();
   diagnostic.deps.inspect = async (_, __, reportStage) => {
     reportStage("fulfillment_preview");

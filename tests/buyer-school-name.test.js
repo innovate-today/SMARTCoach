@@ -87,6 +87,34 @@ function fixture(options = {}) {
   assert(!JSON.stringify(applied.record).includes("private response failure"));
   assert.equal((await ensureBuyerSchoolName(applied.deps, applied.buyer, applied.evidence)).alreadyConfirmed, true);
   assert.equal(appliedWrites, 1);
+  for (const [fault, expectedStage] of [
+    ["provider-read", "school_provider_readback"], ["identity", "school_identity_readback"],
+    ["stale-name", "school_name_readback"], ["save", "school_completion_save"],
+    ["confirmation-read", "school_completion_readback"],
+  ]) {
+    const broken = fixture(); let stage;
+    broken.deps.reportStage = value => { stage = value; };
+    const read = broken.deps.readLocation, persist = broken.deps.save;
+    let reads = 0;
+    broken.deps.readLocation = async () => {
+      if (++reads === 3) {
+        if (fault === "provider-read") throw new Error("private provider response");
+        const location = await read();
+        if (fault === "identity") location.companyId = "other";
+        if (fault === "stale-name") location.name = "Marty Dirt's Account";
+        return location;
+      }
+      return read();
+    };
+    broken.deps.save = async record => {
+      if (record.status === "confirmed" && fault === "save") throw new Error("private storage response");
+      await persist(record);
+      if (record.status === "confirmed" && fault === "confirmation-read") broken.record.schoolName = "corrupted";
+    };
+    await assert.rejects(ensureBuyerSchoolName(broken.deps, broken.buyer, broken.evidence));
+    assert.equal(stage, expectedStage, fault);
+    assert.equal(broken.writes, 1);
+  }
   for (const field of ["id", "companyId", "email"]) {
     const wrongReadback = fixture();
     wrongReadback.deps.writeName = async name => {
