@@ -6,12 +6,12 @@ function fixture() {
   const evidence = { ...buyer, schoolName: "Sandy High", coachName: "Marty Dirt", ownerEmail: "buyer@example.com",
     subscriptionId: "subscription", checkoutFingerprint: "checkout", purchaseVerified: true, pendingCheckoutMatched: true };
   let location = { id: buyer.locationId, companyId: "agency", name: "Marty Dirt's Account", email: evidence.ownerEmail };
-  let record = null, writes = 0;
+  let record = null, writes = 0, saves = 0;
   const deps = { companyId: "agency", now: () => 100,
     readLocation: async () => structuredClone(location),
     writeName: async name => { writes++; location.name = name; },
     load: async () => structuredClone(record),
-    save: async value => { record = { ...structuredClone(value), accountKey: "storage", updatedAt: "storage-owned" }; } };
+    save: async value => { record = { ...structuredClone(value), accountKey: "storage", updatedAt: `storage-owned-${++saves}` }; } };
   return { buyer, evidence, deps, location, get record() { return record; }, get writes() { return writes; } };
 }
 
@@ -113,6 +113,8 @@ function fixture() {
   assert.equal(reviewed.record.attemptedAt, original.attemptedAt);
   assert.equal(reviewed.record.beforeName, original.beforeName);
   assert.equal(reviewed.record.confirmationSource, "reviewed_provider_readback");
+  assert.notEqual(reviewed.record.updatedAt, original.updatedAt);
+  assert.equal(reviewed.record.accountKey, original.accountKey);
   await assert.rejects(ensureBuyerSchoolName(reviewed.deps, reviewed.buyer, reviewed.evidence,
     { reviewReadback: true, dryRun: false, confirmReadback: true, expectedFingerprint: preview.fingerprint }), /requires an attempted/);
   assert.equal((await ensureBuyerSchoolName(reviewed.deps, reviewed.buyer, reviewed.evidence)).alreadyConfirmed, true);
@@ -125,5 +127,15 @@ function fixture() {
   await assert.rejects(ensureBuyerSchoolName(uncertainSave.deps, uncertainSave.buyer, uncertainSave.evidence,
     { reviewReadback: true, dryRun: false, confirmReadback: true, expectedFingerprint: uncertainPreview.fingerprint }), /confirmation readback failed/);
   assert.equal(uncertainSave.record.status, "attempted");
+  for (const field of ["status", "confirmedAt", "confirmationSource", "fingerprint", "buyerAccountKey", "locationId", "companyId", "schoolName", "attemptedAt", "beforeName", "accountKey"]) {
+    const corrupted = fixture();
+    corrupted.deps.writeName = async name => { corrupted.location.name = name; throw new Error("uncertain"); };
+    await assert.rejects(ensureBuyerSchoolName(corrupted.deps, corrupted.buyer, corrupted.evidence));
+    const corruptPreview = await ensureBuyerSchoolName(corrupted.deps, corrupted.buyer, corrupted.evidence, { reviewReadback: true });
+    const persist = corrupted.deps.save;
+    corrupted.deps.save = async value => { await persist(value); corrupted.record[field] = "corrupted"; };
+    await assert.rejects(ensureBuyerSchoolName(corrupted.deps, corrupted.buyer, corrupted.evidence,
+      { reviewReadback: true, dryRun: false, confirmReadback: true, expectedFingerprint: corruptPreview.fingerprint }), /confirmation readback failed/);
+  }
   console.log("buyer school name tests passed");
 })().catch(error => { console.error(error); process.exitCode = 1; });
