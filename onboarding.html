@@ -1989,6 +1989,10 @@ async function checkHighLevelReadiness(){
     var summary='Saved automation status: '+data.status+'. ';
     if(Number.isInteger(data.attempts))summary+='Attempts: '+data.attempts+'. ';
     if(data.nextAttemptAt)summary+='Next check: '+new Date(data.nextAttemptAt).toISOString()+'. ';
+    if(data.savedEvidence){
+      summary+='Saved buyer approval: '+data.savedEvidence.policyStatus+'; snapshot verified: '+(data.savedEvidence.snapshotVerified?'yes':'no')+'; fulfillment: '+data.savedEvidence.fulfillmentStatus+'. ';
+      Object.keys(data.savedEvidence.steps).forEach(function(step){summary+=step+': '+data.savedEvidence.steps[step]+'. ';});
+    }
     summary+='Access email accepted: '+(data.emailAccepted===true?'yes':'no')+'. Inbox delivery and coach sign-in are not verified by this check. ';
     setStatus(summary+'Read-only check; no retry, account changes, or email sent.',data.outcomeRequiresReview?'bad':'good');
   }catch(error){setStatus(error.message,'bad');}

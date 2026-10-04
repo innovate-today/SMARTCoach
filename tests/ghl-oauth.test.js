@@ -758,9 +758,26 @@ async function run() {
       assert.equal(result.deliveryVerified, false); assert.equal(result.automaticFulfillmentReady, false);
       const readinessReq = f.request(); readinessReq.body = { accountKey, locationId };
       const providerCalls = f.calls.length;
+      const storedBeforeInspection = JSON.stringify(Array.from(f.records.entries()));
       const readinessPreview = await f.invoke("ghl-oauth-process-readiness", readinessReq);
       assert.equal(readinessPreview.statusCode, 200);
       assert.equal(f.calls.length, providerCalls, "readiness status must not contact the provider");
+      assert.equal(JSON.stringify(Array.from(f.records.entries())), storedBeforeInspection, "inspection must preserve saved jobs");
+      if (mode !== "automatic-disabled") {
+        assert(readinessPreview.body.savedEvidence);
+        assert.equal(readinessPreview.body.savedEvidence.fulfillmentStatus, succeeds ? "complete"
+          : ["automatic-failed-send", "automatic-policy-failed-send"].includes(mode) ? "pending" : "not_recorded");
+        assert(!JSON.stringify(readinessPreview.body).includes("private-fulfillment"));
+        assert(!JSON.stringify(readinessPreview.body.savedEvidence).includes("fingerprint"));
+      } else assert.equal(readinessPreview.body.savedEvidence, undefined);
+      if (succeeds) {
+        const key = `buyerfulfillment-${locationId}`;
+        const savedJob = f.records.get(key);
+        f.records.set(key, { ...savedJob, buyerAccountKey: "sc-other-buyer" });
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", readinessReq)).statusCode, 503);
+        f.records.set(key, savedJob);
+        assert.equal(f.calls.length, providerCalls);
+      }
       if (!rejectedEvent && mode !== "automatic-disabled") {
         const job = f.records.get(`buyerreadiness-${locationId}`);
         assert.equal(job.buyerAccountKey, accountKey);
