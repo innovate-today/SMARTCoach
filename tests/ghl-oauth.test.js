@@ -1348,6 +1348,39 @@ async function run() {
   assert.equal(nodes.ghlOAuthReadinessBtn.disabled, false);
   assert.equal(navigations.length, 0);
   pageCalls.length = 0;
+  nodes.ghlOAuthRecoveryPreviewBtn = { disabled: false };
+  nodes.ghlOAuthRecoveryConfirmBtn = { hidden: true };
+  const recoveryPreview = { recoveryReady: true, accountUnchanged: true, emailSent: false, jobHistoryPreserved: true,
+    fingerprint: 'a'.repeat(64), buyer: { buyerAccountKey: nodes.accountKey.value, locationId: nodes.locationId.value,
+      schoolName: 'Mustang', coachName: 'Steve Bronco', ownerEmail: 'buyer@example.com',
+      productName: 'SMARTCoach Pro 25 - Monthly', amount: '19.00', billingCadence: 'monthly' } };
+  pageResponse = recoveryPreview;
+  await context.previewReadinessRecovery();
+  assert.deepEqual(JSON.parse(pageCalls.at(-1).options.body), { accountKey: nodes.accountKey.value,
+    locationId: nodes.locationId.value, reviewRecovery: true, dryRun: true });
+  assert.equal(nodes.ghlOAuthRecoveryConfirmBtn.hidden, false);
+  assert.match(statuses.pop()[0], /No account changes or email sent/);
+  const beforeChangedBuyer = pageCalls.length;
+  nodes.locationId.value = 'other';
+  await context.confirmReadinessRecovery();
+  assert.equal(pageCalls.length, beforeChangedBuyer);
+  assert.equal(nodes.ghlOAuthRecoveryConfirmBtn.hidden, true);
+  nodes.locationId.value = recoveryPreview.buyer.locationId;
+  pageResponse = { ...recoveryPreview, emailSent: true };
+  await context.previewReadinessRecovery();
+  assert.equal(nodes.ghlOAuthRecoveryConfirmBtn.hidden, true);
+  pageResponse = recoveryPreview;
+  await context.previewReadinessRecovery();
+  pageResponse = { recoveryApproved: true, jobHistoryPreserved: true, status: 'complete', emailAccepted: true };
+  await context.confirmReadinessRecovery();
+  assert.deepEqual(JSON.parse(pageCalls.at(-1).options.body), { accountKey: nodes.accountKey.value,
+    locationId: nodes.locationId.value, reviewRecovery: true, dryRun: false, confirmRecovery: true,
+    expectedFingerprint: recoveryPreview.fingerprint });
+  const afterRecovery = pageCalls.length;
+  await context.confirmReadinessRecovery();
+  assert.equal(pageCalls.length, afterRecovery);
+  assert.match(statuses.pop()[0], /recovered signup, not proof of an unattended signup pass/);
+  pageCalls.length = 0;
   nodes.setupCode.value = '';
   pageResponse = { authorizationUrl: 'https://marketplace.gohighlevel.com/oauth/chooselocation?state=test' };
   await context.connectHighLevelAgency();

@@ -263,6 +263,8 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthTrialBtn" type="button" class="secondary" onclick="reconcileHighLevelBuyerTrial()">Reconcile Trial Status</button>
         <button id="ghlOAuthFulfillmentBtn" type="button" class="secondary" onclick="previewHighLevelFulfillment()">Preview Fulfillment</button>
         <button id="ghlOAuthReadinessBtn" type="button" class="secondary" onclick="checkHighLevelReadiness()">Check Automation Status</button>
+        <button id="ghlOAuthRecoveryPreviewBtn" type="button" class="secondary" onclick="previewReadinessRecovery()">Preview Stopped Signup Recovery</button>
+        <button id="ghlOAuthRecoveryConfirmBtn" type="button" hidden onclick="confirmReadinessRecovery()">Confirm Recovery &amp; Send Access</button>
         <button id="ghlOAuthBuyerSetupBtn" type="button" class="secondary" onclick="previewHighLevelBuyerSetup()">Preview Buyer Setup</button>
         <button id="ghlOAuthControlledSetupBtn" type="button" class="secondary" onclick="completeHighLevelBuyerSetup()">Complete Controlled Setup</button>
         <button id="ghlOAuthInterruptedWriteBtn" type="button" class="secondary" onclick="reviewHighLevelInterruptedWrite()">Review Interrupted Key Write</button>
@@ -1978,6 +1980,44 @@ async function confirmLegacyActivation(){
   }catch(error){setStatus(error.message+' Do not resend before reviewing delivery.','bad');}
 }
 
+var readinessRecoveryPreview=null;
+async function previewReadinessRecovery(){
+  var button=document.getElementById('ghlOAuthRecoveryPreviewBtn');
+  var confirmButton=document.getElementById('ghlOAuthRecoveryConfirmBtn');
+  readinessRecoveryPreview=null;confirmButton.hidden=true;button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),
+      reviewRecovery:true,dryRun:true
+    });
+    if(data.recoveryReady!==true||data.accountUnchanged!==true||data.emailSent!==false||data.jobHistoryPreserved!==true
+      ||!data.buyer||data.buyer.buyerAccountKey!==document.getElementById('accountKey').value.trim()
+      ||data.buyer.locationId!==document.getElementById('locationId').value.trim()||!/^[a-f0-9]{64}$/.test(data.fingerprint))throw new Error('Recovery preview could not be verified.');
+    readinessRecoveryPreview=data;confirmButton.hidden=false;
+    setStatus('Recovery preview verified for '+data.buyer.schoolName+' / '+data.buyer.coachName+' / '+data.buyer.ownerEmail+'. '
+      +data.buyer.productName+', USD '+data.buyer.amount+' '+data.buyer.billingCadence+'. '
+      +'Confirmation will resume this stopped signup, create head-coach access, and send SMARTCoach Access from info@smartcoach-pro.com. '
+      +'Original job history and attempt count preserved. No account changes or email sent by this preview.','good');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+async function confirmReadinessRecovery(){
+  var button=document.getElementById('ghlOAuthRecoveryConfirmBtn');
+  var preview=readinessRecoveryPreview;readinessRecoveryPreview=null;button.hidden=true;
+  if(!preview)return;
+  try{
+    if(preview.buyer.buyerAccountKey!==document.getElementById('accountKey').value.trim()
+      ||preview.buyer.locationId!==document.getElementById('locationId').value.trim())throw new Error('Buyer selection changed. Preview recovery again.');
+    var result=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
+      accountKey:preview.buyer.buyerAccountKey,locationId:preview.buyer.locationId,reviewRecovery:true,dryRun:false,
+      confirmRecovery:true,expectedFingerprint:preview.fingerprint
+    });
+    if(result.recoveryApproved!==true||result.jobHistoryPreserved!==true)throw new Error('Recovery approval outcome could not be verified.');
+    setStatus('Reviewed recovery status: '+result.status+'. Access email accepted: '+(result.emailAccepted===true?'yes':'no')
+      +'. Original job history preserved. This is a recovered signup, not proof of an unattended signup pass. '
+      +'Inbox delivery, Overview sign-in and first sync still require verification. Do not resend or repeat recovery.',result.status==='complete'?'good':'bad');
+  }catch(error){setStatus(error.message+' Do not retry or resend before reviewing saved outcomes.','bad');}
+}
 async function checkHighLevelReadiness(){
   var button=document.getElementById('ghlOAuthReadinessBtn');
   button.disabled=true;

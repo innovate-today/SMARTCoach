@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { spawnSync } = require("child_process");
-for (const name of ["new-buyer-policy", "buyer-readiness-worker"]) {
+for (const name of ["new-buyer-policy", "buyer-readiness-worker", "buyer-readiness-recovery"]) {
   const result = spawnSync(process.execPath, [`tests/${name}.test.js`], { stdio: "inherit" });
   if (result.status !== 0) throw new Error(`${name} tests failed.`);
 }
