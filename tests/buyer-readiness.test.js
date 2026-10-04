@@ -119,5 +119,44 @@ function fixture() {
   const revoked = fixture(); revoked.ready({ status: "ready" }); revoked.revoke();
   assert.equal((await revoked.run({ event })).status, "disabled");
   assert.equal(revoked.counts().executions, 0);
+  const subscription = fixture();
+  let subscriptionReady = false;
+  subscription.deps.inspect = async (_, __, reportStage) => {
+    reportStage("purchase_subscription_details");
+    if (!subscriptionReady) throw Object.assign(new Error("private details"), { readinessPending: "subscription" });
+    return { status: "ready", fingerprint: "verified" };
+  };
+  assert.equal((await subscription.run({ event })).status, "waiting_for_subscription");
+  const subscriptionExpiry = subscription.job().expiresAt;
+  assert.equal(subscription.counts().executions, 0);
+  subscriptionReady = true;
+  assert.equal((await subscription.run()).status, "waiting_for_subscription");
+  subscription.advance(60000);
+  assert.equal((await subscription.run()).status, "complete");
+  assert.equal(subscription.job().attempts, 2);
+  assert.equal(subscription.job().expiresAt, subscriptionExpiry);
+  const unavailable = fixture(); unavailable.ready({ status: "waiting_for_subscription" });
+  for (let i = 1; i <= 6; i++) assert.equal((await unavailable.run({ event })).status,
+    i === 6 ? "expired" : "waiting_for_subscription");
+  assert.equal(unavailable.counts().executions, 0);
+  const wrongStage = fixture();
+  wrongStage.deps.inspect = async () => { throw Object.assign(new Error("not a verified purchase"), { readinessPending: "subscription" }); };
+  assert.equal((await wrongStage.run({ event })).status, "support_review_required");
+  for (const stage of ["purchase_grant", "purchase_subscription_read", "purchase_subscription_identity",
+    "purchase_catalog_read", "purchase_catalog_verification", "purchase_mapping_readback"]) {
+    const purchaseFailure = fixture();
+    purchaseFailure.deps.inspect = async (_, __, reportStage) => {
+      reportStage(stage);
+      throw Object.assign(new Error("private provider response"), { readinessPending: "subscription" });
+    };
+    const result = await purchaseFailure.run({ event });
+    assert.equal(result.status, "support_review_required");
+    assert.deepEqual(result.failure, { stage, kind: "exception" });
+    assert(!JSON.stringify(purchaseFailure.job()).includes("private"));
+    const saved = structuredClone(purchaseFailure.job());
+    await purchaseFailure.run({ event });
+    assert.deepEqual(purchaseFailure.job(), saved);
+    assert.equal(purchaseFailure.counts().executions, 0);
+  }
   console.log("Buyer readiness persistence and retry safety tests passed");
 })().catch(error => { console.error(error); process.exitCode = 1; });

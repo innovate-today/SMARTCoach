@@ -650,7 +650,7 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
-  for (const mode of ["automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
+  for (const mode of ["automatic-policy-subscription-wait", "automatic-policy-subscription-wrong-location", "automatic-policy-subscription-malformed", "automatic-policy-subscription-unknown-status", "automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const controlled = mode.startsWith('controlled-');
     const automatic = mode.startsWith('automatic-');
     const policy = mode.startsWith('automatic-policy-');
@@ -707,9 +707,17 @@ async function run() {
     assert(mapping.objects.meet_result.fields.meet_name);
     assert(mapping.objects.record.fields.meet_name);
     let sends = 0, values = [], valueWrites = 0, installed = !["automatic-uninstalled", "automatic-policy-worker"].includes(mode), staleValueRead = ['delayed-readback', 'automatic-policy-key-readback'].includes(mode);
+    let subscriptionReady = false;
     let locationName = "Buyer's Account", nameWrites = 0;
     f.setProvider((url, options) => {
       const path = new URL(url).pathname;
+      if (path === `/saas/get-saas-subscription/${locationId}` && mode.startsWith("automatic-policy-subscription-") && !subscriptionReady) {
+        return { locationId: mode.endsWith("wrong-location") ? "different-location" : locationId,
+          companyId: "agency-one", isSaaSV2: true,
+          subscriptionStatus: mode.endsWith("unknown-status") ? "unknown" : "trialing",
+          subscriptionId: mode.endsWith("malformed") ? { invalid: true } : null,
+          customerId: "cus", productId: "product", priceId: "price", saasPlanId: "plan" };
+      }
       if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true, subscriptionStatus: "trialing",
         subscriptionId: "sub", customerId: "cus", productId: "product", priceId: "price", saasPlanId: "plan" };
       if (path === "/saas/saas-plan/plan") return { planId: "plan", companyId: "agency-one", providerLocationId: "QxwjWekSyUf7sDOFHPB4", productId: "product",
@@ -765,6 +773,7 @@ async function run() {
       const succeeds = ["automatic-success", "automatic-install-success", "automatic-policy-success"].includes(mode);
       const rejectedEvent = ["automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency"].includes(mode);
       assert.equal(result.status, succeeds ? "complete" : rejectedEvent ? "event_rejected"
+        : mode === "automatic-policy-subscription-wait" ? "waiting_for_subscription"
         : mode === "automatic-disabled" ? "disabled" : mode === "automatic-missing-mapping" ? "waiting_for_mapping"
           : ["automatic-uninstalled", "automatic-policy-worker"].includes(mode) ? "waiting_for_installation"
           : ["automatic-email", "automatic-pending", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias"].includes(mode) ? "checkout_review_required" : "support_review_required", mode);
@@ -774,6 +783,12 @@ async function run() {
         assert(["exception", "blocked"].includes(result.failure.kind));
       }
       if (succeeds) assert.equal(result.failure, null);
+      const purchaseFailureStage = {
+        "automatic-policy-subscription-wrong-location": "purchase_subscription_identity",
+        "automatic-policy-subscription-malformed": "purchase_subscription_details",
+        "automatic-policy-subscription-unknown-status": "purchase_subscription_details",
+      }[mode];
+      if (purchaseFailureStage) assert.deepEqual(result.failure, { stage: purchaseFailureStage, kind: "exception" });
       if (mode === "automatic-policy-success") {
         assert.equal(locationName, "School");
         assert.equal(nameWrites, 1);
@@ -874,6 +889,24 @@ async function run() {
         const resume = f.request(); resume.body = { accountKey, locationId, dryRun: false, confirmExecution: true };
         assert.equal((await f.invoke("ghl-oauth-process-readiness", resume)).body.status, "complete");
         assert.equal(sends, 1);
+      }
+      if (mode === "automatic-policy-subscription-wait") {
+        const waitingJob = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
+        assert.equal(waitingJob.attempts, 1);
+        assert.equal(f.records.get(`buyerpolicy-${locationId}`), undefined);
+        assert.equal(valueWrites, 0); assert.equal(sends, 0);
+        subscriptionReady = true;
+        const resume = f.request(); resume.body = { accountKey, locationId, dryRun: false, confirmExecution: true };
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", resume)).body.status, "waiting_for_subscription");
+        f.advance(60000);
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", resume)).body.status, "complete");
+        assert.equal(f.records.get(`buyerreadiness-${locationId}`).attempts, 2);
+        assert.equal(f.records.get(`buyerreadiness-${locationId}`).expiresAt, waitingJob.expiresAt);
+        assert.equal(valueWrites, 1); assert.equal(sends, 1);
+      } else if (mode.startsWith("automatic-policy-subscription-")) {
+        subscriptionReady = true; f.advance(60000);
+        assert.equal((await f.api.dispatchProvisioningEvent(event, verification)).status, "support_review_required");
+        assert.equal(valueWrites, 0); assert.equal(sends, 0);
       }
       if (mode === "automatic-policy-worker") {
         f.env.CRON_SECRET = "private-cron-secret-at-least-32-characters";
