@@ -876,6 +876,27 @@ async function run() {
         assert.deepEqual(f.accounts.get(accountKey), accountBefore);
         assert.equal(JSON.stringify(Array.from(f.records.entries()).filter(([key]) => /buyer(readiness|policy|fulfillment|access)-/.test(key))), jobsBefore);
         assert(!JSON.stringify(diagnostics.body).includes("private-fulfillment"));
+        if (mode === "automatic-policy-success") {
+          const namespace = `buyerfulfillment-${locationId}`;
+          const oldJob = structuredClone(f.records.get(namespace));
+          f.records.get(namespace).steps.ensure_buyer_account_key.status = "attempted";
+          const keyReviewRecords = () => Array.from(f.records.entries()).filter(([key]) => !key.startsWith("buyergrant-"));
+          const beforeKeyReview = JSON.stringify(keyReviewRecords());
+          const correct = [{ id: "key-value", name: "account_key", value: accountKey, locationId }];
+          for (const candidate of [correct, [], [...correct, ...correct], [{ ...correct[0], value: "other" }],
+            [{ ...correct[0], locationId: "other" }], [{ ...correct[0], id: null }]]) {
+            values = candidate;
+            const reviewed = await f.invoke("ghl-oauth-process-readiness", diagnosticsReq);
+            assert.equal(reviewed.statusCode, 200);
+            assert.deepEqual(reviewed.body.accountKeyReadback, { readVerified: true, exactMatch: candidate === correct,
+              matchCount: candidate.length, providerWritePerformed: false });
+            assert.equal(sends, sendsBefore); assert.equal(valueWrites, writesBefore);
+            assert.equal(JSON.stringify(keyReviewRecords()), beforeKeyReview);
+            assert.deepEqual(f.accounts.get(accountKey), accountBefore);
+          }
+          f.records.set(namespace, oldJob);
+          values = correct;
+        }
       }
       continue;
     }
