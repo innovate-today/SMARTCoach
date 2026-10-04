@@ -521,6 +521,7 @@ async function testLocationReferencesReadOnly() {
           assert.strictEqual(options.method, "POST");
           let result;
           if (parts[0] === "scan") {
+            assert.strictEqual(parts[parts.length - 1], "1000");
             scans++;
             result = mode === "invalid-scan" ? "invalid" : [mode === "partial" || scans === 1 && mode === "found" ? "42" : "0",
               mode === "oversize" ? Array.from({ length: 501 }, (_, index) => prefix + index)
