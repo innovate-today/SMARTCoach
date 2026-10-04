@@ -262,6 +262,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthSubscriptionBtn" type="button" class="secondary" onclick="checkHighLevelBuyerSubscription()">Check Buyer Subscription</button>
         <button id="ghlOAuthTrialBtn" type="button" class="secondary" onclick="reconcileHighLevelBuyerTrial()">Reconcile Trial Status</button>
         <button id="ghlOAuthFulfillmentBtn" type="button" class="secondary" onclick="previewHighLevelFulfillment()">Preview Fulfillment</button>
+        <button id="ghlOAuthReadinessBtn" type="button" class="secondary" onclick="checkHighLevelReadiness()">Check Automation Status</button>
         <button id="ghlOAuthBuyerSetupBtn" type="button" class="secondary" onclick="previewHighLevelBuyerSetup()">Preview Buyer Setup</button>
         <button id="ghlOAuthControlledSetupBtn" type="button" class="secondary" onclick="completeHighLevelBuyerSetup()">Complete Controlled Setup</button>
         <button id="ghlOAuthInterruptedWriteBtn" type="button" class="secondary" onclick="reviewHighLevelInterruptedWrite()">Review Interrupted Key Write</button>
@@ -1975,6 +1976,23 @@ async function confirmLegacyActivation(){
       ||data.accountKeyWriteVerified!==true||data.billingUnchanged!==true||data.automaticFulfillmentReady!==false)throw new Error('Activation result could not be verified. Review saved access and delivery before retrying.');
     setStatus('Athletic Develop activated. Jenn Moore head-coach access created; one SMARTCoach Access email accepted by HighLevel from '+data.emailFrom+' to '+data.ownerEmail+'. Buyer CRM OAuth enabled; account-key write verified; manual hold released. Billing unchanged; automatic fulfillment remains off. Inbox delivery and Overview sign-in are not yet verified.','good');
   }catch(error){setStatus(error.message+' Do not resend before reviewing delivery.','bad');}
+}
+
+async function checkHighLevelReadiness(){
+  var button=document.getElementById('ghlOAuthReadinessBtn');
+  button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),
+      locationId:document.getElementById('locationId').value.trim(),dryRun:true
+    });
+    var summary='Saved automation status: '+data.status+'. ';
+    if(Number.isInteger(data.attempts))summary+='Attempts: '+data.attempts+'. ';
+    if(data.nextAttemptAt)summary+='Next check: '+new Date(data.nextAttemptAt).toISOString()+'. ';
+    summary+='Access email accepted: '+(data.emailAccepted===true?'yes':'no')+'. Inbox delivery and coach sign-in are not verified by this check. ';
+    setStatus(summary+'Read-only check; no retry, account changes, or email sent.',data.outcomeRequiresReview?'bad':'good');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
 }
 
 async function previewHighLevelFulfillment(){
