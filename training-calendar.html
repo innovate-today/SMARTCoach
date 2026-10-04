@@ -3869,7 +3869,7 @@ function unitMiles(value,unit){
 function formatMiles(value){
   if(!value)return '';
   var rounded=Math.round(value*100)/100;
-  return rounded.toFixed(rounded>=10?1:2).replace(/\.0$/,'').replace(/0$/,'')+' mi';
+  return String(rounded)+' mi';
 }
 function renderAddActivitySummary(){
   if(!els.addActivitySummaryBody||addDayMode!=='quality')return;

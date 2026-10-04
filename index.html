@@ -871,14 +871,18 @@ var APP_WORKFLOWS=[
 var APP_WORKFLOW_BY_ID={};
 APP_WORKFLOWS.forEach(function(workflow){APP_WORKFLOW_BY_ID[workflow.id]=workflow;});
 
+var APP_ACCOUNT_KEY=null;
 function smartCoachAccountKey(){
+  if(APP_ACCOUNT_KEY)return APP_ACCOUNT_KEY;
   try{
     var params=new URLSearchParams(window.location.search||'');
     var fromUrl=(params.get('account')||params.get('tenant')||'').trim();
     if(fromUrl){
-      return setSmartCoachAccountKey(fromUrl);
+      APP_ACCOUNT_KEY=setSmartCoachAccountKey(fromUrl);
+      return APP_ACCOUNT_KEY;
     }
-    return cleanAccountKey(localStorage.getItem('sc_account')||'default');
+    APP_ACCOUNT_KEY=cleanAccountKey(localStorage.getItem('sc_account')||'default');
+    return APP_ACCOUNT_KEY;
   }catch(e){
     return 'default';
   }
@@ -1711,6 +1715,21 @@ function saveAccountSettings(){
   if(input&&!String(input.value||'').trim()){
     if(status){status.textContent='Enter your SMARTCoach account key.';status.style.color='#c00';}
     renderAccountSummary({productPlan:productPlan(),configured:false,accountMissing:true},productPlan());
+    return;
+  }
+  var nextKey=cleanAccountKey(input&&input.value);
+  if(nextKey!==smartCoachAccountKey()){
+    // A new document discards every old-account cache and pending UI selection.
+    var nextCode=accessInput?accessInput.value.trim():'';
+    try{
+      localStorage.setItem('sc_account',nextKey);
+      localStorage.setItem('sc_access_'+nextKey,nextCode);
+    }catch(e){}
+    writeSmartCoachCookie(accountCookieNameFor('sc_access_'+nextKey),nextCode);
+    var nextUrl=new URL(window.location.href);
+    nextUrl.searchParams.delete('tenant');
+    nextUrl.searchParams.set('account',nextKey);
+    window.location.replace(nextUrl.pathname+nextUrl.search+nextUrl.hash);
     return;
   }
   var key=setSmartCoachAccountKey(input&&input.value);
