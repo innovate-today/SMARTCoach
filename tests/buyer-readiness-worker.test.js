@@ -1,8 +1,11 @@
 const assert = require("assert/strict");
 const { createBuyerReadinessWorker } = require("../lib/buyer-readiness-worker");
+const { createBuyerReadiness } = require("../lib/buyer-readiness");
 const { scanBuyerReadinessJobs } = require("../lib/account-registry");
 
 async function run() {
+  await verifyAutomaticSubscriptionResume();
+  await verifyAutomaticSubscriptionResume("waiting_for_subscription_identity");
   let enabled = false, state, scans = [], resumed = [], failResume = false, failReadback = false;
   const first = "buyerreadiness-12345678901234567890", second = "buyerreadiness-12345678901234567891";
   const worker = createBuyerReadinessWorker({ enabled: () => enabled,
@@ -72,5 +75,59 @@ async function run() {
     keys.forEach((key, index) => { if (previousEnv[index] === undefined) delete process.env[key]; else process.env[key] = previousEnv[index]; });
   }
   console.log("Readiness worker durable cursor and fail-closed tests passed");
+}
+
+async function verifyAutomaticSubscriptionResume(waitingStatus = "waiting_for_subscription") {
+  const buyer = { locationId: "AbCdEfGhIjKlMnOpQrSt", accountKey: "sc-abcdefghijklmnopqrst" };
+  const namespace = "buyerreadiness-abcdefghijklmnopqrst";
+  const event = { type: "INSTALL", locationId: buyer.locationId, companyId: "agency", appId: "connector" };
+  let now = 1000, job, workerState, subscriptionReady = false, executions = 0, inspections = 0;
+  const readiness = createBuyerReadiness({
+    now: () => now, allowed: () => true, lock: async () => () => {},
+    load: async () => structuredClone(job),
+    save: async (_, value) => { job = structuredClone(value); },
+    inspect: async (_, savedEvent, reportStage) => {
+      inspections++;
+      assert.deepEqual(savedEvent, event);
+      reportStage("purchase_subscription_details");
+      if (!subscriptionReady && waitingStatus === "waiting_for_subscription_identity") return { status: waitingStatus };
+      if (!subscriptionReady) throw Object.assign(new Error("Identifiers pending"), { readinessPending: "subscription" });
+      return { status: "ready", fingerprint: "verified-purchase" };
+    },
+    execute: async () => { executions++; return { status: "complete", emailAccepted: true }; },
+  });
+  assert.equal((await readiness.run(buyer, { event })).status, waitingStatus);
+  const deadline = job.expiresAt;
+  const worker = createBuyerReadinessWorker({
+    enabled: () => true, lock: async () => () => {},
+    load: async () => structuredClone(workerState),
+    save: async value => { workerState = structuredClone(value); },
+    scan: async () => ({ cursor: "0", namespaces: [namespace] }),
+    loadJob: async () => structuredClone(job),
+    resume: async identity => {
+      assert.deepEqual(identity, buyer);
+      return readiness.run(identity);
+    },
+  });
+  subscriptionReady = true;
+  assert.equal((await worker.run()).buyerStatus, waitingStatus);
+  assert.equal(inspections, 1, "Worker must honor the persisted retry time");
+  assert.equal(executions, 0);
+  now += 60000;
+  assert.equal((await worker.run()).buyerStatus, "complete");
+  assert.equal(job.attempts, 2);
+  assert.equal(job.expiresAt, deadline);
+  assert.equal(job.emailAccepted, true);
+  assert.equal(executions, 1);
+  const complete = structuredClone(job);
+  assert.equal((await worker.run()).buyerStatus, "existing_access_preserved");
+  assert.deepEqual(job, complete);
+  assert.equal(executions, 1, "Repeated worker scans must not resend access");
+  job = { ...complete, status: "support_review_required", emailAccepted: false,
+    failure: { stage: "purchase_subscription_read", kind: "exception" } };
+  const stopped = structuredClone(job);
+  assert.equal((await worker.run()).buyerStatus, "support_review_required");
+  assert.deepEqual(job, stopped);
+  assert.equal(executions, 1, "Worker must not replay a stopped buyer");
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

@@ -54,7 +54,7 @@ function fixture(options = {}) {
     if (new URL(url).pathname === "/oauth/token") assert(locks.has("oauthgrant"));
     else if (provider) {
       const data = provider(url, options);
-      if (data.mockHttpStatus) return { ok: false, status: data.mockHttpStatus, json: async () => data };
+      if (data?.mockHttpStatus) return { ok: false, status: data.mockHttpStatus, json: async () => data };
       return { ok: true, json: async () => data };
     }
     if (response instanceof Error) throw response;
@@ -650,7 +650,9 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
-  for (const mode of ["automatic-policy-subscription-wait", "automatic-policy-subscription-wrong-location", "automatic-policy-subscription-malformed", "automatic-policy-subscription-unknown-status", "automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
+  const identityModes = ["missing", "empty", "conflict", "ambiguous", "malformed", "wrong-live", "manual", "alias", "unsigned"]
+    .map(kind => `automatic-policy-identity-${kind}`);
+  for (const mode of [...identityModes, "automatic-policy-subscription-wait", "automatic-policy-subscription-wrong-location", "automatic-policy-subscription-malformed", "automatic-policy-subscription-unknown-status", "automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const controlled = mode.startsWith('controlled-');
     const automatic = mode.startsWith('automatic-');
     const policy = mode.startsWith('automatic-policy-');
@@ -699,6 +701,11 @@ async function run() {
       Object.assign(f.records.get("pendingcheckout"), { plan: "pro25", productName: "SMARTCoach Pro 25 - Monthly" });
       f.records.get("pendingcheckout").lastLocationCreateEvent.signatureVerified = mode !== "automatic-policy-unsigned-mapping";
       if (mode === "automatic-policy-alias") f.registry.inspectAccountLocationReferences = async () => ({ complete: true, references: [accountKey, "legacy-alias"] });
+      if (mode === "automatic-policy-identity-manual") {
+        original.token = "manual-token"; f.accounts.get(accountKey).token = original.token;
+      }
+      if (mode === "automatic-policy-identity-alias") f.registry.inspectAccountLocationReferences = async () => ({ complete: true, references: [accountKey, "alias"] });
+      if (mode === "automatic-policy-identity-unsigned") f.records.get("pendingcheckout").lastLocationCreateEvent.signatureVerified = false;
       assert.equal(await f.api.approvedBuyerOAuth(accountKey, locationId), false);
     }
     const mapping = require("../smart_trak_object_mapping.json");
@@ -711,6 +718,12 @@ async function run() {
     let locationName = "Buyer's Account", nameWrites = 0;
     f.setProvider((url, options) => {
       const path = new URL(url).pathname;
+      if (path === `/saas/get-saas-subscription/${locationId}` && identityModes.includes(mode) && !subscriptionReady) {
+        if (mode.endsWith("empty")) return null;
+        if (mode.endsWith("malformed")) return [];
+        if (mode.endsWith("ambiguous")) return { locationId, data: { locationId, companyId: "agency-one", isSaaSV2: true } };
+        return { locationId: mode.endsWith("conflict") ? "other" : locationId, isSaaSV2: true, subscriptionStatus: "trialing" };
+      }
       if (path === `/saas/get-saas-subscription/${locationId}` && mode.startsWith("automatic-policy-subscription-") && !subscriptionReady) {
         return { locationId: mode.endsWith("wrong-location") ? "different-location" : locationId,
           companyId: "agency-one", isSaaSV2: true,
@@ -731,7 +744,7 @@ async function run() {
           assert.deepEqual(JSON.parse(options.body), { companyId: "agency-one", name: "School" });
           nameWrites++; locationName = JSON.parse(options.body).name;
         }
-        return { location: { id: locationId, companyId: "agency-one", name: locationName, email: "buyer@example.com" } };
+        return { location: { id: locationId, companyId: mode === "automatic-policy-identity-wrong-live" ? "other" : "agency-one", name: locationName, email: "buyer@example.com" } };
       }
       if (path === "/locations/QxwjWekSyUf7sDOFHPB4") return { location: { id: "QxwjWekSyUf7sDOFHPB4", companyId: "agency-one" } };
       if (path === `/locations/${locationId}/customFields`) return { customFields: ["missing-fields", "automatic-missing-fields", "automatic-policy-missing-fields"].includes(mode) ? [] : Object.values(mapping.contactFields).map(field => ({ ...field, locationId })) };
@@ -773,6 +786,7 @@ async function run() {
       const succeeds = ["automatic-success", "automatic-install-success", "automatic-policy-success"].includes(mode);
       const rejectedEvent = ["automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency"].includes(mode);
       assert.equal(result.status, succeeds ? "complete" : rejectedEvent ? "event_rejected"
+        : ["automatic-policy-identity-missing", "automatic-policy-identity-empty"].includes(mode) ? "waiting_for_subscription_identity"
         : mode === "automatic-policy-subscription-wait" ? "waiting_for_subscription"
         : mode === "automatic-disabled" ? "disabled" : mode === "automatic-missing-mapping" ? "waiting_for_mapping"
           : ["automatic-uninstalled", "automatic-policy-worker"].includes(mode) ? "waiting_for_installation"
@@ -790,6 +804,12 @@ async function run() {
       }[mode];
       if (purchaseFailureStage) assert.deepEqual(result.failure, { stage: purchaseFailureStage, kind: "exception",
         ...(mode === "automatic-policy-subscription-wrong-location" ? { identityReason: "conflicting_identity" } : {}) });
+      const identityReason = { "automatic-policy-identity-conflict": "conflicting_identity",
+        "automatic-policy-identity-ambiguous": "ambiguous_envelope", "automatic-policy-identity-malformed": "malformed_response" }[mode];
+      if (identityReason) assert.deepEqual(result.failure, { stage: "purchase_subscription_identity", kind: "exception", identityReason });
+      if (["wrong-live", "manual", "alias", "unsigned"].some(kind => mode === `automatic-policy-identity-${kind}`)) {
+        assert.deepEqual(result.failure, { stage: "purchase_identity_wait_verification", kind: "exception" });
+      }
       if (mode === "automatic-policy-success") {
         assert.equal(locationName, "School");
         assert.equal(nameWrites, 1);
@@ -890,6 +910,32 @@ async function run() {
         const resume = f.request(); resume.body = { accountKey, locationId, dryRun: false, confirmExecution: true };
         assert.equal((await f.invoke("ghl-oauth-process-readiness", resume)).body.status, "complete");
         assert.equal(sends, 1);
+      }
+      if (["automatic-policy-identity-missing", "automatic-policy-identity-empty"].includes(mode)) {
+        const waitingJob = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
+        assert.equal(valueWrites, 0); assert.equal(sends, 0);
+        assert.equal(f.records.get(`buyerpolicy-${locationId}`), undefined);
+        subscriptionReady = true;
+        f.env.CRON_SECRET = "private-cron-secret-at-least-32-characters";
+        f.env.SMARTCOACH_GHL_READINESS_WORKER_ENABLED = "true";
+        f.registry.scanBuyerReadinessJobs = async () => ({ cursor: "0", namespaces: [`buyerreadiness-${locationId.toLowerCase()}`] });
+        const realLoad = f.registry.loadAccountScopedRecord;
+        f.registry.loadAccountScopedRecord = (key, namespace) => realLoad(key,
+          namespace === `buyerreadiness-${locationId.toLowerCase()}` ? `buyerreadiness-${locationId}` : namespace);
+        const cron = f.request("GET"); cron.headers = { authorization: `Bearer ${f.env.CRON_SECRET}` };
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "waiting_for_subscription_identity");
+        assert.equal(valueWrites, 0); assert.equal(sends, 0);
+        f.advance(60000);
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "complete");
+        assert.equal(f.records.get(`buyerreadiness-${locationId}`).attempts, 2);
+        assert.equal(f.records.get(`buyerreadiness-${locationId}`).expiresAt, waitingJob.expiresAt);
+        assert.equal(valueWrites, 1); assert.equal(sends, 1);
+        assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "existing_access_preserved");
+        assert.equal(valueWrites, 1); assert.equal(sends, 1);
+      } else if (identityModes.includes(mode)) {
+        subscriptionReady = true; f.advance(60000);
+        assert.equal((await f.api.dispatchProvisioningEvent(event, verification)).status, "support_review_required");
+        assert.equal(valueWrites, 0); assert.equal(sends, 0);
       }
       if (mode === "automatic-policy-subscription-wait") {
         const waitingJob = structuredClone(f.records.get(`buyerreadiness-${locationId}`));

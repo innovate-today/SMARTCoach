@@ -1,5 +1,5 @@
 const assert = require("assert/strict");
-const { newBuyerPolicyEnabled, qualifyNewBuyer, completedBuyerOAuthApproval } = require("../lib/new-buyer-policy");
+const { newBuyerPolicyEnabled, canWaitForSubscriptionIdentity, qualifyNewBuyer, completedBuyerOAuthApproval } = require("../lib/new-buyer-policy");
 
 const locationId = "AbCdEfGhIjKlMnOpQrSt", accountKey = `sc-${locationId.toLowerCase()}`;
 const env = { SMARTCOACH_GHL_NEW_BUYER_PLANS: "pro25", SMARTCOACH_GHL_NEW_BUYER_OAUTH_PLANS: "pro25",
@@ -26,6 +26,34 @@ const annual = structuredClone(base);
 Object.assign(annual.purchase, { purchasedBillingCadence: "annual", purchasedAmount: "199.00" });
 Object.assign(annual.pending, { cadence: "annual", productName: "SMARTCoach Pro 25 - Annual" });
 assert(qualifyNewBuyer(annual).qualified);
+assert(canWaitForSubscriptionIdentity(base));
+assert(canWaitForSubscriptionIdentity(annual));
+for (const mutate of [
+  value => { value.buyer.accountKey = "other"; },
+  value => { value.account.locationId = "other"; },
+  value => { value.account.productPlan = "pro100"; },
+  value => { value.pending.cadence = "weekly"; },
+  value => { value.pending.productName = "Other"; },
+  value => { value.pending.coachEmail = "other@example.com"; },
+  value => { value.pending.lastLocationCreateEvent.signatureVerified = false; },
+  value => { value.pending.lastLocationCreateEvent.companyId = "other"; },
+  value => { value.pending.lastLocationCreateEvent.email = "other@example.com"; },
+  value => { value.account.schoolName = "other"; },
+  value => { value.account.accountOwnerName = "other"; },
+  value => { value.account.token = "manual-token"; },
+  value => { value.account.coachStaff = [{ id: "existing" }]; },
+  value => { value.account.coachStaff = {}; },
+  value => { value.account.coachAccessCodes = ["existing"]; },
+  value => { value.account.coachAccessCodes = {}; },
+  value => { value.account.accessCode = "existing"; },
+  value => { value.account.subscription.status = "active"; },
+  value => { value.account.accessStatus = "manual_hold"; },
+  value => { value.inventory.complete = false; },
+  value => { value.inventory.references.push("alias"); },
+]) {
+  const changed = structuredClone(base); mutate(changed);
+  assert.equal(canWaitForSubscriptionIdentity(changed), false);
+}
 for (const mutate of [
   value => { value.buyer.accountKey = "school"; },
   value => { value.buyer.locationId = "QxwjWekSyUf7sDOFHPB4"; },

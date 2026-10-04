@@ -139,6 +139,10 @@ function fixture() {
   for (let i = 1; i <= 6; i++) assert.equal((await unavailable.run({ event })).status,
     i === 6 ? "expired" : "waiting_for_subscription");
   assert.equal(unavailable.counts().executions, 0);
+  const identityUnavailable = fixture(); identityUnavailable.ready({ status: "waiting_for_subscription_identity" });
+  for (let i = 1; i <= 6; i++) assert.equal((await identityUnavailable.run({ event })).status,
+    i === 6 ? "expired" : "waiting_for_subscription_identity");
+  assert.equal(identityUnavailable.counts().executions, 0);
   const wrongStage = fixture();
   wrongStage.deps.inspect = async () => { throw Object.assign(new Error("not a verified purchase"), { readinessPending: "subscription" }); };
   assert.equal((await wrongStage.run({ event })).status, "support_review_required");
