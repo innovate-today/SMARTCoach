@@ -650,7 +650,7 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
-  for (const mode of ["automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
+  for (const mode of ["automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const controlled = mode.startsWith('controlled-');
     const automatic = mode.startsWith('automatic-');
     const success = ['success', 'controlled-success'].includes(mode);
@@ -684,7 +684,7 @@ async function run() {
     assert.equal(mapping.objects.meet.fields.meet.type, "TEXT");
     assert(mapping.objects.meet_result.fields.meet_name);
     assert(mapping.objects.record.fields.meet_name);
-    let sends = 0, values = [], valueWrites = 0, installed = mode !== "automatic-uninstalled";
+    let sends = 0, values = [], valueWrites = 0, installed = mode !== "automatic-uninstalled", staleValueRead = mode === 'delayed-readback';
     f.setProvider((url, options) => {
       const path = new URL(url).pathname;
       if (path === `/saas/get-saas-subscription/${locationId}`) return { locationId, companyId: "agency-one", isSaaSV2: true, subscriptionStatus: "trialing",
@@ -704,6 +704,7 @@ async function run() {
       }
       if (path === `/locations/${locationId}/customValues`) {
         if (options.method === "POST") { valueWrites++; values = [{ id: "key-value", name: "account_key", value: accountKey, locationId }]; return { customValue: values[0] }; }
+        if (staleValueRead && valueWrites) { staleValueRead = false; return { customValues: [] }; }
         return { customValues: mode === "conflicting-value" ? [{ id: "other-key", name: "account_key", value: "sc-other", locationId }] : values };
       }
       if (path === "/contacts/") return { contacts: [{ id: "seller-owner", email: "buyer@example.com", locationId: "QxwjWekSyUf7sDOFHPB4" }] };
@@ -806,12 +807,36 @@ async function run() {
     if (mode === "wrong-buyer") req.body.accountKey = "sc-other";
     const beforeExecuteCalls = f.calls.length;
     const result = await f.invoke("ghl-oauth-fulfill-buyer", req);
-    assert.equal(result.statusCode, success ? 200 : ["failed-send", "missing-message"].includes(mode) ? 502 : mode === "wrong-buyer" ? 422 : ["no-admin", "wrong-origin", "missing-scope"].includes(mode) ? 403 : 409, `${mode}: ${result.body.error || ""}`);
+    assert.equal(result.statusCode, success ? 200 : ["delayed-readback", "failed-send", "missing-message"].includes(mode) ? 502 : mode === "wrong-buyer" ? 422 : ["no-admin", "wrong-origin", "missing-scope"].includes(mode) ? 403 : 409, `${mode}: ${result.body.error || ""}`);
     assert.equal(sends, success || ["failed-send", "missing-message"].includes(mode) ? 1 : 0);
     if (['disabled', 'controlled-wildcard', 'controlled-other-account', 'controlled-malformed'].includes(mode)) {
       assert.equal(f.calls.length, beforeExecuteCalls);
     }
-    if (success) {
+    if (mode === 'delayed-readback') {
+      assert.equal((await f.invoke('ghl-oauth-fulfill-buyer', req)).statusCode, 409);
+      const review = f.request(); review.body = { accountKey, locationId, reviewInterruptedWrite: true, dryRun: true };
+      const verified = await f.invoke('ghl-oauth-fulfill-buyer', review);
+      assert.equal(verified.statusCode, 200, JSON.stringify({ error: verified.body.error, job: f.records.get(`buyerfulfillment-${locationId}`) })); assert.equal(verified.body.interruptedWriteVerified, true);
+      assert.equal(valueWrites, 1); assert.equal(sends, 0);
+      review.body = { ...review.body, dryRun: false, confirmRecovery: true, expectedFingerprint: 'stale' };
+      assert.equal((await f.invoke('ghl-oauth-fulfill-buyer', review)).statusCode, 409);
+      review.body.expectedFingerprint = verified.body.fingerprint;
+      review.body.confirmRecovery = false;
+      assert.equal((await f.invoke('ghl-oauth-fulfill-buyer', review)).statusCode, 409);
+      review.body.confirmRecovery = true;
+      values[0].value = 'other';
+      assert.equal((await f.invoke('ghl-oauth-fulfill-buyer', review)).statusCode, 409);
+      values[0].value = accountKey;
+      const recovered = await f.invoke('ghl-oauth-fulfill-buyer', review);
+      assert.equal(recovered.statusCode, 200); assert.equal(recovered.body.recoveryRecorded, true);
+      assert.equal(recovered.body.providerWritePerformed, false); assert.equal(recovered.body.emailSent, false);
+      assert.equal(valueWrites, 1); assert.equal(sends, 0);
+      assert.equal((await f.invoke('ghl-oauth-fulfill-buyer', review)).statusCode, 409);
+      assert.equal((await f.invoke('ghl-oauth-fulfill-buyer', req)).statusCode, 200);
+      assert.equal(valueWrites, 1); assert.equal(sends, 1);
+      assert.equal((await f.invoke('ghl-oauth-fulfill-buyer', req)).statusCode, 200);
+      assert.equal(valueWrites, 1); assert.equal(sends, 1);
+    } else if (success) {
       assert.equal(f.accounts.get(accountKey).subscription.amount, "29.00");
       assert.equal(f.accounts.get(accountKey).subscription.status, "trialing");
       assert.equal(f.accounts.get(accountKey).token, ""); assert.equal(f.accounts.get(accountKey).coachStaff.length, 1);

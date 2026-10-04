@@ -264,6 +264,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthFulfillmentBtn" type="button" class="secondary" onclick="previewHighLevelFulfillment()">Preview Fulfillment</button>
         <button id="ghlOAuthBuyerSetupBtn" type="button" class="secondary" onclick="previewHighLevelBuyerSetup()">Preview Buyer Setup</button>
         <button id="ghlOAuthControlledSetupBtn" type="button" class="secondary" onclick="completeHighLevelBuyerSetup()">Complete Controlled Setup</button>
+        <button id="ghlOAuthInterruptedWriteBtn" type="button" class="secondary" onclick="reviewHighLevelInterruptedWrite()">Review Interrupted Key Write</button>
         <button id="ghlOAuthCheckoutReviewBtn" type="button" class="secondary" onclick="reviewHighLevelCheckoutIdentity()">Review Checkout Identity</button>
         <button id="ghlOAuthWriteBtn" type="button" class="secondary" onclick="verifyHighLevelBuyerWrite()">Verify Account-Key Write</button>
         <button id="ghlOAuthWelcomeBtn" type="button" class="secondary" onclick="sendHighLevelBuyerWelcome()">Send Welcome Link</button>
@@ -2029,6 +2030,24 @@ async function completeHighLevelBuyerSetup(){
     if(result.complete!==true||result.emailAccepted!==true||result.deliveryVerified!==false||result.automaticFulfillmentReady!==false)throw new Error('Controlled setup outcome requires review.');
     setStatus('Controlled buyer setup completed and read back. Head-coach access created; one access email accepted from info@smartcoach-pro.com to '+identity.ownerEmail+'. Inbox delivery and Overview sign-in are not yet verified. HighLevel billing unchanged. Automatic fulfillment remains off.','good');
   }catch(error){setStatus(error.message+' Do not retry or resend before reviewing saved setup and delivery.','bad');}
+  finally{button.disabled=false;}
+}
+
+async function reviewHighLevelInterruptedWrite(){
+  var button=document.getElementById('ghlOAuthInterruptedWriteBtn');
+  var buyer={accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim()};
+  button.disabled=true;
+  try{
+    var preview=await highLevelConnectionRequest('ghl-oauth-fulfill-buyer','POST',Object.assign({},buyer,{reviewInterruptedWrite:true,dryRun:true}));
+    if(preview.interruptedWriteVerified!==true||preview.providerWritePerformed!==false||preview.recoveryRecorded!==false
+      ||preview.emailSent!==false||!preview.fingerprint||preview.buyer?.accountKey!==buyer.accountKey
+      ||preview.buyer?.locationId!==buyer.locationId)throw new Error('Interrupted step review could not be verified.');
+    if(!window.confirm('Record the exact verified account-key readback for '+buyer.accountKey+' as a reviewed completed step? No provider write, coach access or email will occur. Controlled setup can then resume without repeating this write.'))return;
+    var result=await highLevelConnectionRequest('ghl-oauth-fulfill-buyer','POST',Object.assign({},buyer,{reviewInterruptedWrite:true,dryRun:false,confirmRecovery:true,expectedFingerprint:preview.fingerprint}));
+    if(result.recoveryRecorded!==true||result.accountKey!==buyer.accountKey||result.locationId!==buyer.locationId
+      ||result.providerWritePerformed!==false||result.emailSent!==false||result.automaticFulfillmentReady!==false)throw new Error('Recovery outcome requires review.');
+    setStatus('Interrupted account-key write verified by exact readback and recorded as reviewed. No provider write, coach access or email performed. Complete Controlled Setup can resume the remaining step.','good');
+  }catch(error){setStatus(error.message+' Do not retry or resend uncertain actions.','bad');}
   finally{button.disabled=false;}
 }
 
