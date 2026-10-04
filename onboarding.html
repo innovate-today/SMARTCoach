@@ -1996,6 +1996,11 @@ async function checkHighLevelReadiness(){
     if(data.prerequisites){
       summary+='Current prerequisites: '+(data.prerequisites.verified?'verified':'failed at '+data.prerequisites.stage)+'. ';
       if(data.prerequisites.blockers)summary+='Checks: '+data.prerequisites.blockers.join(', ')+'. ';
+      if(data.prerequisites.inventory){
+        var inventory=data.prerequisites.inventory;
+        summary+='Mapping inventory complete: '+(inventory.complete?'yes':'no')+'; references: '+inventory.referenceCount+'; buyer found: '+(inventory.buyerMatched?'yes':'no')+'. ';
+        if(inventory.reason)summary+='Inventory stop: '+inventory.reason+'. ';
+      }
       if(data.prerequisites.reason)summary+=data.prerequisites.reason+' ';
       if(data.prerequisites.providerStatus)summary+='Provider HTTP '+data.prerequisites.providerStatus+'. ';
     }

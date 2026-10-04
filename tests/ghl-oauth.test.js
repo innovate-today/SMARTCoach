@@ -859,7 +859,7 @@ async function run() {
       for (const secret of ["private-fulfillment-buyer", "private-fulfillment-seller", "private-admin", "private-send-error"]) {
         assert(!JSON.stringify(result).includes(secret));
       }
-      if (["automatic-policy-success", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping"].includes(mode)) {
+      if (["automatic-policy-success", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-alias"].includes(mode)) {
         const diagnosticsReq = f.request(); diagnosticsReq.body = { accountKey, locationId, dryRun: true, inspectPrerequisites: true };
         const jobsBefore = JSON.stringify(Array.from(f.records.entries()).filter(([key]) => /buyer(readiness|policy|fulfillment|access)-/.test(key)));
         const accountBefore = structuredClone(f.accounts.get(accountKey));
@@ -868,6 +868,10 @@ async function run() {
         assert.equal(diagnostics.statusCode, 200);
         assert.equal(diagnostics.body.prerequisites.stage, mode === "automatic-policy-success" ? "verified"
           : mode === "automatic-policy-missing-fields" ? "snapshot" : "qualification");
+        if (mode === "automatic-policy-alias") {
+          assert.deepEqual(diagnostics.body.prerequisites.inventory, { complete: true, referenceCount: 2, buyerMatched: true, reason: null });
+          assert(!JSON.stringify(diagnostics.body).includes("legacy-alias"));
+        }
         assert.equal(sends, sendsBefore); assert.equal(valueWrites, writesBefore);
         assert.deepEqual(f.accounts.get(accountKey), accountBefore);
         assert.equal(JSON.stringify(Array.from(f.records.entries()).filter(([key]) => /buyer(readiness|policy|fulfillment|access)-/.test(key))), jobsBefore);
