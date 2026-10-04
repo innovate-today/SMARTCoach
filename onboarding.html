@@ -265,6 +265,8 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthReadinessBtn" type="button" class="secondary" onclick="checkHighLevelReadiness()">Check Automation Status</button>
         <button id="ghlOAuthRecoveryPreviewBtn" type="button" class="secondary" onclick="previewReadinessRecovery()">Preview Stopped Signup Recovery</button>
         <button id="ghlOAuthRecoveryConfirmBtn" type="button" hidden onclick="confirmReadinessRecovery()">Confirm Recovery &amp; Send Access</button>
+        <button id="ghlOAuthSchoolReviewBtn" type="button" class="secondary" onclick="reviewSchoolNameReadback()">Review School Name Write</button>
+        <button id="ghlOAuthSchoolConfirmBtn" type="button" hidden onclick="confirmSchoolNameReadback()">Confirm Name Readback Only</button>
         <button id="ghlOAuthBuyerSetupBtn" type="button" class="secondary" onclick="previewHighLevelBuyerSetup()">Preview Buyer Setup</button>
         <button id="ghlOAuthControlledSetupBtn" type="button" class="secondary" onclick="completeHighLevelBuyerSetup()">Complete Controlled Setup</button>
         <button id="ghlOAuthInterruptedWriteBtn" type="button" class="secondary" onclick="reviewHighLevelInterruptedWrite()">Review Interrupted Key Write</button>
@@ -1985,6 +1987,7 @@ async function confirmLegacyActivation(){
 }
 
 var readinessRecoveryPreview=null;
+var schoolNameReadbackPreview=null;
 var buyerKeyRecoveryPreview=null;
 async function previewBuyerKeyRecovery(){
   var button=document.getElementById('ghlOAuthKeyRecoveryPreviewBtn');
@@ -2061,6 +2064,40 @@ async function confirmReadinessRecovery(){
       +'. Original job history preserved. This is a recovered signup, not proof of an unattended signup pass. '
       +'Inbox delivery, Overview sign-in and first sync still require verification. Do not resend or repeat recovery.',result.status==='complete'?'good':'bad');
   }catch(error){setStatus(error.message+' Do not retry or resend before reviewing saved outcomes.','bad');}
+}
+async function reviewSchoolNameReadback(){
+  var button=document.getElementById('ghlOAuthSchoolReviewBtn');
+  var confirmButton=document.getElementById('ghlOAuthSchoolConfirmBtn');
+  schoolNameReadbackPreview=null;confirmButton.hidden=true;button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),
+      reviewSchoolName:true,dryRun:true
+    });
+    if(data.readbackVerified!==true||data.providerWritePerformed!==false||data.accountUnchanged!==true||data.emailSent!==false
+      ||data.accountKey!==document.getElementById('accountKey').value.trim()||data.locationId!==document.getElementById('locationId').value.trim()
+      ||!/^[a-f0-9]{64}$/.test(data.fingerprint))throw new Error('School name readback could not be verified.');
+    schoolNameReadbackPreview=data;confirmButton.hidden=false;
+    setStatus('School name readback verified: '+data.schoolName+'. Confirmation records this already-applied name only. '
+      +'No repeat name update, setup retry, account-key write, or email. Preview changed no ledger.','good');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+async function confirmSchoolNameReadback(){
+  var button=document.getElementById('ghlOAuthSchoolConfirmBtn');
+  var preview=schoolNameReadbackPreview;schoolNameReadbackPreview=null;button.hidden=true;
+  if(!preview)return;
+  try{
+    if(preview.accountKey!==document.getElementById('accountKey').value.trim()
+      ||preview.locationId!==document.getElementById('locationId').value.trim())throw new Error('Buyer selection changed. Review name readback again.');
+    var result=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
+      accountKey:preview.accountKey,locationId:preview.locationId,reviewSchoolName:true,dryRun:false,
+      confirmReadback:true,expectedFingerprint:preview.fingerprint
+    });
+    if(result.ledgerConfirmed!==true||result.providerWritePerformed!==false||result.emailSent!==false)throw new Error('School name confirmation requires review.');
+    setStatus('School name ledger confirmed from verified provider readback. Original attempt retained. '
+      +'Setup remains stopped; no repeat name update, account-key write, or email.','good');
+  }catch(error){setStatus(error.message+' Do not repeat the name write or setup recovery.','bad');}
 }
 async function checkHighLevelReadiness(){
   var button=document.getElementById('ghlOAuthReadinessBtn');

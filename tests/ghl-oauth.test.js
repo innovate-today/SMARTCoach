@@ -855,6 +855,74 @@ async function run() {
         await f.api.dispatchProvisioningEvent(event, verification);
         assert.equal(nameWrites, 1, "Repeated events must not rename again");
         assert.equal(sends, 1, "Name synchronization must not duplicate access emails");
+        const savedRecords = structuredClone(Array.from(f.records.entries()));
+        const savedAccount = structuredClone(f.accounts.get(accountKey));
+        f.accounts.set(accountKey, structuredClone(original));
+        f.records.delete(`buyeraccess-${locationId}`);
+        f.records.delete(`buyerwelcome-${locationId}`);
+        Object.assign(f.records.get(`buyerreadiness-${locationId}`), { status: "support_review_required" });
+        Object.assign(f.records.get(`buyerpolicy-${locationId}`), { status: "approved" });
+        Object.assign(f.records.get(`buyerfulfillment-${locationId}`), { status: "pending",
+          steps: { verify_buyer_setup: { status: "attempted", attemptedAt: 1000000 } } });
+        Object.assign(f.records.get(`buyerschoolname-${locationId}`), { status: "attempted" });
+        const reviewReq = f.request(); reviewReq.body = { accountKey, locationId, reviewSchoolName: true, dryRun: true };
+        const stoppedJob = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
+        const stoppedFulfillment = structuredClone(f.records.get(`buyerfulfillment-${locationId}`));
+        const attemptedName = structuredClone(f.records.get(`buyerschoolname-${locationId}`));
+        const writesBefore = f.calls.filter(call => ["POST", "PUT", "PATCH", "DELETE"].includes(call.options.method)).length;
+        const namePreview = await f.invoke("ghl-oauth-process-readiness", reviewReq);
+        assert.equal(namePreview.statusCode, 200, JSON.stringify(namePreview.body));
+        assert.equal(namePreview.body.readbackVerified, true);
+        assert.equal(namePreview.body.providerWritePerformed, false);
+        assert.equal(namePreview.body.emailSent, false);
+        assert(!JSON.stringify(namePreview.body).includes("private-"));
+        assert.deepEqual(f.records.get(`buyerschoolname-${locationId}`), attemptedName);
+        assert.deepEqual(f.accounts.get(accountKey), original);
+        for (const [key, change] of [
+          [`buyerreadiness-${locationId}`, { status: "pending" }],
+          [`buyerreadiness-${locationId}`, { signatureVerified: false }],
+          [`buyerreadiness-${locationId}`, { expiresAt: 1 }],
+          [`buyerpolicy-${locationId}`, { buyerAccountKey: "sc-other" }],
+          [`buyerpolicy-${locationId}`, { snapshotVerified: false }],
+          [`buyerfulfillment-${locationId}`, { fingerprint: "changed" }],
+          [`buyerfulfillment-${locationId}`, { steps: { verify_buyer_setup: { status: "attempted" }, ensure_buyer_account_key: { status: "attempted" } } }],
+        ]) {
+          const before = structuredClone(f.records.get(key));
+          f.records.set(key, { ...before, ...change });
+          assert.equal((await f.invoke("ghl-oauth-process-readiness", reviewReq)).statusCode, 409);
+          assert.deepEqual(f.records.get(`buyerschoolname-${locationId}`), attemptedName);
+          f.records.set(key, before);
+        }
+        f.accounts.get(accountKey).subscription.status = "trialing";
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", reviewReq)).statusCode, 409);
+        f.accounts.set(accountKey, structuredClone(original));
+        for (const change of [
+          req => { delete req.headers["x-smartcoach-setup-code"]; },
+          req => { req.headers.origin = "https://other.example"; },
+          req => { req.method = "GET"; },
+          req => { req.body.dryRun = false; },
+          req => { req.body.dryRun = false; req.body.confirmReadback = true; req.body.expectedFingerprint = "stale"; },
+        ]) {
+          const blocked = f.request(); blocked.body = { ...reviewReq.body }; change(blocked);
+          assert((await f.invoke("ghl-oauth-process-readiness", blocked)).statusCode >= 400);
+          assert.deepEqual(f.records.get(`buyerschoolname-${locationId}`), attemptedName);
+        }
+        const confirmReq = f.request(); confirmReq.body = { ...reviewReq.body, dryRun: false,
+          confirmReadback: true, expectedFingerprint: namePreview.body.fingerprint };
+        const confirmedName = await f.invoke("ghl-oauth-process-readiness", confirmReq);
+        assert.equal(confirmedName.statusCode, 200, JSON.stringify(confirmedName.body));
+        assert.equal(confirmedName.body.ledgerConfirmed, true);
+        assert.equal(f.records.get(`buyerschoolname-${locationId}`).confirmationSource, "reviewed_provider_readback");
+        assert.equal(f.records.get(`buyerschoolname-${locationId}`).attemptedAt, attemptedName.attemptedAt);
+        assert.deepEqual(f.records.get(`buyerreadiness-${locationId}`), stoppedJob);
+        assert.deepEqual(f.records.get(`buyerfulfillment-${locationId}`), stoppedFulfillment);
+        assert.deepEqual(f.accounts.get(accountKey), original);
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", confirmReq)).statusCode, 409);
+        assert.equal(f.calls.filter(call => ["POST", "PUT", "PATCH", "DELETE"].includes(call.options.method)).length, writesBefore,
+          "Reviewed name confirmation must make no provider writes");
+        assert.equal(nameWrites, 1); assert.equal(sends, 1);
+        f.records.clear(); for (const [key, value] of savedRecords) f.records.set(key, value);
+        f.accounts.set(accountKey, savedAccount);
       } else assert.equal(nameWrites, 0);
       if (mode === "automatic-policy-key-readback") {
         assert.deepEqual(result.failure, { stage: "key_provider_readback", kind: "exception" });
@@ -1611,6 +1679,21 @@ async function run() {
   assert.equal(nodes.ghlOAuthReadinessBtn.disabled, false);
   assert.equal(navigations.length, 0);
   pageCalls.length = 0;
+  nodes.ghlOAuthSchoolReviewBtn = { disabled: false };
+  nodes.ghlOAuthSchoolConfirmBtn = { hidden: true };
+  pageResponse = { accountKey: nodes.accountKey.value, locationId: nodes.locationId.value, schoolName: "School",
+    fingerprint: "b".repeat(64), readbackVerified: true, providerWritePerformed: false, accountUnchanged: true, emailSent: false };
+  await context.reviewSchoolNameReadback();
+  assert.equal(nodes.ghlOAuthSchoolConfirmBtn.hidden, false);
+  assert.equal(JSON.parse(pageCalls.pop().options.body).dryRun, true);
+  pageResponse = { ledgerConfirmed: true, providerWritePerformed: false, emailSent: false };
+  await context.confirmSchoolNameReadback();
+  assert.deepEqual(JSON.parse(pageCalls.pop().options.body), { accountKey: nodes.accountKey.value, locationId: nodes.locationId.value,
+    reviewSchoolName: true, dryRun: false, confirmReadback: true, expectedFingerprint: "b".repeat(64) });
+  assert.match(statuses.pop()[0], /Setup remains stopped/);
+  assert.equal(nodes.ghlOAuthSchoolConfirmBtn.hidden, true);
+  await context.confirmSchoolNameReadback();
+  assert.equal(pageCalls.length, 0, "Confirmation must consume the preview exactly once");
   nodes.ghlOAuthKeyRecoveryPreviewBtn = { disabled: false };
   nodes.ghlOAuthKeyRecoveryConfirmBtn = { hidden: true };
   const keyRecoveryPreview = { keyRecoveryReady: true, accountUnchanged: true, emailSent: false,
