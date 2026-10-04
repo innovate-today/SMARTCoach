@@ -650,7 +650,7 @@ async function run() {
     }
     for (const secret of ["private-preview-buyer", "private-seller-preview", "private-hash", "keep-pit"]) assert(!JSON.stringify(result).includes(secret));
   }
-  const identityModes = ["missing", "empty", "conflict", "ambiguous", "malformed", "wrong-live", "manual", "alias", "unsigned"]
+  const identityModes = ["missing", "empty", "conflict", "agency-conflict", "v2-conflict", "ambiguous", "malformed", "wrong-live", "manual", "alias", "unsigned"]
     .map(kind => `automatic-policy-identity-${kind}`);
   for (const mode of [...identityModes, "automatic-policy-subscription-wait", "automatic-policy-subscription-wrong-location", "automatic-policy-subscription-malformed", "automatic-policy-subscription-unknown-status", "automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const controlled = mode.startsWith('controlled-');
@@ -722,6 +722,8 @@ async function run() {
         if (mode.endsWith("empty")) return null;
         if (mode.endsWith("malformed")) return [];
         if (mode.endsWith("ambiguous")) return { locationId, data: { locationId, companyId: "agency-one", isSaaSV2: true } };
+        if (mode.endsWith("agency-conflict")) return { locationId, companyId: "other-agency", isSaaSV2: true };
+        if (mode.endsWith("v2-conflict")) return { locationId, companyId: "agency-one", isSaaSV2: false };
         return { locationId: mode.endsWith("conflict") ? "other" : locationId, isSaaSV2: true, subscriptionStatus: "trialing" };
       }
       if (path === `/saas/get-saas-subscription/${locationId}` && mode.startsWith("automatic-policy-subscription-") && !subscriptionReady) {
@@ -803,10 +805,18 @@ async function run() {
         "automatic-policy-subscription-unknown-status": "purchase_subscription_details",
       }[mode];
       if (purchaseFailureStage) assert.deepEqual(result.failure, { stage: purchaseFailureStage, kind: "exception",
-        ...(mode === "automatic-policy-subscription-wrong-location" ? { identityReason: "conflicting_identity" } : {}) });
+        ...(mode === "automatic-policy-subscription-wrong-location" ? { identityReason: "conflicting_identity",
+          identityChecks: { locationId: "mismatched", companyId: "matched", isSaaSV2: "matched" } } : {}) });
       const identityReason = { "automatic-policy-identity-conflict": "conflicting_identity",
+        "automatic-policy-identity-agency-conflict": "conflicting_identity", "automatic-policy-identity-v2-conflict": "conflicting_identity",
         "automatic-policy-identity-ambiguous": "ambiguous_envelope", "automatic-policy-identity-malformed": "malformed_response" }[mode];
-      if (identityReason) assert.deepEqual(result.failure, { stage: "purchase_subscription_identity", kind: "exception", identityReason });
+      const identityChecks = {
+        "automatic-policy-identity-conflict": { locationId: "mismatched", companyId: "missing", isSaaSV2: "matched" },
+        "automatic-policy-identity-agency-conflict": { locationId: "matched", companyId: "mismatched", isSaaSV2: "matched" },
+        "automatic-policy-identity-v2-conflict": { locationId: "matched", companyId: "matched", isSaaSV2: "mismatched" }
+      }[mode];
+      if (identityReason) assert.deepEqual(result.failure, { stage: "purchase_subscription_identity", kind: "exception", identityReason,
+        ...(identityChecks ? { identityChecks } : {}) });
       if (["wrong-live", "manual", "alias", "unsigned"].some(kind => mode === `automatic-policy-identity-${kind}`)) {
         assert.deepEqual(result.failure, { stage: "purchase_identity_wait_verification", kind: "exception" });
       }

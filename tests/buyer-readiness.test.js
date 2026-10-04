@@ -165,10 +165,43 @@ function fixture() {
     assert.equal(identity.counts().executions, 0);
   }
   const unrelatedIdentity = fixture();
+  for (const field of ["locationId", "companyId", "isSaaSV2"]) {
+    const identity = fixture();
+    const identityChecks = { locationId: "matched", companyId: "matched", isSaaSV2: "matched", token: "private-token" };
+    identityChecks[field] = "mismatched";
+    identity.deps.inspect = async (_, __, reportStage) => {
+      reportStage("purchase_subscription_identity");
+      throw Object.assign(new Error("private response"), { readinessFailure: {
+        stage: "purchase_subscription_identity", kind: "exception", identityReason: "conflicting_identity", identityChecks
+      } });
+    };
+    const expected = { locationId: identityChecks.locationId, companyId: identityChecks.companyId, isSaaSV2: identityChecks.isSaaSV2 };
+    assert.deepEqual((await identity.run({ event })).failure.identityChecks, expected);
+    assert.deepEqual((await identity.run({ inspectOnly: true })).failure.identityChecks, expected);
+    assert(!JSON.stringify(identity.job()).includes("private"));
+    const saved = structuredClone(identity.job());
+    await identity.run({ event });
+    assert.deepEqual(identity.job(), saved);
+    assert.equal(identity.counts().executions, 0);
+  }
+  for (const identityChecks of [null, [], { locationId: "matched" },
+    { locationId: "private-location", companyId: "matched", isSaaSV2: "matched" }]) {
+    const identity = fixture();
+    identity.deps.inspect = async (_, __, reportStage) => {
+      reportStage("purchase_subscription_identity");
+      throw Object.assign(new Error("private response"), { readinessFailure: {
+        stage: "purchase_subscription_identity", kind: "exception", identityReason: "conflicting_identity", identityChecks
+      } });
+    };
+    assert.deepEqual((await identity.run({ event })).failure,
+      { stage: "purchase_subscription_identity", kind: "exception", identityReason: "conflicting_identity" });
+    assert(!JSON.stringify(identity.job()).includes("private"));
+  }
   unrelatedIdentity.deps.inspect = async (_, __, reportStage) => {
     reportStage("purchase_catalog_read");
     throw Object.assign(new Error("private"), { readinessFailure: {
-      stage: "purchase_subscription_identity", kind: "exception", identityReason: "missing_identity"
+      stage: "purchase_subscription_identity", kind: "exception", identityReason: "missing_identity",
+      identityChecks: { locationId: "matched", companyId: "missing", isSaaSV2: "matched" }
     } });
   };
   assert.deepEqual((await unrelatedIdentity.run({ event })).failure, { stage: "purchase_catalog_read", kind: "exception" });
