@@ -756,6 +756,11 @@ async function run() {
           : ["automatic-uninstalled", "automatic-policy-worker"].includes(mode) ? "waiting_for_installation"
           : ["automatic-email", "automatic-pending", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias"].includes(mode) ? "checkout_review_required" : "support_review_required", mode);
       assert.equal(result.deliveryVerified, false); assert.equal(result.automaticFulfillmentReady, false);
+      if (["automatic-failed-send", "automatic-policy-failed-send"].includes(mode)) {
+        assert.equal(result.failure.stage, "fulfillment_execution");
+        assert(["exception", "blocked"].includes(result.failure.kind));
+      }
+      if (succeeds) assert.equal(result.failure, null);
       const readinessReq = f.request(); readinessReq.body = { accountKey, locationId };
       const providerCalls = f.calls.length;
       const storedBeforeInspection = JSON.stringify(Array.from(f.records.entries()));

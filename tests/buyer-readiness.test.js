@@ -55,6 +55,26 @@ function fixture() {
   failed.advance(60000);
   assert.equal((await failed.run({ event })).status, "support_review_required");
   assert.equal(failed.counts().executions, 1);
+  assert.deepEqual(uncertain.failure, { stage: "fulfillment_execution", kind: "exception" });
+
+  const diagnostic = fixture();
+  diagnostic.deps.inspect = async (_, __, reportStage) => {
+    reportStage("fulfillment_preview");
+    reportStage("secret-token-should-not-be-stored");
+    throw new Error("private provider credentials and payload");
+  };
+  const stopped = await diagnostic.run({ event });
+  assert.deepEqual(stopped.failure, { stage: "fulfillment_preview", kind: "exception" });
+  assert(!JSON.stringify(diagnostic.job()).includes("private"));
+  assert(!JSON.stringify(diagnostic.job()).includes("secret-token"));
+  const stoppedHistory = structuredClone(diagnostic.job());
+  await diagnostic.run({ event });
+  assert.deepEqual(diagnostic.job(), stoppedHistory);
+  assert.equal(diagnostic.counts().executions, 0);
+  diagnostic.setJob({ ...stoppedHistory, failure: { stage: "private-token", kind: "exception", message: "secret" } });
+  assert.equal((await diagnostic.run({ inspectOnly: true })).failure, null);
+  diagnostic.setJob({ ...stoppedHistory, failure: undefined });
+  assert.equal((await diagnostic.run({ inspectOnly: true })).failure, null);
 
   const interrupted = fixture(); await interrupted.run({ event });
   interrupted.setJob({ ...interrupted.job(), status: "executing" });
