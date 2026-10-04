@@ -267,6 +267,8 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthRecoveryConfirmBtn" type="button" hidden onclick="confirmReadinessRecovery()">Confirm Recovery &amp; Send Access</button>
         <button id="ghlOAuthSchoolReviewBtn" type="button" class="secondary" onclick="reviewSchoolNameReadback()">Review School Name Write</button>
         <button id="ghlOAuthSchoolConfirmBtn" type="button" hidden onclick="confirmSchoolNameReadback()">Confirm Name Readback Only</button>
+        <button id="ghlOAuthSetupReviewBtn" type="button" class="secondary" onclick="previewInterruptedSetupRecovery()">Review Interrupted Setup</button>
+        <button id="ghlOAuthSetupConfirmBtn" type="button" hidden onclick="confirmInterruptedSetupRecovery()">Recover Setup Only</button>
         <button id="ghlOAuthBuyerSetupBtn" type="button" class="secondary" onclick="previewHighLevelBuyerSetup()">Preview Buyer Setup</button>
         <button id="ghlOAuthControlledSetupBtn" type="button" class="secondary" onclick="completeHighLevelBuyerSetup()">Complete Controlled Setup</button>
         <button id="ghlOAuthInterruptedWriteBtn" type="button" class="secondary" onclick="reviewHighLevelInterruptedWrite()">Review Interrupted Key Write</button>
@@ -1988,6 +1990,7 @@ async function confirmLegacyActivation(){
 
 var readinessRecoveryPreview=null;
 var schoolNameReadbackPreview=null;
+var interruptedSetupPreview=null;
 var buyerKeyRecoveryPreview=null;
 async function previewBuyerKeyRecovery(){
   var button=document.getElementById('ghlOAuthKeyRecoveryPreviewBtn');
@@ -2098,6 +2101,43 @@ async function confirmSchoolNameReadback(){
     setStatus('School name ledger confirmed from verified provider readback. Original attempt retained. '
       +'Setup remains stopped; no repeat name update, account-key write, or email.','good');
   }catch(error){setStatus(error.message+' Do not repeat the name write or setup recovery.','bad');}
+}
+async function previewInterruptedSetupRecovery(){
+  var button=document.getElementById('ghlOAuthSetupReviewBtn');
+  var confirmButton=document.getElementById('ghlOAuthSetupConfirmBtn');
+  interruptedSetupPreview=null;confirmButton.hidden=true;button.disabled=true;
+  try{
+    var data=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
+      accountKey:document.getElementById('accountKey').value.trim(),locationId:document.getElementById('locationId').value.trim(),
+      reviewSetupRecovery:true,dryRun:true
+    });
+    if(data.setupRecoveryReady!==true||data.providerWritePerformed!==false||data.accountUnchanged!==true||data.emailSent!==false
+      ||data.readinessStillStopped!==true||!/^[a-f0-9]{64}$/.test(data.fingerprint)
+      ||data.accountKey!==document.getElementById('accountKey').value.trim()||data.locationId!==document.getElementById('locationId').value.trim()){
+      throw new Error('Interrupted setup recovery could not be verified.');
+    }
+    interruptedSetupPreview=data;confirmButton.hidden=false;
+    setStatus('Setup recovery preview verified: '+data.schoolName+'. Confirmation saves subscription setup and a private fallback coach code only. '
+      +'No repeat rename, CRM account-key write, coach invitation or email. Automation stays stopped. Preview changed no setup or recovery history.','good');
+  }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+async function confirmInterruptedSetupRecovery(){
+  var button=document.getElementById('ghlOAuthSetupConfirmBtn');
+  var preview=interruptedSetupPreview;interruptedSetupPreview=null;button.hidden=true;
+  if(!preview)return;
+  try{
+    if(preview.accountKey!==document.getElementById('accountKey').value.trim()
+      ||preview.locationId!==document.getElementById('locationId').value.trim())throw new Error('Buyer selection changed. Review setup again.');
+    var result=await highLevelConnectionRequest('ghl-oauth-process-readiness','POST',{
+      accountKey:preview.accountKey,locationId:preview.locationId,reviewSetupRecovery:true,dryRun:false,
+      confirmSetupRecovery:true,expectedFingerprint:preview.fingerprint
+    });
+    if(result.setupRecovered!==true||result.jobHistoryPreserved!==true||result.readinessStillStopped!==true
+      ||result.providerWritePerformed!==false||result.emailSent!==false)throw new Error('Setup recovery outcome requires review.');
+    setStatus('Setup step recovered; original attempt history preserved. Automation stays stopped. '
+      +'No repeat rename, CRM account-key write, coach invitation or email.','good');
+  }catch(error){setStatus(error.message+' Do not repeat recovery or send access before reviewing saved outcomes.','bad');}
 }
 async function checkHighLevelReadiness(){
   var button=document.getElementById('ghlOAuthReadinessBtn');

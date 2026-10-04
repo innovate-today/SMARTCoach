@@ -921,6 +921,132 @@ async function run() {
         assert.equal(f.calls.filter(call => ["POST", "PUT", "PATCH", "DELETE"].includes(call.options.method)).length, writesBefore,
           "Reviewed name confirmation must make no provider writes");
         assert.equal(nameWrites, 1); assert.equal(sends, 1);
+        Object.assign(f.records.get(`buyerreadiness-${locationId}`), { failure: { stage: "fulfillment_execution", kind: "exception" } });
+        const setupJob = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
+        const setupRecords = structuredClone(Array.from(f.records.entries()));
+        const setupName = structuredClone(f.records.get(`buyerschoolname-${locationId}`));
+        const setupReq = f.request(); setupReq.body = { accountKey, locationId, reviewSetupRecovery: true, dryRun: true };
+        const setupPreview = await f.invoke("ghl-oauth-process-readiness", setupReq);
+        assert.equal(setupPreview.statusCode, 200, JSON.stringify(setupPreview.body));
+        assert.equal(setupPreview.body.setupRecoveryReady, true);
+        assert.equal(setupPreview.body.accountUnchanged, true);
+        assert.equal(setupPreview.body.emailSent, false);
+        assert.equal(setupPreview.body.providerWritePerformed, false);
+        assert(!JSON.stringify(setupPreview.body).includes("private-"));
+        const businessRecords = entries => entries.filter(([key]) => !key.startsWith("buyergrant-"));
+        assert.deepEqual(businessRecords(Array.from(f.records.entries())), businessRecords(setupRecords));
+        assert.deepEqual(f.accounts.get(accountKey), original);
+        const scopedLoad = f.registry.loadAccountScopedRecord;
+        for (const namespace of ["buyerreadiness", "buyerfulfillment", "buyerpolicy", "buyerschoolname", "buyeraccess", "buyerwelcome", "buyersetupreview", "buyerkeyreview", "checkoutidentity"]) {
+          f.registry.loadAccountScopedRecord = async (storage, key) => key === `${namespace}-${locationId}`
+            ? { error: "unavailable" } : scopedLoad(storage, key);
+          assert((await f.invoke("ghl-oauth-process-readiness", setupReq)).statusCode >= 400);
+          assert.deepEqual(f.accounts.get(accountKey), original);
+        }
+        f.registry.loadAccountScopedRecord = scopedLoad;
+        locationName = "Changed name";
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", setupReq)).statusCode, 409);
+        locationName = "School";
+        for (const flag of ["SMARTCOACH_GHL_NEW_BUYER_PLANS", "SMARTCOACH_GHL_BUYER_SCHOOL_NAME_SYNC_ENABLED"]) {
+          const previous = f.env[flag]; f.env[flag] = "";
+          assert.equal((await f.invoke("ghl-oauth-process-readiness", setupReq)).statusCode, 409);
+          f.env[flag] = previous;
+        }
+        for (const [key, change] of [
+          [`buyerreadiness-${locationId}`, { status: "pending" }],
+          [`buyerreadiness-${locationId}`, { signatureVerified: false }],
+          [`buyerreadiness-${locationId}`, { expiresAt: 1 }],
+          [`buyerreadiness-${locationId}`, { attempts: 6 }],
+          [`buyerreadiness-${locationId}`, { failure: { stage: "other" } }],
+          [`buyerpolicy-${locationId}`, { snapshotVerified: false }],
+          [`buyerschoolname-${locationId}`, { status: "attempted" }],
+          [`buyerschoolname-${locationId}`, { companyId: "foreign" }],
+          [`buyerfulfillment-${locationId}`, { steps: { verify_buyer_setup: { status: "attempted", attemptedAt: 1 }, unknown: {} } }],
+          [`buyerfulfillment-${locationId}`, { fingerprint: "changed" }],
+        ]) {
+          const before = structuredClone(f.records.get(key)); f.records.set(key, { ...before, ...change });
+          assert.equal((await f.invoke("ghl-oauth-process-readiness", setupReq)).statusCode, 409);
+          assert.deepEqual(f.accounts.get(accountKey), original); f.records.set(key, before);
+        }
+        for (const namespace of ["buyersetupreview", "buyerkeyreview", "checkoutidentity", "buyeraccess", "buyerwelcome"]) {
+          f.records.set(`${namespace}-${locationId}`, {});
+          assert.equal((await f.invoke("ghl-oauth-process-readiness", setupReq)).statusCode, 409);
+          f.records.delete(`${namespace}-${locationId}`);
+        }
+        for (const change of [
+          req => { delete req.headers["x-smartcoach-setup-code"]; },
+          req => { req.headers.origin = "https://other.example"; },
+          req => { req.method = "GET"; },
+          req => { req.body.dryRun = false; },
+          req => { req.body.dryRun = false; req.body.confirmSetupRecovery = true; req.body.expectedFingerprint = "stale"; },
+        ]) {
+          const blocked = f.request(); blocked.body = { ...setupReq.body }; change(blocked);
+          assert((await f.invoke("ghl-oauth-process-readiness", blocked)).statusCode >= 400);
+          assert.deepEqual(f.accounts.get(accountKey), original);
+        }
+        const setupConfirmReq = f.request(); setupConfirmReq.body = { ...setupReq.body, dryRun: false,
+          confirmSetupRecovery: true, expectedFingerprint: setupPreview.body.fingerprint };
+        f.accounts.get(accountKey).logoUrl = "changed";
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", setupConfirmReq)).statusCode, 409);
+        f.accounts.set(accountKey, structuredClone(original));
+        const scopedSave = f.registry.saveAccountScopedRecord;
+        let setupSaves = 0;
+        f.registry.saveAccountScopedRecord = async (storage, namespace, record) => {
+          const result = await scopedSave(storage, namespace, record);
+          f.records.get(namespace).updatedAt = `storage-${++setupSaves}`;
+          return result;
+        };
+        const recoveredSetup = await f.invoke("ghl-oauth-process-readiness", setupConfirmReq);
+        assert.equal(recoveredSetup.statusCode, 200, JSON.stringify(recoveredSetup.body));
+        assert.equal(recoveredSetup.body.setupRecovered, true);
+        assert.equal(recoveredSetup.body.readinessStillStopped, true);
+        assert.equal(recoveredSetup.body.emailSent, false);
+        assert.equal(recoveredSetup.body.providerWritePerformed, false);
+        assert.equal(f.accounts.get(accountKey).subscription.status, "trialing");
+        assert.equal(f.accounts.get(accountKey).requireCoachAccess, true);
+        assert.equal(f.accounts.get(accountKey).coachAccessCodes.length, 1);
+        assert.equal(f.accounts.get(accountKey).token, original.token);
+        assert.equal(f.accounts.get(accountKey).accountOwnerEmail, original.accountOwnerEmail);
+        assert.deepEqual(f.records.get(`buyerreadiness-${locationId}`), setupJob);
+        assert.deepEqual(f.records.get(`buyerschoolname-${locationId}`), setupName);
+        assert.equal(f.records.get(`buyerfulfillment-${locationId}`).steps.verify_buyer_setup.status, "confirmed");
+        assert.equal(f.records.get(`buyerfulfillment-${locationId}`).steps.verify_buyer_setup.attemptedAt, stoppedFulfillment.steps.verify_buyer_setup.attemptedAt);
+        assert.equal(f.records.get(`buyerfulfillment-${locationId}`).steps.ensure_buyer_account_key, undefined);
+        assert.equal(f.records.get(`buyersetupreview-${locationId}`).status, "confirmed");
+        assert.deepEqual(f.records.get(`buyersetupreview-${locationId}`).originalFulfillment, stoppedFulfillment);
+        assert.equal((await f.invoke("ghl-oauth-process-readiness", setupConfirmReq)).statusCode, 409);
+        assert.equal(f.calls.filter(call => ["POST", "PUT", "PATCH", "DELETE"].includes(call.options.method)).length, writesBefore);
+        assert.equal(nameWrites, 1); assert.equal(sends, 1);
+        f.registry.saveAccountScopedRecord = scopedSave;
+        for (const stage of ["audit", "setup", "fulfillment", "final-audit", "setup-readback"]) {
+          f.records.clear(); for (const [key, value] of structuredClone(setupRecords)) f.records.set(key, value);
+          f.accounts.set(accountKey, structuredClone(original));
+          const p = await f.invoke("ghl-oauth-process-readiness", setupReq);
+          assert.equal(p.statusCode, 200);
+          const accountSave = f.registry.saveAccountRecord;
+          f.registry.saveAccountScopedRecord = async (storage, namespace, record) => {
+            if (stage === "audit" && namespace === `buyersetupreview-${locationId}`
+              || stage === "fulfillment" && namespace === `buyerfulfillment-${locationId}`
+              || stage === "final-audit" && namespace === `buyersetupreview-${locationId}` && record.status === "confirmed") return { saved: false };
+            return scopedSave(storage, namespace, record);
+          };
+          f.registry.saveAccountRecord = async (key, record) => {
+            if (stage === "setup") return { saved: false };
+            return accountSave(key, stage === "setup-readback" ? { ...record, token: "changed" } : record);
+          };
+          const failedReq = f.request(); failedReq.body = { ...setupConfirmReq.body, expectedFingerprint: p.body.fingerprint };
+          const failed = await f.invoke("ghl-oauth-process-readiness", failedReq);
+          assert.equal(failed.statusCode, 503, stage + JSON.stringify(failed.body));
+          assert.deepEqual(f.records.get(`buyerreadiness-${locationId}`), setupJob);
+          assert.deepEqual(f.records.get(`buyerschoolname-${locationId}`), setupName);
+          assert.equal(f.records.get(`buyeraccess-${locationId}`), undefined);
+          assert.equal(f.records.get(`buyerfulfillment-${locationId}`).steps.ensure_buyer_account_key, undefined);
+          if (stage === "audit" || stage === "setup") assert.deepEqual(f.accounts.get(accountKey), original);
+          if (stage !== "audit") assert.equal((await f.invoke("ghl-oauth-process-readiness", setupReq)).statusCode, 409);
+          f.registry.saveAccountRecord = accountSave;
+          f.registry.saveAccountScopedRecord = scopedSave;
+        }
+        assert.equal(nameWrites, 1); assert.equal(sends, 1);
         f.records.clear(); for (const [key, value] of savedRecords) f.records.set(key, value);
         f.accounts.set(accountKey, savedAccount);
       } else assert.equal(nameWrites, 0);
@@ -1694,6 +1820,34 @@ async function run() {
   assert.equal(nodes.ghlOAuthSchoolConfirmBtn.hidden, true);
   await context.confirmSchoolNameReadback();
   assert.equal(pageCalls.length, 0, "Confirmation must consume the preview exactly once");
+  nodes.ghlOAuthSetupReviewBtn = { disabled: false };
+  nodes.ghlOAuthSetupConfirmBtn = { hidden: true };
+  const setupPreviewResponse = { accountKey: nodes.accountKey.value, locationId: nodes.locationId.value, schoolName: "School",
+    setupRecoveryReady: true, fingerprint: "c".repeat(64), readinessStillStopped: true,
+    providerWritePerformed: false, accountUnchanged: true, emailSent: false };
+  pageResponse = setupPreviewResponse;
+  await context.previewInterruptedSetupRecovery();
+  assert.equal(nodes.ghlOAuthSetupConfirmBtn.hidden, false);
+  assert.deepEqual(JSON.parse(pageCalls.pop().options.body), { accountKey: nodes.accountKey.value, locationId: nodes.locationId.value,
+    reviewSetupRecovery: true, dryRun: true });
+  nodes.locationId.value = "changed";
+  await context.confirmInterruptedSetupRecovery();
+  assert.equal(pageCalls.length, 0);
+  nodes.locationId.value = setupPreviewResponse.locationId;
+  await context.previewInterruptedSetupRecovery(); pageCalls.length = 0;
+  pageResponse = { setupRecovered: true, jobHistoryPreserved: true, readinessStillStopped: true, providerWritePerformed: false, emailSent: false };
+  await context.confirmInterruptedSetupRecovery();
+  assert.deepEqual(JSON.parse(pageCalls.pop().options.body), { accountKey: nodes.accountKey.value, locationId: nodes.locationId.value,
+    reviewSetupRecovery: true, dryRun: false, confirmSetupRecovery: true, expectedFingerprint: "c".repeat(64) });
+  assert.match(statuses.pop()[0], /Automation stays stopped/);
+  assert.equal(nodes.ghlOAuthSetupConfirmBtn.hidden, true);
+  await context.confirmInterruptedSetupRecovery(); assert.equal(pageCalls.length, 0);
+  for (const change of [{ emailSent: true }, { providerWritePerformed: true }, { readinessStillStopped: false }, { accountKey: "other" }]) {
+    pageResponse = { ...setupPreviewResponse, ...change };
+    await context.previewInterruptedSetupRecovery();
+    assert.equal(nodes.ghlOAuthSetupConfirmBtn.hidden, true);
+  }
+  pageCalls.length = 0;
   nodes.ghlOAuthKeyRecoveryPreviewBtn = { disabled: false };
   nodes.ghlOAuthKeyRecoveryConfirmBtn = { hidden: true };
   const keyRecoveryPreview = { keyRecoveryReady: true, accountUnchanged: true, emailSent: false,
