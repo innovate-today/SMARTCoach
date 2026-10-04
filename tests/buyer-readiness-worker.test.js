@@ -58,7 +58,7 @@ async function run() {
     global.fetch = async (url, options) => {
       calls++;
       const parts = new URL(url).pathname.split("/").slice(1).map(decodeURIComponent);
-      assert.deepEqual(parts, ["scan", "0", "match", `${prefix}buyerreadiness-*`, "count", "20"]);
+      assert.deepEqual(parts, ["scan", "0", "match", `${prefix}buyerreadiness-*`, "count", "1000"]);
       assert.equal(options.method, "POST");
       return { ok: true, text: async () => JSON.stringify({ result }) };
     };
