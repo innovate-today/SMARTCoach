@@ -121,6 +121,51 @@ webhook matching. These are guards for future fulfillment, not automatic onboard
 Existing configured accounts are unchanged until an explicit verified update.
 API reference: https://marketplace.gohighlevel.com/docs/ghl/saas-api/get-location-subscription/index.html
 
+### Staged Event-To-Fulfillment Handoff
+
+The server-only dispatcher is wired into the existing `ghl-location-create`
+route for signed LocationCreate events after mapping readback, preserved duplicate
+mappings, and connector INSTALL events. It is disabled by default. No new public
+execution endpoint or client-controlled execution flag is added. Legacy automation
+secret fallback may acknowledge/map an event but cannot run fulfillment.
+
+Execution requires this buyer's exact derived key in all three settings:
+`SMARTCOACH_GHL_AUTOMATIC_FULFILLMENT_ACCOUNTS`,
+`SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS`, and
+`SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS`. The automatic and controlled lists reject
+wildcards, global switches and malformed entries. Production settings must remain
+unchanged until separately approved for a specific buyer; deployment alone is not
+approval to enable access or mail.
+
+The dispatcher checks the signing result, exact provisioning/connector app and
+version, configured agency, distinct real buyer location, and original directly
+matched checkout. It then reuses the controlled coordinator's fresh purchase,
+price/cadence, lifecycle, connector/token, snapshot, sender and access checks,
+fingerprint, locks, intent-before-write records and outcome readback. Automatic
+dispatch cannot use support-reconciled owner identity as a substitute for the
+original checkout. Gates and direct checkout are rechecked before each step.
+It does not install the connector or expand app permissions. Such authorization
+remains a prerequisite, not something inferred from a location-created event.
+
+INSTALL before the saved buyer mapping returns `waiting_for_mapping` without
+inventing a checkout; a later LocationCreate checks current provider installation.
+LocationCreate before INSTALL stops safely, and a later connector INSTALL can
+check the same mapped buyer. Accepted existing access is preserved without mail
+or code regeneration. Partial setup or uncertain sending returns support review
+and cannot blindly replay an attempted step. No background retry queue, polling
+worker, or automatic snapshot installer is provided: delayed provider readiness
+requires a later valid event or controlled support review. Do not rely on webhook
+delivery retries to make an incomplete buyer ready.
+
+Webhook responses include a sanitized `fulfillmentDispatch` result. HTTP200 and
+`emailAccepted` are not proof of inbox delivery, coach sign-in, or first sync;
+`automaticFulfillmentReady` remains false until live end-to-end verification.
+This staged, buyer-allowlisted handoff is not a general unattended launch rollout.
+
+Event references:
+https://marketplace.gohighlevel.com/docs/webhook/LocationCreate/index.html
+https://marketplace.gohighlevel.com/docs/webhook/AppInstall/index.html
+
 `Update Owner Email Only` previews the saved recipient and explicitly confirms
 the change to the owner/code-recovery destination. Its same-origin admin POST to
 `ghl-oauth-update-owner-email` requires verified buyer OAuth and an unchanged
@@ -224,7 +269,8 @@ the current installation and mapping; near expiry, a new token is requested thro
 the agency grant instead of consuming a location refresh token. Verification never
 overwrites the PIT, changes subscriptions,
 creates coach credentials, sends email, or marks onboarding complete. Live renewal
-and INSTALL event reconciliation remain separate work.
+remains separate live verification work. Signed INSTALL handoff is staged as
+described above; it is not enabled or verified by a real new-buyer signup.
 
 ### Read-Only Consumer Rollout
 
@@ -240,7 +286,7 @@ the pilot. This is not a completed OAuth migration or automatic onboarding.
 
 1. Configure client, scopes, agency identity and secrets, deploy, then obtain approval to authorize only the intended buyer installation.
 2. Verify real token response and refresh behavior; mock tests do not establish live connectivity.
-3. Add verified INSTALL handling for this connector, matching app/company/location identity and an existing valid checkout-to-buyer mapping. Handle event arrival order and duplicate delivery safely.
+3. Review/deploy the disabled signed-event handoff, then validate a separately approved buyer's INSTALL/location mapping and delivery order. No broad or future-location install is authorized by deployment.
 4. Obtain location tokens only for confirmed installed buyer locations, validating returned location identity. Add renewal to CRM consumers before replacing any PIT.
 5. Verify private-app future-install eligibility in the actual UI. Enabling it later requires an explicit access-scope decision and changes to this release's default rejection.
 6. Reconcile Trialing versus Active, verify coach creation, welcome-email delivery to the verified owner, Overview destination, and approved clean purchase-to-access validation.

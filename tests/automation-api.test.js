@@ -376,7 +376,7 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
         return {
           ok: true,
           status: 200,
-          text: async () => JSON.stringify({ result: JSON.stringify(pendingRecord) }),
+          text: async () => JSON.stringify({ result: JSON.stringify(mode === "stale-readback" ? pendingRecord : savedPending || pendingRecord) }),
         };
       }
       if (key === "smartcoach:account:sc-buyer-location") {
@@ -466,6 +466,8 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
       assert.strictEqual(res.body.buyerProvisioningVerified, false);
       assert.strictEqual(res.body.automaticFulfillmentReady, false);
       assert.strictEqual(res.body.productSelectionSource, "precheckout_form");
+      assert.strictEqual(res.body.fulfillmentDispatch.status, mode === "stale-readback" ? "mapping_readback_required" : "signed_event_required");
+      assert.strictEqual(res.body.fulfillmentDispatch.emailAccepted, false);
       assert.ok(savedAccount);
       assert.strictEqual(savedAccount.accountKey, "sc-buyer-location");
       assert.strictEqual(savedAccount.locationId, "buyer-location");
@@ -606,6 +608,7 @@ async function testGhlInstallWebhookAcknowledgesWithoutProvisioning() {
       assert.strictEqual(res.body.success, true);
       assert.strictEqual(res.body.eventType, "INSTALL");
       assert.strictEqual(res.body.acknowledged, true);
+      assert.strictEqual(res.body.fulfillmentDispatch.status, "signed_event_required");
       assert.strictEqual(res.body.provisioned, false);
       assert.strictEqual(res.body.automationSecretFallback, true);
       assert.strictEqual(fetchCalled, false);
@@ -615,6 +618,27 @@ async function testGhlInstallWebhookAcknowledgesWithoutProvisioning() {
   } finally {
     global.fetch = previousFetch;
   }
+}
+
+async function testSignedGhlInstallDispatchRemainsDisabled() {
+  const previousVerify = crypto.verify;
+  const previousFetch = global.fetch;
+  let fetchCalled = false;
+  // Only mock the signature boundary; exercise the real route and disabled dispatcher.
+  crypto.verify = () => true;
+  global.fetch = async () => { fetchCalled = true; throw new Error("Disabled dispatch must not read providers or storage."); };
+  try {
+    await withEnv({ SMARTCOACH_GHL_AUTOMATIC_FULFILLMENT_ACCOUNTS: "", SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS: "" }, async () => {
+      const res = mockRes();
+      await handler({ method: "POST", query: { route: "ghl-location-create" }, headers: { "x-ghl-signature": "mock-signature" },
+        body: { type: "INSTALL", appId: "6abfe408797ba36482ddbe72", companyId: "agency-company", locationId: "AbCdEfGhIjKlMnOpQrSt" } }, res);
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.ghlLocationCreateVerified, true);
+      assert.strictEqual(res.body.fulfillmentDispatch.status, "disabled");
+      assert.strictEqual(res.body.fulfillmentDispatch.emailAccepted, false);
+      assert.strictEqual(fetchCalled, false);
+    });
+  } finally { crypto.verify = previousVerify; global.fetch = previousFetch; }
 }
 
 async function testAccountSetupCodeProtection() {
@@ -1907,11 +1931,13 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
   await testPendingCheckoutStoresOnboardingAndReturnsSaleLink();
   await testPendingCheckoutValidatesRequiredFields();
   await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation();
+  await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation("stale-readback");
   await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation("existing");
   await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation("conflict");
   await testGhlLocationCreateWithoutMatchDoesNotProvision();
   await testGhlLocationCreateRequiresSignatureOrSecret();
   await testGhlInstallWebhookAcknowledgesWithoutProvisioning();
+  await testSignedGhlInstallDispatchRemainsDisabled();
   await testAccountSetupCodeProtection();
   await testAutomationSecretRequiredBeforeRegistry();
   await testAutomationDoesNotGenerateCoachCodes();

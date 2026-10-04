@@ -6715,6 +6715,7 @@ async function ghlLocationCreateWebhook(req, res) {
     const payload = JSON.parse(rawBody || "{}");
     const eventType = cleanSetupText(payload.type);
     if (eventType === "INSTALL") {
+      const fulfillmentDispatch = await dispatchGhlBuyerFulfillment(payload, verification);
       res.status(200).json({
         success: true,
         eventType,
@@ -6722,6 +6723,7 @@ async function ghlLocationCreateWebhook(req, res) {
         provisioned: false,
         ghlLocationCreateVerified: verification.signatureVerified,
         automationSecretFallback: verification.automationSecretFallback,
+        fulfillmentDispatch,
       });
       return;
     }
@@ -6763,10 +6765,13 @@ async function ghlLocationCreateWebhook(req, res) {
     // LocationCreate retries must not overwrite credentials, owner corrections, or subscription updates.
     if (existing) {
       if (existing.locationId !== buyerLocationId) throw httpError(409, "Saved buyer location conflicts with this event.");
+      await releaseCheckoutLock();
+      releaseCheckoutLock = null;
+      const fulfillmentDispatch = await dispatchGhlBuyerFulfillment(payload, verification);
       res.status(200).json({ success: true, eventType, buyerLocationId, accountKey,
         pendingCheckoutMatched: true, duplicateLocationCreate: true, provisioned: false,
         buyerProvisioningVerified: false, automaticFulfillmentReady: false,
-        reason: "Buyer account already exists. Existing setup preserved; purchase verification is still required." });
+        reason: "Buyer account already exists. Existing setup preserved; purchase verification is still required.", fulfillmentDispatch });
       return;
     }
 
@@ -6810,6 +6815,13 @@ async function ghlLocationCreateWebhook(req, res) {
       },
     };
     const pendingRegistry = await saveAccountScopedRecord(pendingKey, PENDING_CHECKOUT_NAMESPACE, updatedPending);
+    const confirmedPending = pendingRegistry.saved ? await loadAccountScopedRecord(pendingKey, PENDING_CHECKOUT_NAMESPACE) : null;
+    const mappingConfirmed = !confirmedPending?.error && confirmedPending?.record?.lastMatchedLocationId === buyerLocationId
+      && JSON.stringify(confirmedPending.record.lastLocationCreateEvent) === JSON.stringify(updatedPending.lastLocationCreateEvent);
+    await releaseCheckoutLock();
+    releaseCheckoutLock = null;
+    const fulfillmentDispatch = mappingConfirmed ? await dispatchGhlBuyerFulfillment(payload, verification)
+      : { status: "mapping_readback_required", automaticFulfillmentReady: false, emailAccepted: false };
 
     res.status(200).json({
       success: true,
@@ -6827,11 +6839,23 @@ async function ghlLocationCreateWebhook(req, res) {
       productSelectionSource: "precheckout_form",
       provisioned: !!(result.registry && result.registry.saved),
       ...result,
+      fulfillmentDispatch,
     });
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not process LocationCreate webhook." });
   } finally {
     if (releaseCheckoutLock) await releaseCheckoutLock().catch(() => {});
+  }
+}
+
+async function dispatchGhlBuyerFulfillment(payload, verification) {
+  // Signature fallback can acknowledge legacy events, but never execute onboarding.
+  if (verification.signatureVerified !== true) return { status: "signed_event_required", automaticFulfillmentReady: false, emailAccepted: false };
+  try {
+    return await require("../../lib/ghl-oauth").createGhlOAuth({ onAccountUpdated: clearAccountStatusCacheForAccount })
+      .dispatchProvisioningEvent(payload, verification);
+  } catch (_) {
+    return { status: "support_review_required", automaticFulfillmentReady: false, emailAccepted: false, outcomeRequiresReview: true };
   }
 }
 
