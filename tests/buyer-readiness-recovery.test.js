@@ -4,7 +4,7 @@ const buyer = { accountKey: "sc-abcdefghijklmnopqrst", locationId: "AbCdEfGhIjKl
 function fixture() {
   const evidence = { readiness: { buyerAccountKey: buyer.accountKey, locationId: buyer.locationId, signatureVerified: true,
     event: { type: "LocationCreate", id: buyer.locationId }, status: "support_review_required",
-    attempts: 1, createdAt: 1000, expiresAt: 86401000 } };
+    attempts: 1, createdAt: 1000, expiresAt: 86401000, accountKey: "ghlconnector", updatedAt: "original-storage-time" } };
   let enabled = true, locked = false, inspections = 0, writes = 0, resumes = 0, failAudit = false, failJob = false;
   const prerequisite = { verified: true, snapshot: { verified: true, objectCount: 5 }, qualification: { qualified: true,
     fingerprint: "current-purchase", identity: { buyerAccountKey: buyer.accountKey, locationId: buyer.locationId,
@@ -12,8 +12,8 @@ function fixture() {
   const deps = { now: () => 2000, enabled: () => enabled, eventValid: event => event?.id === buyer.locationId,
     lock: async () => { assert(!locked); locked = true; return async () => { locked = false; }; },
     load: async () => structuredClone(evidence), inspect: async () => { inspections++; return prerequisite; },
-    saveRecovery: async (_, record) => { writes++; if (!failAudit) evidence.recovery = structuredClone(record); },
-    saveReadiness: async (_, record) => { writes++; if (!failJob) evidence.readiness = structuredClone(record); },
+    saveRecovery: async (_, record) => { writes++; if (!failAudit) evidence.recovery = { ...structuredClone(record), accountKey: "ghlconnector", updatedAt: `storage-${writes}` }; },
+    saveReadiness: async (_, record) => { writes++; if (!failJob) evidence.readiness = { ...structuredClone(record), accountKey: "ghlconnector", updatedAt: `storage-${writes}` }; },
     resume: async () => { assert(!locked); resumes++; return { status: "complete", emailAccepted: true }; } };
   return { evidence, prerequisite, api: createBuyerReadinessRecovery(deps), counts: () => ({ inspections, writes, resumes }),
     disable: () => { enabled = false; }, failAudit: () => { failAudit = true; }, failJob: () => { failJob = true; } };

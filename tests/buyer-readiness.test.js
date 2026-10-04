@@ -9,7 +9,7 @@ function fixture() {
   let executions = 0, inspections = 0, reads = 0, writes = 0, failExecution = false, corruptReadback = false, revokeOnInspect = false;
   const deps = { now: () => time, allowed: () => enabled,
     load: async () => { reads++; return structuredClone(corruptReadback && job ? { ...job, attempts: 99 } : job); },
-    save: async (_, record) => { writes++; job = { ...structuredClone(record), accountKey: "ghlconnector" }; },
+    save: async (_, record) => { writes++; job = { ...structuredClone(record), accountKey: "ghlconnector", updatedAt: `storage-${writes}` }; },
     lock: async () => { assert(!locked); locked = true; return async () => { locked = false; }; },
     inspect: async () => { inspections++; if (revokeOnInspect) enabled = false; return readiness; },
     execute: async () => { executions++; if (failExecution) throw new Error("private provider error"); return { status: "complete", emailAccepted: true }; },
