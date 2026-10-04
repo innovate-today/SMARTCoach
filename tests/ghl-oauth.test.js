@@ -788,7 +788,8 @@ async function run() {
         "automatic-policy-subscription-malformed": "purchase_subscription_details",
         "automatic-policy-subscription-unknown-status": "purchase_subscription_details",
       }[mode];
-      if (purchaseFailureStage) assert.deepEqual(result.failure, { stage: purchaseFailureStage, kind: "exception" });
+      if (purchaseFailureStage) assert.deepEqual(result.failure, { stage: purchaseFailureStage, kind: "exception",
+        ...(mode === "automatic-policy-subscription-wrong-location" ? { identityReason: "conflicting_identity" } : {}) });
       if (mode === "automatic-policy-success") {
         assert.equal(locationName, "School");
         assert.equal(nameWrites, 1);

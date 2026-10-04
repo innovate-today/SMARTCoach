@@ -142,6 +142,32 @@ function fixture() {
   const wrongStage = fixture();
   wrongStage.deps.inspect = async () => { throw Object.assign(new Error("not a verified purchase"), { readinessPending: "subscription" }); };
   assert.equal((await wrongStage.run({ event })).status, "support_review_required");
+  for (const identityReason of ["missing_response", "malformed_response", "ambiguous_envelope", "missing_identity", "conflicting_identity", "private-provider-secret"]) {
+    const identity = fixture();
+    identity.deps.inspect = async (_, __, reportStage) => {
+      reportStage("purchase_subscription_identity");
+      throw Object.assign(new Error("private payload"), { readinessFailure: {
+        stage: "purchase_subscription_identity", kind: "exception", identityReason, token: "private-token"
+      } });
+    };
+    const result = await identity.run({ event });
+    assert.equal(result.status, "support_review_required");
+    assert.deepEqual(result.failure, { stage: "purchase_subscription_identity", kind: "exception",
+      ...(identityReason === "private-provider-secret" ? {} : { identityReason }) });
+    assert(!JSON.stringify(identity.job()).includes("private"));
+    const saved = structuredClone(identity.job());
+    await identity.run({ event });
+    assert.deepEqual(identity.job(), saved);
+    assert.equal(identity.counts().executions, 0);
+  }
+  const unrelatedIdentity = fixture();
+  unrelatedIdentity.deps.inspect = async (_, __, reportStage) => {
+    reportStage("purchase_catalog_read");
+    throw Object.assign(new Error("private"), { readinessFailure: {
+      stage: "purchase_subscription_identity", kind: "exception", identityReason: "missing_identity"
+    } });
+  };
+  assert.deepEqual((await unrelatedIdentity.run({ event })).failure, { stage: "purchase_catalog_read", kind: "exception" });
   for (const stage of ["purchase_grant", "purchase_subscription_read", "purchase_subscription_identity",
     "purchase_catalog_read", "purchase_catalog_verification", "purchase_mapping_readback"]) {
     const purchaseFailure = fixture();

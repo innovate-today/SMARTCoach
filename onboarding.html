@@ -2072,6 +2072,7 @@ async function checkHighLevelReadiness(){
     });
     var summary='Saved automation status: '+data.status+'. ';
     summary+='Recorded failure stage: '+(data.failure ? data.failure.stage+' ('+data.failure.kind+')' : 'not recorded')+'. ';
+    if(data.failure && data.failure.identityReason)summary+='Subscription identity failure: '+data.failure.identityReason+'. ';
     if(Number.isInteger(data.attempts))summary+='Attempts: '+data.attempts+'. ';
     if(data.nextAttemptAt)summary+='Next check: '+new Date(data.nextAttemptAt).toISOString()+'. ';
     if(data.savedEvidence){
