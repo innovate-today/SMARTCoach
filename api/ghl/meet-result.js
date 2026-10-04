@@ -11,6 +11,31 @@ const ATHLETE_FIELD_ALIASES = {
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { displayNameCase } = require("../../lib/display-name");
+const registry = require("../../lib/account-registry");
+const { savePartnerMeetResult } = require("../../lib/partner-meet-result");
+
+function partnerResultDependencies(accountKey) {
+  if (!accountKey || !registry.registryConfigured()) throw httpError(503, "Shared finish protection requires account storage.");
+  return {
+    lock: async namespace => {
+      try { return await registry.acquireAccountScopedLock(accountKey, namespace, { ttlMs: 120000, waitMs: 1000 }); }
+      catch (error) {
+        if (error.code === "POWER_TRAK_BUSY") throw httpError(503, "Another coach is saving this shared finish. Wait, then save again.");
+        throw error;
+      }
+    },
+    loadSession: async id => (await registry.loadPartnerTimingSessions(accountKey, { id }))[0],
+    load: async namespace => {
+      const loaded = await registry.loadAccountScopedRecord(accountKey, namespace);
+      if (!loaded.configured || loaded.error) throw httpError(503, "Shared finish history is unavailable.");
+      return loaded.found ? loaded.record : null;
+    },
+    save: async (namespace, record) => {
+      const saved = await registry.saveAccountScopedRecord(accountKey, namespace, record);
+      if (!saved.saved) throw httpError(503, "Shared finish history could not be saved.");
+    },
+  };
+}
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -46,143 +71,149 @@ module.exports = async function handler(req, res) {
       return;
     }
     const meetResult = normalizeMeetResult(payload);
-    if (meetResult.resultType === "relay") {
-      const existingRelayResults = await findMeetResultRecordsForRelayEvent({
-        token,
-        locationId,
-        event: meetResult.event,
-      });
-      const autoFlags = calculateRelayMeetResultFlags({ existingRelayResults, meetResult });
-      meetResult.isPr = false;
-      meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
-      const properties = buildMeetResultProperties({ contactId: "", meetResult });
-      const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
-      if (duplicate && !meetResult.forceDuplicateSync) {
-        throw httpError(409, "This relay result appears to have already been saved.");
-      }
-      const record = await ghlFetch({
-        token,
-        path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records`,
-        method: "POST",
-        body: { locationId, properties },
-      });
-      res.status(200).json({
-        success: true,
-        athlete: meetResult.athleteName,
-        contactId: "",
-        athleteGender: meetResult.athleteGender,
-        recordId: record.id || (record.record && record.record.id) || null,
-        sourceRecordId: properties.source_record_id,
-        relay: true,
-        isPr: false,
-        isSeasonBest: meetResult.isSeasonBest,
-        records: [],
-      });
-      return;
-    }
-    const contact = await findOrCreateContact({ token, locationId, meetResult });
-    meetResult.athleteGender = meetResult.athleteGender || contactGender(contact);
-    if (meetResult.resultType === "field") {
-      const existingFieldResults = await findMeetResultRecordsForAthleteEvent({
-        token,
-        locationId,
-        contactId: contact.id,
-        event: meetResult.event,
-      });
-      const autoFlags = calculateFieldMeetResultFlags({ existingFieldResults, meetResult });
-      meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
-      meetResult.isPr = meetResult.isPr || autoFlags.isPr;
-      const properties = buildMeetResultProperties({ contactId: contact.id, meetResult });
-      const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
-      if (duplicate && !meetResult.forceDuplicateSync) {
-        throw httpError(409, "This field result appears to have already been saved.");
-      }
-      const record = await ghlFetch({
-        token,
-        path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records`,
-        method: "POST",
-        body: { locationId, properties },
-      });
-      await addMeetResultNote({ token, contactId: contact.id, meetResult });
-      res.status(200).json({
-        success: true,
-        athlete: meetResult.athleteName,
-        contactId: contact.id,
-        athleteGender: meetResult.athleteGender,
-        recordId: record.id || (record.record && record.record.id) || null,
-        sourceRecordId: properties.source_record_id,
-        field: true,
-        isPr: meetResult.isPr,
-        isSeasonBest: meetResult.isSeasonBest,
-        records: [],
-      });
-      return;
-    }
-    const seasonSourceRecordId = buildSeasonSourceRecordId({ contactId: contact.id, meetResult });
-    const existingSeasonRecord = await findObjectRecord({
+    meetResult.syncedBy = clean(req.headers && req.headers["x-smartcoach-coach-name"]).replace(/[\r\n]+/g, " ").slice(0, 120);
+    const saveResult = () => saveSingleMeetResult({ token, locationId, meetResult });
+    const partner = meetResult.partnerTimingSessionId || meetResult.partnerFinishRecordId;
+    const response = partner ? await savePartnerMeetResult(partnerResultDependencies(getGhlContext(req).accountKey), meetResult, saveResult) : await saveResult();
+    res.status(200).json(response);
+  } catch (error) {
+    const setupMessage = meetResultSetupErrorMessage(error);
+    res.status(error.statusCode || 500).json({ error: setupMessage || error.message || "Meet result sync failed." });
+  }
+};
+
+async function saveSingleMeetResult({ token, locationId, meetResult }) {
+  if (meetResult.resultType === "relay") {
+    const existingRelayResults = await findMeetResultRecordsForRelayEvent({
       token,
       locationId,
-      schemaKey: SEASON_RECORD_SCHEMA_KEY,
-      sourceRecordId: seasonSourceRecordId,
-    });
-    const athleteBestSourceRecordId = buildAthleteBestSourceRecordId({ contactId: contact.id, meetResult });
-    const athleteBestLookup = await findAthleteBestRecord({
-      token,
-      locationId,
-      contactId: contact.id,
       event: meetResult.event,
     });
-    const autoFlags = calculateMeetResultFlags({ existingSeasonRecord, athleteBestLookup, meetResult });
+    const autoFlags = calculateRelayMeetResultFlags({ existingRelayResults, meetResult });
+    meetResult.isPr = false;
     meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
-    meetResult.isPr = meetResult.isPr || autoFlags.isPr;
-    const properties = buildMeetResultProperties({ contactId: contact.id, meetResult });
+    const properties = buildMeetResultProperties({ contactId: "", meetResult });
     const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
     if (duplicate && !meetResult.forceDuplicateSync) {
-      throw httpError(409, "This meet result appears to have already been saved.");
+      throw httpError(409, "This relay result appears to have already been saved.");
     }
-
     const record = await ghlFetch({
       token,
       path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records`,
       method: "POST",
       body: { locationId, properties },
     });
-    const meetResultRecordId = record.id || (record.record && record.record.id) || null;
+    return {
+      success: true,
+      athlete: meetResult.athleteName,
+      contactId: "",
+      athleteGender: meetResult.athleteGender,
+      recordId: record.id || (record.record && record.record.id) || null,
+      sourceRecordId: properties.source_record_id,
+      relay: true,
+      isPr: false,
+      isSeasonBest: meetResult.isSeasonBest,
+      records: [],
+    };
+  }
+  const contact = await findOrCreateContact({ token, locationId, meetResult });
+  meetResult.athleteGender = meetResult.athleteGender || contactGender(contact);
+  if (meetResult.resultType === "field") {
+    const existingFieldResults = await findMeetResultRecordsForAthleteEvent({
+      token,
+      locationId,
+      contactId: contact.id,
+      event: meetResult.event,
+    });
+    const autoFlags = calculateFieldMeetResultFlags({ existingFieldResults, meetResult });
+    meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
+    meetResult.isPr = meetResult.isPr || autoFlags.isPr;
+    const properties = buildMeetResultProperties({ contactId: contact.id, meetResult });
+    const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
+    if (duplicate && !meetResult.forceDuplicateSync) {
+      throw httpError(409, "This field result appears to have already been saved.");
+    }
+    const record = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records`,
+      method: "POST",
+      body: { locationId, properties },
+    });
     await addMeetResultNote({ token, contactId: contact.id, meetResult });
-    const seasonRecord = await upsertSeasonRecord({
-      token,
-      locationId,
-      contactId: contact.id,
-      meetResult,
-      existing: existingSeasonRecord,
-      sourceRecordId: seasonSourceRecordId,
-    });
-    const athleteBest = await upsertAthleteBest({
-      token,
-      locationId,
-      contactId: contact.id,
-      meetResult,
-      existing: athleteBestLookup.record,
-      sourceRecordId: athleteBestSourceRecordId,
-      meetResultSourceRecordId: properties.source_record_id,
-    });
-    res.status(200).json({
+    return {
       success: true,
       athlete: meetResult.athleteName,
       contactId: contact.id,
       athleteGender: meetResult.athleteGender,
-      recordId: meetResultRecordId,
+      recordId: record.id || (record.record && record.record.id) || null,
       sourceRecordId: properties.source_record_id,
-      seasonRecord,
-      athleteBest,
-      currentFitnessUpdated: meetResult.useAsCurrentFitness === true,
+      field: true,
+      isPr: meetResult.isPr,
+      isSeasonBest: meetResult.isSeasonBest,
       records: [],
-    });
-  } catch (error) {
-    const setupMessage = meetResultSetupErrorMessage(error);
-    res.status(error.statusCode || 500).json({ error: setupMessage || error.message || "Meet result sync failed." });
+    };
   }
-};
+  const seasonSourceRecordId = buildSeasonSourceRecordId({ contactId: contact.id, meetResult });
+  const existingSeasonRecord = await findObjectRecord({
+    token,
+    locationId,
+    schemaKey: SEASON_RECORD_SCHEMA_KEY,
+    sourceRecordId: seasonSourceRecordId,
+  });
+  const athleteBestSourceRecordId = buildAthleteBestSourceRecordId({ contactId: contact.id, meetResult });
+  const athleteBestLookup = await findAthleteBestRecord({
+    token,
+    locationId,
+    contactId: contact.id,
+    event: meetResult.event,
+  });
+  const autoFlags = calculateMeetResultFlags({ existingSeasonRecord, athleteBestLookup, meetResult });
+  meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
+  meetResult.isPr = meetResult.isPr || autoFlags.isPr;
+  const properties = buildMeetResultProperties({ contactId: contact.id, meetResult });
+  const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id, strict: !!meetResult.partnerTimingSessionId });
+  if (duplicate && !meetResult.forceDuplicateSync) {
+    throw httpError(409, "This meet result appears to have already been saved.");
+  }
+
+  const record = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records`,
+    method: "POST",
+    body: { locationId, properties },
+  });
+  const meetResultRecordId = record.id || (record.record && record.record.id) || null;
+  await addMeetResultNote({ token, contactId: contact.id, meetResult });
+  const seasonRecord = await upsertSeasonRecord({
+    token,
+    locationId,
+    contactId: contact.id,
+    meetResult,
+    existing: existingSeasonRecord,
+    sourceRecordId: seasonSourceRecordId,
+  });
+  const athleteBest = await upsertAthleteBest({
+    token,
+    locationId,
+    contactId: contact.id,
+    meetResult,
+    existing: athleteBestLookup.record,
+    sourceRecordId: athleteBestSourceRecordId,
+    meetResultSourceRecordId: properties.source_record_id,
+  });
+  return {
+    success: true,
+    athlete: meetResult.athleteName,
+    contactId: contact.id,
+    athleteGender: meetResult.athleteGender,
+    recordId: meetResultRecordId,
+    sourceRecordId: properties.source_record_id,
+    seasonRecord,
+    athleteBest,
+    currentFitnessUpdated: meetResult.useAsCurrentFitness === true,
+    records: [],
+  };
+}
 
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -233,6 +264,8 @@ function normalizeMeetResult(payload) {
     fieldVideo: clean(payload.fieldVideo),
     coachRaceNotes: clean(payload.coachRaceNotes),
     sourceRecordId: clean(payload.sourceRecordId),
+    partnerTimingSessionId: clean(payload.partnerTimingSessionId),
+    partnerFinishRecordId: clean(payload.partnerFinishRecordId),
     forceDuplicateSync: payload.forceDuplicateSync === true,
   };
 }
@@ -365,6 +398,7 @@ function meetResultNotes(meetResult) {
       meetResult.athleteGender ? `Gender: ${meetResult.athleteGender}` : "",
       meetResult.raceDivision ? `Division: ${meetResult.raceDivision}` : "",
       meetResult.coachRaceNotes,
+      meetResult.syncedBy ? `Synced by (device-reported): ${meetResult.syncedBy}` : "",
     ].filter(Boolean).join("\n");
   }
   return [
@@ -423,7 +457,7 @@ function formatSplitsForNote(splitsJson) {
     .filter(Boolean);
 }
 
-async function findDuplicateMeetResult({ token, locationId, sourceRecordId }) {
+async function findDuplicateMeetResult({ token, locationId, sourceRecordId, strict = false }) {
   if (!sourceRecordId) return null;
   try {
     const result = await ghlFetch({
@@ -445,7 +479,7 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId }) {
     });
     return firstRecord(result);
   } catch (error) {
-    if (error.statusCode && error.statusCode >= 500) throw error;
+    if (strict || error.statusCode && error.statusCode >= 500) throw error;
     return null;
   }
 }

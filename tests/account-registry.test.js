@@ -395,9 +395,15 @@ async function testPartnerTimingUsesScopedStorage() {
     const text = String(url);
     const parts = text.replace("https://registry.example/", "").split("/").map(decodeURIComponent);
     const command = parts[0];
+    if (command === "eval") {
+      const key = parts[3], token = parts[4];
+      if (store.get(key) === token) store.delete(key);
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: 1 }) };
+    }
     if (command === "set") {
       const key = parts[1];
-      const value = parts.slice(2).join("/");
+      if (parts[3] === "nx" && store.has(key)) return { ok: true, status: 200, text: async () => JSON.stringify({ result: null }) };
+      const value = parts[3] === "nx" ? parts[2] : parts.slice(2).join("/");
       store.set(key, value);
       sets.push({ key, value });
       return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
@@ -436,6 +442,8 @@ async function testPartnerTimingUsesScopedStorage() {
       const saved = await savePartnerTimingSession("Partner School", {
         id: "meet-1",
         meetName: "Blue Invite",
+        meetDate: "2026-08-21",
+        eventName: "2 Mile",
         startAt: "2026-08-21T12:00:00.000Z",
         records: [{
           id: "tap-new",
@@ -453,6 +461,26 @@ async function testPartnerTimingUsesScopedStorage() {
       const loaded = await loadPartnerTimingSessions("Partner School", { id: "meet-1" });
       assert.strictEqual(loaded.length, 1);
       assert.deepStrictEqual(loaded[0].records.map((record) => record.id).sort(), ["tap-legacy", "tap-new"]);
+      const newTap = loaded[0].records.find(record => record.id === "tap-new");
+      assert.strictEqual(newTap.raceEvent, "2 Mile");
+      assert.strictEqual(newTap.raceStartAt, "2026-08-21T12:00:00.000Z");
+      const otherDevice = await savePartnerTimingSession("Partner School", {
+        id: "meet-1", eventName: "5K", meetName: "Wrong", meetDate: "2026-08-22",
+        startAt: "2026-08-21T12:10:00.000Z",
+        records: [{ ...newTap, raceEvent: "5K", tapAt: "2026-08-21T12:30:00.000Z" },
+          { id: "finish-new", kind: "finish", stationId: "finish", athleteName: "Runner", tapAt: "2026-08-21T12:16:00.000Z" }],
+      });
+      assert.strictEqual(otherDevice.session.eventName, "2 Mile");
+      assert.strictEqual(otherDevice.session.meetName, "Blue Invite");
+      assert.strictEqual(otherDevice.session.startAt, saved.session.startAt);
+      assert.deepStrictEqual(otherDevice.session.records.find(record => record.id === "tap-new"), newTap);
+      assert.strictEqual(otherDevice.session.records.find(record => record.id === "finish-new").raceEvent, "2 Mile");
+      const reset = await savePartnerTimingSession("Partner School", {
+        id: "meet-1", resetRecords: "reset-new-race", eventName: "5K", meetName: "Blue Invite", meetDate: "2026-08-21",
+        startAt: "2026-08-21T13:00:00.000Z", records: [],
+      });
+      assert.strictEqual(reset.session.eventName, "5K");
+      assert.strictEqual(reset.session.records.length, 0);
     });
   } finally {
     global.fetch = previousFetch;

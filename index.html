@@ -10706,7 +10706,7 @@ function submitCapturedMeetResults(forceDuplicateSync,skipPartnerSync){
     return;
   }
   var localSynced=selected.filter(hasMeetSyncedRuns);
-  if(localSynced.length&&!forceDuplicateSync){
+  if(localSynced.length&&!forceDuplicateSync&&!partnerTimingEnabled()){
     status.textContent='One or more selected meet results already exist.';status.style.color='#c47a00';status.style.fontWeight='700';
     if(confirm('One or more selected meet results already exist. Save again only if you intentionally want another copy.')){
       submitCapturedMeetResults(true);
@@ -10720,7 +10720,7 @@ function submitCapturedMeetResults(forceDuplicateSync,skipPartnerSync){
     status.textContent=meetResultSport()==='Cross Country'?'Choose a distance before saving meet results.':'Select an event before saving meet results.';status.style.color='#c00';status.style.fontWeight='700';
     return;
   }
-  if(meetRaceAlreadySaved(eventName)&&!forceDuplicateSync){
+  if(meetRaceAlreadySaved(eventName)&&!forceDuplicateSync&&!partnerTimingEnabled()){
     status.textContent=meetRaceSaveLabel(eventName)+' has already been saved.';status.style.color='#c47a00';status.style.fontWeight='700';
     if(confirm(meetRaceSaveLabel(eventName)+' has already synced. Do you want to sync again?')){
       submitCapturedMeetResults(true);
@@ -10755,12 +10755,18 @@ function submitCapturedMeetResults(forceDuplicateSync,skipPartnerSync){
           isPr:isPr,
           isSeasonBest:isSeasonBest,
           coachRaceNotes:notes||s.note||'',
-          sourceRecordId:buildMeetSourceRecordId(r,s,i,forceDuplicateSync)
+          sourceRecordId:buildMeetSourceRecordId(r,s,i,forceDuplicateSync),
+          partnerTimingSessionId:partnerTimingEnabled()?ensurePartnerTiming().id:'',
+          partnerFinishRecordId:partnerTimingEnabled()?s.partnerRecordId||'':''
         }
       });
     });
   });
   if(!queue.length){status.textContent='Selected meet results are already saved.';status.style.color='#c47a00';return;}
+  if(partnerTimingEnabled()&&queue.some(function(item){return !item.payload.partnerFinishRecordId;})){
+    status.textContent='Load Partner Taps before saving. Every Partner Timing result needs a shared finish tap.';status.style.color='#c00';
+    btn.textContent='Save Meet Results';btn.disabled=false;return;
+  }
   btn.textContent='Saving...';btn.disabled=true;
   status.textContent='Saving meet results...';status.style.color='#555';status.style.fontWeight='400';
   saveMeetResultQueue(queue,function(current,total){
@@ -10789,7 +10795,7 @@ function submitCapturedMeetResults(forceDuplicateSync,skipPartnerSync){
     finishEntryQuickAction('m-meet-save');
     setTimeout(function(){btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
   }).catch(function(e){
-    if(e.status===409){
+    if(e.status===409&&!partnerTimingEnabled()){
       status.textContent='This meet result already exists.';status.style.color='#c47a00';status.style.fontWeight='700';
       btn.textContent='Save Meet Results';btn.disabled=false;
       if(confirm('This meet result already exists. Save again only if you intentionally want another copy.')){
@@ -10868,6 +10874,9 @@ function submitCapturedRelayMeetResult(forceDuplicateSync){
   });
 }
 function buildMeetSourceRecordId(r,s,i,forceDuplicateSync){
+  if(partnerTimingEnabled()&&s.partnerRecordId){
+    return 'pt_'+encodeURIComponent(ensurePartnerTiming().id)+'_'+encodeURIComponent(s.partnerRecordId);
+  }
   var eventName=selectedMeetSaveEvent();
   var base=[
     'mr',
