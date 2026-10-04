@@ -51,7 +51,8 @@ function fixture(options = {}) {
       return async () => locks.delete(namespace);
     },
   };
-  const api = createGhlOAuth({ env, registry, fulfillmentExecutionEnabled: options.executionEnabled === true, now: () => time, fetch: async (url, options) => {
+  const schoolNameWaits = [];
+  const api = createGhlOAuth({ env, registry, waitForSchoolNameReadback: async ms => { schoolNameWaits.push(ms); }, fulfillmentExecutionEnabled: options.executionEnabled === true, now: () => time, fetch: async (url, options) => {
     calls.push({ url, options });
     if (new URL(url).pathname === "/oauth/token") assert(locks.has("oauthgrant"));
     else if (provider) {
@@ -76,7 +77,7 @@ function fixture(options = {}) {
     req.headers.cookie = started.headers["Set-Cookie"].split(";")[0];
     return req;
   };
-  return { api, env, registry, records, accounts, calls, request, invoke, start, callbackReq, setProvider: (value) => { provider = value; }, setResponse: (value) => { response = value; }, grant: () => structuredClone(response), advance: (ms) => { time += ms; } };
+  return { api, env, registry, records, accounts, calls, schoolNameWaits, request, invoke, start, callbackReq, setProvider: (value) => { provider = value; }, setResponse: (value) => { response = value; }, grant: () => structuredClone(response), advance: (ms) => { time += ms; } };
 }
 
 async function run() {
@@ -655,7 +656,7 @@ async function run() {
   const identityModes = ["provisioning-delay", "missing", "empty", "conflict", "agency-conflict", "v2-conflict", "ambiguous", "malformed", "wrong-live", "manual", "alias", "unsigned"]
     .map(kind => `automatic-policy-identity-${kind}`);
   const automaticNameModes = ["automatic-policy-name-response-error", "automatic-policy-name-stale-read",
-    "automatic-policy-name-confirm-save-error"];
+    "automatic-policy-name-delayed-read", "automatic-policy-name-delayed-response-error", "automatic-policy-name-confirm-save-error"];
   for (const mode of [...identityModes, ...automaticNameModes, "automatic-policy-subscription-wait", "automatic-policy-subscription-wrong-location", "automatic-policy-subscription-malformed", "automatic-policy-subscription-unknown-status", "automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const controlled = mode.startsWith('controlled-');
     const automatic = mode.startsWith('automatic-');
@@ -723,7 +724,8 @@ async function run() {
     let sends = 0, values = [], valueWrites = 0, installed = !["automatic-uninstalled", "automatic-policy-worker"].includes(mode), staleValueRead = ['delayed-readback', 'automatic-policy-key-readback'].includes(mode);
     let subscriptionReady = false;
     let locationName = "Buyer's Account", nameWrites = 0;
-    let staleNameRead = mode === "automatic-policy-name-stale-read";
+    let staleNameReads = mode === "automatic-policy-name-stale-read" ? Infinity
+      : ["automatic-policy-name-delayed-read", "automatic-policy-name-delayed-response-error"].includes(mode) ? 3 : 0;
     if (mode === "automatic-policy-name-confirm-save-error") {
       const scopedSave = f.registry.saveAccountScopedRecord;
       f.registry.saveAccountScopedRecord = async (storage, namespace, record) => {
@@ -760,10 +762,10 @@ async function run() {
           assert.equal(options.headers.Authorization, "Bearer private-access");
           assert.deepEqual(JSON.parse(options.body), { companyId: "agency-one", name: "School" });
           nameWrites++; locationName = JSON.parse(options.body).name;
-          if (mode === "automatic-policy-name-response-error") return { mockHttpStatus: 502 };
+          if (["automatic-policy-name-response-error", "automatic-policy-name-delayed-response-error"].includes(mode)) return { mockHttpStatus: 502 };
         }
-        if (options.method !== "PUT" && nameWrites && staleNameRead) {
-          staleNameRead = false;
+        if (options.method !== "PUT" && nameWrites && staleNameReads > 0) {
+          staleNameReads--;
           return { location: { id: locationId, companyId: "agency-one", name: "Buyer's Account", email: "buyer@example.com" } };
         }
         return { location: { id: locationId, companyId: mode === "automatic-policy-identity-wrong-live" ? "other" : "agency-one", name: locationName, email: "buyer@example.com" } };
@@ -831,7 +833,8 @@ async function run() {
         assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "existing_access_preserved");
         assert.equal(valueWrites, 1); assert.equal(sends, 1);
       }
-      const succeeds = provisioningDelay || ["automatic-success", "automatic-install-success", "automatic-policy-success", "automatic-policy-name-response-error"].includes(mode);
+      const succeeds = provisioningDelay || ["automatic-success", "automatic-install-success", "automatic-policy-success", "automatic-policy-name-response-error",
+        "automatic-policy-name-delayed-read", "automatic-policy-name-delayed-response-error"].includes(mode);
       const rejectedEvent = ["automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency"].includes(mode);
       assert.equal(result.status, succeeds ? "complete" : rejectedEvent ? "event_rejected"
         : ["automatic-policy-identity-missing", "automatic-policy-identity-empty"].includes(mode) ? "waiting_for_subscription_identity"
@@ -845,6 +848,17 @@ async function run() {
         assert(["exception", "blocked"].includes(result.failure.kind));
       }
       if (succeeds) assert.equal(result.failure, null);
+      if (["automatic-policy-name-delayed-read", "automatic-policy-name-delayed-response-error", "automatic-policy-name-stale-read"].includes(mode)) {
+        assert.deepEqual(f.schoolNameWaits, [1000, 2000, 4000]);
+        assert.equal(nameWrites, 1);
+      }
+      if (["automatic-policy-name-delayed-read", "automatic-policy-name-delayed-response-error"].includes(mode)) {
+        assert.equal(f.records.get(`buyerschoolname-${locationId}`).status, "confirmed");
+        assert.equal(f.records.get(`buyerschoolname-${locationId}`).writeResponseUncertain,
+          mode === "automatic-policy-name-delayed-response-error" ? true : undefined);
+        assert.equal(valueWrites, 1); assert.equal(sends, 1);
+        assert.equal(f.records.get(`buyerreadiness-${locationId}`).attempts, 1);
+      }
       if (["automatic-policy-name-stale-read", "automatic-policy-name-confirm-save-error"].includes(mode)) {
         // Fixed substage labels distinguish faults that previously shared the same historical status.
         assert.deepEqual(result.failure, { stage: mode === "automatic-policy-name-stale-read"
@@ -1153,7 +1167,8 @@ async function run() {
             "automatic-policy-name-stale-read", "automatic-policy-name-confirm-save-error"].includes(mode) ? "pending" : "not_recorded");
         assert(!JSON.stringify(readinessPreview.body).includes("private-fulfillment"));
         assert(!JSON.stringify(readinessPreview.body.savedEvidence).includes("fingerprint"));
-        assert.equal(readinessPreview.body.savedEvidence.schoolNameStatus, ["automatic-policy-success", "automatic-policy-name-response-error"].includes(mode) ? "confirmed"
+        assert.equal(readinessPreview.body.savedEvidence.schoolNameStatus, ["automatic-policy-success", "automatic-policy-name-response-error",
+          "automatic-policy-name-delayed-read", "automatic-policy-name-delayed-response-error"].includes(mode) ? "confirmed"
           : ["automatic-policy-name-stale-read", "automatic-policy-name-confirm-save-error"].includes(mode) ? "attempted" : "not_recorded");
       } else assert.equal(readinessPreview.body.savedEvidence, undefined);
       if (succeeds) {

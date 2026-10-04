@@ -7,7 +7,9 @@ function fixture(options = {}) {
     subscriptionId: "subscription", checkoutFingerprint: "checkout", purchaseVerified: true, pendingCheckoutMatched: true };
   let location = { id: buyer.locationId, companyId: "agency", name: "Marty Dirt's Account", email: evidence.ownerEmail };
   let record = null, writes = 0, saves = 0, reads = 0;
+  const waits = [];
   const deps = { companyId: "agency", now: () => 100,
+    waitForReadback: async ms => { waits.push(ms); },
     readLocation: async () => {
       if (++reads === 3 && options.failWriteReadback) throw new Error("uncertain provider readback");
       return structuredClone(location);
@@ -15,7 +17,7 @@ function fixture(options = {}) {
     writeName: async name => { writes++; location.name = name; },
     load: async () => structuredClone(record),
     save: async value => { record = { ...structuredClone(value), accountKey: "storage", updatedAt: `storage-owned-${++saves}` }; } };
-  return { buyer, evidence, deps, location, get record() { return record; }, get writes() { return writes; } };
+  return { buyer, evidence, deps, location, waits, get reads() { return reads; }, get record() { return record; }, get writes() { return writes; } };
 }
 
 (async () => {
@@ -62,7 +64,41 @@ function fixture(options = {}) {
   delayed.deps.writeName = async () => {};
   await assert.rejects(ensureBuyerSchoolName(delayed.deps, delayed.buyer, delayed.evidence), /provider readback failed/);
   assert.equal(delayed.record.status, "attempted");
+  assert.deepEqual(delayed.waits, [1000, 2000, 4000]);
+  assert.equal(delayed.reads, 6);
   await assert.rejects(ensureBuyerSchoolName(delayed.deps, delayed.buyer, delayed.evidence), /already attempted/);
+
+  for (const staleReads of [1, 3]) {
+    const eventually = fixture();
+    const read = eventually.deps.readLocation;
+    let postWriteReads = 0;
+    eventually.deps.readLocation = async () => {
+      const location = await read();
+      if (eventually.writes && ++postWriteReads <= staleReads) location.name = "Marty Dirt's Account";
+      return location;
+    };
+    assert.equal((await ensureBuyerSchoolName(eventually.deps, eventually.buyer, eventually.evidence)).nameUpdated, true);
+    assert.equal(eventually.record.status, "confirmed");
+    assert.equal(eventually.writes, 1);
+    assert.deepEqual(eventually.waits, [1000, 2000, 4000].slice(0, staleReads));
+    await ensureBuyerSchoolName(eventually.deps, eventually.buyer, eventually.evidence);
+    assert.equal(eventually.writes, 1);
+  }
+  for (const field of ["id", "companyId", "email", "name"]) {
+    const competing = fixture();
+    const read = competing.deps.readLocation;
+    let postWriteReads = 0;
+    competing.deps.readLocation = async () => {
+      const location = await read();
+      if (competing.writes && ++postWriteReads === 1) location.name = "Marty Dirt's Account";
+      else if (competing.writes) location[field] = "Other coach or account";
+      return location;
+    };
+    await assert.rejects(ensureBuyerSchoolName(competing.deps, competing.buyer, competing.evidence));
+    assert.deepEqual(competing.waits, [1000]);
+    assert.equal(competing.writes, 1);
+    assert.equal(competing.record.status, "attempted");
+  }
 
   const race = fixture();
   const save = race.deps.save;
@@ -97,7 +133,7 @@ function fixture(options = {}) {
     const read = broken.deps.readLocation, persist = broken.deps.save;
     let reads = 0;
     broken.deps.readLocation = async () => {
-      if (++reads === 3) {
+      if (++reads >= 3) {
         if (fault === "provider-read") throw new Error("private provider response");
         const location = await read();
         if (fault === "identity") location.companyId = "other";
