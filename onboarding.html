@@ -263,6 +263,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="ghlOAuthTrialBtn" type="button" class="secondary" onclick="reconcileHighLevelBuyerTrial()">Reconcile Trial Status</button>
         <button id="ghlOAuthFulfillmentBtn" type="button" class="secondary" onclick="previewHighLevelFulfillment()">Preview Fulfillment</button>
         <button id="ghlOAuthReadinessBtn" type="button" class="secondary" onclick="checkHighLevelReadiness()">Check Automation Status</button>
+        <button id="ghlOAuthLocationEventReviewBtn" type="button" class="secondary" onclick="reviewUnmatchedGhlLocationCreate()">Review Unmatched Location Event</button>
         <button id="ghlOAuthRecoveryPreviewBtn" type="button" class="secondary" onclick="previewReadinessRecovery()">Preview Stopped Signup Recovery</button>
         <button id="ghlOAuthRecoveryConfirmBtn" type="button" hidden onclick="confirmReadinessRecovery()">Confirm Recovery &amp; Send Access</button>
         <button id="ghlOAuthSchoolReviewBtn" type="button" class="secondary" onclick="reviewSchoolNameReadback()">Review School Name Write</button>
@@ -2180,6 +2181,26 @@ async function checkHighLevelReadiness(){
     summary+='Access email accepted: '+(data.emailAccepted===true?'yes':'no')+'. Inbox delivery and coach sign-in are not verified by this check. ';
     setStatus(summary+'Read-only check; no retry, account changes, or email sent.',data.outcomeRequiresReview?'bad':'good');
   }catch(error){setStatus(error.message,'bad');}
+  finally{button.disabled=false;}
+}
+
+async function reviewUnmatchedGhlLocationCreate(){
+  var button=document.getElementById('ghlOAuthLocationEventReviewBtn');
+  var secret=activeAutomationSecret();
+  var locationId=String(document.getElementById('locationId').value||'').trim();
+  if(!secret){setStatus('Enter the automation secret to review saved HighLevel location events.','bad');return;}
+  if(!/^[a-zA-Z0-9]{20}$/.test(locationId)){setStatus('Enter a valid HighLevel buyer location ID first.','bad');return;}
+  button.disabled=true;
+  try{
+    var response=await fetch('/api/smart-trak/account-registry?action=review-ghl-location-create&locationId='+encodeURIComponent(locationId),{
+      method:'GET',cache:'no-store',credentials:'same-origin',headers:{'X-SMARTCoach-Automation-Secret':secret}
+    });
+    var data=await response.json();
+    if(!response.ok)throw new Error(data.error||'Could not review the saved HighLevel location event.');
+    if(!data.found){setStatus('No unmatched HighLevel location event is saved for this location. This check is read-only.','good');return;}
+    var event=data.event||{};
+    setStatus('Saved HighLevel location event needs checkout matching. Location: '+(event.locationName||locationId)+'. Buyer: '+(event.buyerEmailMasked||'masked')+'. Deliveries: '+(event.deliveryCount||1)+'. No account was provisioned and no email was sent. Read-only review.','bad');
+  }catch(error){setStatus(error.message||'Could not review the saved HighLevel location event.','bad');}
   finally{button.disabled=false;}
 }
 

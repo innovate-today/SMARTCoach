@@ -505,20 +505,28 @@ async function testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLoca
 
 async function testGhlLocationCreateWithoutMatchDoesNotProvision() {
   const previousFetch = global.fetch;
-  let saveCalled = false;
+  const saved = new Map();
+  let ttlWriteSeen = false;
   global.fetch = async (url) => {
     const text = String(url);
-    if (text.includes("/eval/") || (text.includes("/set/") && text.includes("%3Alock/"))) {
+    if (text.includes("/eval/") || (text.includes("/set/") && decodeURIComponent(text).includes(":lock/"))) {
       return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
     }
     if (text.includes("/get/")) {
+      const key = decodeURIComponent(text.split("/get/")[1]);
       return {
         ok: true,
         status: 200,
-        text: async () => JSON.stringify({ result: "" }),
+        text: async () => JSON.stringify({ result: saved.get(key) || "" }),
       };
     }
-    if (text.includes("/set/")) saveCalled = true;
+    if (text.includes("/set/")) {
+      const parts = text.split("/set/")[1].split("/");
+      const key = decodeURIComponent(parts[0]);
+      saved.set(key, decodeURIComponent(parts[1]));
+      ttlWriteSeen ||= parts.includes("ex");
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+    }
     throw new Error(`Unexpected registry call: ${text}`);
   };
 
@@ -535,7 +543,8 @@ async function testGhlLocationCreateWithoutMatchDoesNotProvision() {
         headers: { "x-smartcoach-automation-secret": "automation-secret" },
         body: {
           type: "LocationCreate",
-          id: "unmatched-buyer-location",
+          id: "AbCdEfGhIjKlMnOpQrSt",
+          name: "Parker High",
           email: "unmatched@example.com",
           stripeProductId: "prod_smartcoach_pro_25",
         },
@@ -545,7 +554,86 @@ async function testGhlLocationCreateWithoutMatchDoesNotProvision() {
       assert.strictEqual(res.body.success, true);
       assert.strictEqual(res.body.pendingCheckoutMatched, false);
       assert.strictEqual(res.body.provisioned, false);
-      assert.strictEqual(saveCalled, false);
+      assert.strictEqual(res.body.reconciliationRequired, true);
+      assert.strictEqual(res.body.reconciliationRecordSaved, true);
+      assert.strictEqual(res.body.accountKey, "sc-abcdefghijklmnopqrst");
+      assert.strictEqual(ttlWriteSeen, true);
+      assert.strictEqual([...saved.keys()].filter((key) => key.endsWith(":ghllocationcreatereview")).length, 1);
+      const review = mockRes();
+      await handler({
+        method: "GET",
+        query: { route: "account-registry", action: "review-ghl-location-create", locationId: "AbCdEfGhIjKlMnOpQrSt" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+      }, review);
+      assert.strictEqual(review.statusCode, 200);
+      assert.strictEqual(review.body.found, true);
+      assert.strictEqual(review.body.event.status, "needs_checkout_match");
+      assert.strictEqual(review.body.event.locationName, "Parker High");
+      assert.strictEqual(review.body.event.buyerEmailMasked, "un***@example.com");
+      assert.strictEqual(review.body.event.deliveryCount, 1);
+      assert.strictEqual(JSON.stringify(review.body).includes("unmatched@example.com"), false);
+
+      const duplicate = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "ghl-location-create" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          type: "LocationCreate",
+          id: "AbCdEfGhIjKlMnOpQrSt",
+          name: "Parker High",
+          email: "unmatched@example.com",
+          stripeProductId: "prod_smartcoach_pro_25",
+        },
+      }, duplicate);
+      assert.strictEqual(duplicate.statusCode, 200);
+      assert.strictEqual(duplicate.body.reconciliationRecordSaved, true);
+      const duplicateReview = mockRes();
+      await handler({
+        method: "GET",
+        query: { route: "account-registry", action: "review-ghl-location-create", locationId: "AbCdEfGhIjKlMnOpQrSt" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+      }, duplicateReview);
+      assert.strictEqual(duplicateReview.body.event.deliveryCount, 2);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
+async function testUnmatchedGhlLocationCreateRequiresDurableQuarantine() {
+  const previousFetch = global.fetch;
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/eval/") || (text.includes("/set/") && decodeURIComponent(text).includes(":lock/"))) {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+    }
+    if (text.includes("/get/")) return { ok: true, status: 200, text: async () => JSON.stringify({ result: "" }) };
+    if (text.includes("/set/")) return { ok: false, status: 503, text: async () => JSON.stringify({ error: "Registry unavailable." }) };
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "ghl-location-create" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          type: "LocationCreate",
+          id: "AbCdEfGhIjKlMnOpQrSt",
+          email: "unmatched@example.com",
+        },
+      }, res);
+      assert.strictEqual(res.statusCode, 503);
+      assert.match(res.body.error, /Registry unavailable/);
+      assert.strictEqual(res.body.pendingCheckoutMatched, undefined);
+      assert.strictEqual(res.body.reconciliationRecordSaved, undefined);
     });
   } finally {
     global.fetch = previousFetch;
@@ -889,10 +977,13 @@ async function testDuplicateStripeWebhookDoesNotSaveAgain() {
 async function testInvalidStripeWebhookDoesNotTouchRegistry() {
   const previousFetch = global.fetch;
   const secret = "stripe-webhook-secret";
-  let fetchCalled = false;
-  global.fetch = async () => {
-    fetchCalled = true;
-    throw new Error("Invalid Stripe signatures should not touch the registry.");
+  let registryDataTouched = false;
+  global.fetch = async (url) => {
+    if (String(url).endsWith("/pipeline")) {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: [] }) };
+    }
+    registryDataTouched = true;
+    throw new Error("Invalid Stripe signatures should not touch account registry data.");
   };
 
   try {
@@ -936,7 +1027,7 @@ async function testInvalidStripeWebhookDoesNotTouchRegistry() {
 
       assert.strictEqual(invalidSignatureRes.statusCode, 401);
       assert.match(invalidSignatureRes.body.error, /could not be verified/i);
-      assert.strictEqual(fetchCalled, false);
+      assert.strictEqual(registryDataTouched, false);
     });
   } finally {
     global.fetch = previousFetch;
@@ -1950,6 +2041,7 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
   await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation("existing");
   await testGhlLocationCreateMatchesPendingCheckoutAndProvisionsBuyerLocation("conflict");
   await testGhlLocationCreateWithoutMatchDoesNotProvision();
+  await testUnmatchedGhlLocationCreateRequiresDurableQuarantine();
   await testGhlLocationCreateRequiresSignatureOrSecret();
   await testGhlInstallWebhookAcknowledgesWithoutProvisioning();
   await testSignedGhlInstallDispatchRemainsDisabled();

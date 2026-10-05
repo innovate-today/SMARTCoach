@@ -68,6 +68,7 @@ const ATHLETE_CALENDAR_QUESTIONS_NAMESPACE = "athletecalendarquestions";
 const WEATHER_LOCATIONS_NAMESPACE = "weatherlocations";
 const SIMULATOR_FIELDS_NAMESPACE = "simulatorfields";
 const PENDING_CHECKOUT_NAMESPACE = "pendingcheckout";
+const GHL_LOCATION_CREATE_REVIEW_NAMESPACE = "ghllocationcreatereview";
 const SMARTCOACH_SELLER_LOCATION_ID = "QxwjWekSyUf7sDOFHPB4";
 const GHL_LOCATION_CREATE_PUBLIC_KEY = [
   "-----BEGIN PUBLIC KEY-----",
@@ -6749,6 +6750,20 @@ async function ghlLocationCreateWebhook(req, res) {
     const pendingResult = await loadAccountScopedRecord(pendingKey, PENDING_CHECKOUT_NAMESPACE);
     const pending = pendingResult && pendingResult.record || null;
     if (!pending) {
+      await releaseCheckoutLock();
+      releaseCheckoutLock = null;
+      const quarantine = await saveUnmatchedGhlLocationCreate({
+        buyerLocationId,
+        companyId: cleanSetupText(payload.companyId).slice(0, 100),
+        locationName: cleanSetupText(payload.name).slice(0, 140),
+        email,
+        emailHash: pendingKey,
+        stripeProductId: stripeProductId.slice(0, 140),
+        signatureVerified: verification.signatureVerified === true && verification.automationSecretFallback !== true,
+      });
+      if (!quarantine.saved) {
+        throw httpError(503, quarantine.reason || "Unmatched HighLevel location event could not be saved for review.");
+      }
       res.status(200).json({
         success: true,
         eventType,
@@ -6757,7 +6772,11 @@ async function ghlLocationCreateWebhook(req, res) {
         buyerLocationId,
         pendingCheckoutMatched: false,
         provisioned: false,
-        reason: "No pending SMARTCoach checkout onboarding record matched this buyer email.",
+        reconciliationRequired: true,
+        reconciliationRecordSaved: true,
+        accountKey: quarantine.accountKey,
+        reconciliationStatus: "needs_checkout_match",
+        reason: "No pending SMARTCoach checkout matched this buyer email. The event was safely saved for review; no account was provisioned and no email was sent.",
       });
       return;
     }
@@ -6854,6 +6873,48 @@ async function ghlLocationCreateWebhook(req, res) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not process LocationCreate webhook." });
   } finally {
     if (releaseCheckoutLock) await releaseCheckoutLock().catch(() => {});
+  }
+}
+
+async function saveUnmatchedGhlLocationCreate(event) {
+  const accountKey = normalizeSetupAccountKey(`sc-${event.buyerLocationId}`);
+  if (!accountKey || !event.emailHash) return { saved: false, reason: "Unmatched HighLevel location event has no safe account key." };
+  let releaseLock;
+  try {
+    releaseLock = await acquireAccountScopedLock(accountKey, GHL_LOCATION_CREATE_REVIEW_NAMESPACE, { ttlMs: 120000, waitMs: 1000 });
+    const current = await loadAccountScopedRecord(accountKey, GHL_LOCATION_CREATE_REVIEW_NAMESPACE);
+    const existing = current && current.record || null;
+    if (existing && (existing.locationId !== event.buyerLocationId || existing.buyerEmailHash !== event.emailHash)) {
+      return { saved: false, reason: "A conflicting unmatched HighLevel location event is already saved for this location." };
+    }
+    const now = new Date().toISOString();
+    const record = {
+      status: "needs_checkout_match",
+      reason: "No pending SMARTCoach checkout matched the buyer email.",
+      locationId: event.buyerLocationId,
+      companyId: cleanSetupText(event.companyId).slice(0, 100),
+      locationName: cleanSetupText(event.locationName).slice(0, 140),
+      buyerEmailHash: event.emailHash,
+      buyerEmailMasked: maskEmail(event.email),
+      stripeProductId: cleanSetupText(event.stripeProductId).slice(0, 140),
+      signatureVerified: event.signatureVerified === true,
+      firstSeenAt: existing && existing.firstSeenAt || now,
+      lastSeenAt: now,
+      deliveryCount: Math.max(0, Number(existing && existing.deliveryCount) || 0) + 1,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+    const saved = await saveAccountScopedRecord(accountKey, GHL_LOCATION_CREATE_REVIEW_NAMESPACE, record, { ttlSeconds: 30 * 24 * 60 * 60 });
+    if (!saved.saved) return { saved: false, reason: saved.reason || "Unmatched HighLevel location event could not be saved." };
+    const confirmed = await loadAccountScopedRecord(accountKey, GHL_LOCATION_CREATE_REVIEW_NAMESPACE);
+    if (!confirmed || !confirmed.found || confirmed.record.locationId !== event.buyerLocationId
+      || confirmed.record.buyerEmailHash !== event.emailHash || confirmed.record.status !== "needs_checkout_match") {
+      return { saved: false, reason: "Unmatched HighLevel location event could not be verified after saving." };
+    }
+    return { saved: true, accountKey, record: confirmed.record };
+  } catch (error) {
+    return { saved: false, reason: error.message || "Unmatched HighLevel location event could not be saved." };
+  } finally {
+    if (releaseLock) await releaseLock().catch(() => {});
   }
 }
 
@@ -7199,6 +7260,33 @@ async function accountRegistry(req, res) {
         registry: { configured: !!result.configured },
         accounts: result.accounts || [],
         count: result.count || 0,
+      });
+      return;
+    }
+    if (action === "review-ghl-location-create") {
+      const locationId = cleanSetupText(firstQueryValue(req.query && req.query.locationId));
+      if (!/^[a-zA-Z0-9]{20}$/.test(locationId) || locationId === SMARTCOACH_SELLER_LOCATION_ID) {
+        throw httpError(400, "A valid buyer location ID is required.");
+      }
+      const accountKey = normalizeSetupAccountKey(`sc-${locationId}`);
+      const result = await loadAccountScopedRecord(accountKey, GHL_LOCATION_CREATE_REVIEW_NAMESPACE);
+      const event = result.record || null;
+      res.status(200).json({
+        success: true,
+        found: !!(result.found && event),
+        accountKey,
+        locationId,
+        event: event ? {
+          status: event.status,
+          reason: event.reason,
+          locationName: event.locationName,
+          buyerEmailMasked: event.buyerEmailMasked,
+          stripeProductId: event.stripeProductId,
+          firstSeenAt: event.firstSeenAt,
+          lastSeenAt: event.lastSeenAt,
+          deliveryCount: event.deliveryCount,
+          expiresAt: event.expiresAt,
+        } : null,
       });
       return;
     }
