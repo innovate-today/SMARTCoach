@@ -48,7 +48,7 @@ function fixture() {
     await assert.rejects(blocked.api.run(buyer), /no approval, setup/); assert.equal(blocked.counts().writes, 0);
   }
   for (const mutation of [p => { p.verified = false; }, p => { p.snapshot.verified = false; },
-    p => { p.qualification.previousPreserved = true; }, p => { p.qualification.identity.productPlan = "pro100"; }]) {
+    p => { p.qualification.previousPreserved = true; }, p => { p.qualification.identity.productPlan = "essential"; }]) {
     const blocked = fixture(); mutation(blocked.prerequisite);
     await assert.rejects(blocked.api.run(buyer)); assert.equal(blocked.counts().writes, 0);
   }

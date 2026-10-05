@@ -5,6 +5,7 @@ const locationId = "AbCdEfGhIjKlMnOpQrSt", accountKey = `sc-${locationId.toLower
 const env = { SMARTCOACH_GHL_NEW_BUYER_PLANS: "pro25", SMARTCOACH_GHL_NEW_BUYER_OAUTH_PLANS: "pro25",
   SMARTCOACH_GHL_OAUTH_COMPANY_ID: "company" };
 const base = {
+  env,
   buyer: { accountKey, locationId }, companyId: "company", status: "trialing", subscriptionId: "subscription", priceId: "price",
   account: { accountKey, locationId, productPlan: "pro25", accountOwnerEmail: "coach@example.com", schoolName: "School",
     accountOwnerName: "Coach", subscription: { status: "incomplete" }, coachStaff: [], coachAccessCodes: [] },
@@ -15,7 +16,7 @@ const base = {
   inventory: { complete: true, references: [accountKey] },
 };
 assert(newBuyerPolicyEnabled(env));
-for (const value of [undefined, "", "*", "pro100", "pro25,pro100", "pro25 *"]) {
+for (const value of [undefined, "", "*", "pro100", "pro25,*", "pro25,unknown", "pro25,", "pro25,pro25", "pro25 *"]) {
   for (const key of ["SMARTCOACH_GHL_NEW_BUYER_PLANS", "SMARTCOACH_GHL_NEW_BUYER_OAUTH_PLANS"]) {
     assert.equal(newBuyerPolicyEnabled({ ...env, [key]: value }), false);
   }
@@ -95,4 +96,63 @@ for (const changed of [{ ...proof, status: "approved" }, { ...proof, snapshotVer
 assert.equal(completedBuyerOAuthApproval(env, base.buyer, { ...account, schoolName: "other" }, proof), false);
 assert.equal(completedBuyerOAuthApproval(env, base.buyer, { ...account, accessStatus: "manual_hold" }, proof), false);
 assert.equal(qualifyNewBuyer({ ...base, account, previous: { ...proof, fingerprint: "changed" } }).qualified, false);
-console.log("New Pro 25 buyer policy isolation tests passed");
+const allPlansEnv = { ...env, SMARTCOACH_GHL_NEW_BUYER_PLANS: "pro25,pro100,pro200",
+  SMARTCOACH_GHL_NEW_BUYER_OAUTH_PLANS: "pro200, pro25, pro100" };
+assert(newBuyerPolicyEnabled(allPlansEnv));
+for (const [plan, label, monthly, annualAmount] of [
+  ["pro25", "SMARTCoach Pro 25", "19.00", "199.00"],
+  ["pro100", "SMARTCoach Pro 100", "29.00", "299.00"],
+  ["pro200", "SMARTCoach Pro 200", "39.00", "399.00"],
+]) {
+  for (const cadence of ["monthly", "annual"]) {
+    const value = structuredClone(base);
+    value.env = allPlansEnv;
+    value.account.productPlan = plan;
+    const amount = cadence === "monthly" ? monthly : annualAmount;
+    Object.assign(value.pending, { plan, cadence, productName: `${label} - ${cadence === "monthly" ? "Monthly" : "Annual"}` });
+    Object.assign(value.purchase, { purchasedProductPlan: plan, purchasedBillingCadence: cadence, purchasedAmount: amount });
+    const approval = qualifyNewBuyer(value);
+    assert(approval.qualified);
+    assert(canWaitForSubscriptionIdentity(value));
+    const saved = { ...approval.identity, fingerprint: approval.fingerprint, status: "complete", snapshotVerified: true };
+    const configured = { ...value.account, subscription: { status: "trialing", billingCadence: cadence, amount } };
+    assert(completedBuyerOAuthApproval(allPlansEnv, value.buyer, configured, saved));
+    assert(qualifyNewBuyer({ ...value, account: configured, previous: saved }).qualified);
+    for (const mutate of [
+      v => { v.pending.plan = "unknown"; },
+      v => { v.pending.productName = "Other tier"; },
+      v => { v.purchase.purchasedProductPlan = "unknown"; },
+      v => { v.purchase.purchasedAmount = "1.00"; },
+      v => { v.pending.lastLocationCreateEvent.signatureVerified = false; },
+      v => { v.inventory.references.push("alias"); },
+      v => { v.account.accessStatus = "manual_hold"; },
+    ]) {
+      const invalid = structuredClone(value); mutate(invalid);
+      assert.equal(qualifyNewBuyer(invalid).qualified, false);
+    }
+    for (const key of ["SMARTCOACH_GHL_NEW_BUYER_PLANS", "SMARTCOACH_GHL_NEW_BUYER_OAUTH_PLANS"]) {
+      const disabled = { ...allPlansEnv, [key]: "" };
+      assert.equal(qualifyNewBuyer({ ...value, env: disabled }).qualified, false);
+      assert.equal(canWaitForSubscriptionIdentity({ ...value, env: disabled }), false);
+      assert.equal(completedBuyerOAuthApproval(disabled, value.buyer, configured, saved), false);
+      if (plan !== "pro25") {
+        const onlyPro25 = { ...allPlansEnv, [key]: "pro25" };
+        assert(newBuyerPolicyEnabled(onlyPro25));
+        assert.equal(qualifyNewBuyer({ ...value, env: onlyPro25 }).qualified, false);
+        assert.equal(canWaitForSubscriptionIdentity({ ...value, env: onlyPro25 }), false);
+        assert.equal(completedBuyerOAuthApproval(onlyPro25, value.buyer, configured, saved), false);
+      }
+    }
+    assert.equal(completedBuyerOAuthApproval(allPlansEnv, value.buyer, { ...configured, productPlan: "unknown" }, saved), false);
+    assert.equal(completedBuyerOAuthApproval(allPlansEnv, value.buyer, configured, { ...saved, amount: "1.00" }), false);
+  }
+}
+for (const plan of ["essential", "proUnlimited", "prounlimited", "unknown", ""]) {
+  assert.equal(newBuyerPolicyEnabled(allPlansEnv, plan), false);
+  assert.equal(newBuyerPolicyEnabled({ ...allPlansEnv, SMARTCOACH_GHL_NEW_BUYER_PLANS: `pro25,${plan}` }), false);
+  const invalid = structuredClone(base); invalid.env = allPlansEnv;
+  invalid.account.productPlan = plan; invalid.pending.plan = plan; invalid.purchase.purchasedProductPlan = plan;
+  assert.equal(qualifyNewBuyer(invalid).qualified, false);
+  assert.equal(canWaitForSubscriptionIdentity(invalid), false);
+}
+console.log("New buyer tier policy isolation tests passed");
