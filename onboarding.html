@@ -253,6 +253,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <button id="ghlOAuthCheckoutApproveBtn" type="button" class="secondary" onclick="approveHighLevelCheckoutIdentity()">Record Identity Approval</button>
       </details>
+      <div class="field" style="max-width:420px;margin-top:12px">
+        <label for="ghlLocationCreateReviewLocationId">HighLevel Location ID for event review</label>
+        <input id="ghlLocationCreateReviewLocationId" type="text" maxlength="20" placeholder="20-character buyer Location ID" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      </div>
       <div class="formactions">
         <button type="button" class="secondary" onclick="generateAccountKey()">Generate Account Key</button>
         <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Shared Code</button>
@@ -2187,7 +2191,7 @@ async function checkHighLevelReadiness(){
 async function reviewUnmatchedGhlLocationCreate(){
   var button=document.getElementById('ghlOAuthLocationEventReviewBtn');
   var secret=activeAutomationSecret();
-  var locationId=String(document.getElementById('locationId').value||'').trim();
+  var locationId=String(document.getElementById('ghlLocationCreateReviewLocationId').value||'').trim();
   if(!secret){setStatus('Enter the automation secret to review saved HighLevel location events.','bad');return;}
   if(!/^[a-zA-Z0-9]{20}$/.test(locationId)){setStatus('Enter a valid HighLevel buyer location ID first.','bad');return;}
   button.disabled=true;
