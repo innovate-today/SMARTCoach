@@ -94,10 +94,6 @@ async function run() {
   assert.equal(started.statusCode, 200);
   assert.match(started.headers["Set-Cookie"], /Secure; HttpOnly; SameSite=Lax/);
   const cb = f.callbackReq(started);
-  const noCookie = { ...cb, headers: {} };
-  const missingCookieResult = await f.invoke("crm-connect-callback", noCookie);
-  assert.equal(missingCookieResult.statusCode, 400);
-  assert.match(missingCookieResult.body.error, /cookie is missing/);
   const mismatch = { ...cb, headers: { cookie: "__Host-smartcoach-ghl-state=" + "a".repeat(64) } };
   assert.match((await f.invoke("crm-connect-callback", mismatch)).body.error, /does not match/);
   const malformed = { ...cb, query: { ...cb.query, state: "invalid" } };
@@ -129,6 +125,17 @@ async function run() {
   assert(!JSON.stringify(status).includes("private-access"));
   assert.equal((await f.api.agencyGrant()).access_token, "private-access");
   assert.equal(f.calls.length, 1);
+
+  const noCookieFixture = fixture();
+  const noCookieStarted = await noCookieFixture.start();
+  const noCookieCallback = noCookieFixture.callbackReq(noCookieStarted);
+  noCookieCallback.headers = {};
+  assert.equal((await noCookieFixture.invoke("crm-connect-callback", noCookieCallback)).statusCode, 200);
+  assert.equal((await noCookieFixture.invoke("crm-connect-callback", noCookieCallback)).statusCode, 400);
+  const unknownState = noCookieFixture.request("GET");
+  unknownState.query = { state: "b".repeat(64), code: "private-code" };
+  assert.equal((await noCookieFixture.invoke("crm-connect-callback", unknownState)).statusCode, 400);
+
   f.advance(86400 * 1000);
   f.setResponse({ ...f.grant(), access_token: "renewed-access", refresh_token: "renewed-refresh" });
   assert.equal((await f.api.agencyGrant()).access_token, "renewed-access");
