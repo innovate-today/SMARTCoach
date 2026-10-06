@@ -195,8 +195,11 @@ function fixture() {
   const wrongStage = fixture();
   wrongStage.deps.inspect = async () => { throw Object.assign(new Error("not a verified purchase"), { readinessPending: "subscription" }); };
   assert.equal((await wrongStage.run({ event })).status, "support_review_required");
-  const snapshotFixture = () => {
+  const snapshotFixture = (legacy = true) => {
     const test = fixture();
+    if (legacy) test.setJob({ buyerAccountKey: buyer.accountKey, locationId: buyer.locationId,
+      signatureVerified: true, event, createdAt: 1000, expiresAt: 86401000,
+      attempts: 0, status: "pending", nextAttemptAt: null });
     let schemaCalls = 0;
     test.schemaCalls = () => schemaCalls;
     test.deps.inspect = async (_, __, reportStage) => {
@@ -289,7 +292,7 @@ function fixture() {
   priorWaits.deps.inspect = snapshotFixture().deps.inspect;
   assert.equal((await priorWaits.run({ event })).status, "waiting_for_snapshot");
   assert.equal(priorWaits.job().attempts, 6);
-  priorWaits.advance(60000); priorWaits.deps.inspect = async () => ({ status: "ready" });
+  priorWaits.advance(5 * 60000); priorWaits.deps.inspect = async () => ({ status: "ready" });
   assert.equal((await priorWaits.run()).status, "complete");
   assert.equal(priorWaits.job().attempts, 7);
   const concurrent = snapshotFixture();
@@ -318,10 +321,73 @@ function fixture() {
   assert.equal((await executionSnapshot.run({ event })).status, "support_review_required");
   assert.equal(executionSnapshot.job().snapshotDeadlineAt, undefined);
   for (const mutation of [{ snapshotDeadlineAt: 2 }, { snapshotMissingCount: 0 },
-    { snapshotWaitStartedAt: undefined }, { snapshotMissingCount: 7 }]) {
+    { snapshotWaitStartedAt: undefined }, { snapshotMissingCount: 7 },
+    { snapshotPolicy: "sparse_v1" }, { snapshotPolicy: "unknown" }]) {
     const corruptSnapshot = snapshotFixture(); await corruptSnapshot.run({ event });
     corruptSnapshot.setJob({ ...corruptSnapshot.job(), ...mutation });
     await assert.rejects(corruptSnapshot.run(), /identity or history/);
+  }
+  for (const legacy of [true, false]) {
+    const windowMinutes = legacy ? 30 : 120;
+    const backoff = legacy ? [1, 2, 4, 8, 8] : [5, 10, 20, 30, 30];
+    const policy = snapshotFixture(legacy);
+    await policy.run({ event, deferFirstInspection: true });
+    assert.equal(policy.job().snapshotPolicy, legacy ? undefined : "sparse_v1");
+    const queuedPolicy = structuredClone(policy.job());
+    await policy.run({ event, inspectOnly: true });
+    assert.deepEqual(policy.job(), queuedPolicy);
+    if (!legacy) policy.advance(60000);
+    await policy.run({ event });
+    const original = structuredClone(policy.job());
+    assert.equal(original.snapshotDeadlineAt, original.snapshotWaitStartedAt + windowMinutes * 60000);
+    assert.equal(original.nextAttemptAt, original.snapshotWaitStartedAt + backoff[0] * 60000);
+    for (const [index, minutes] of backoff.entries()) {
+      const waiting = structuredClone(policy.job());
+      const calls = policy.schemaCalls();
+      // Each run constructs a new readiness instance, exercising persisted restart/resume.
+      policy.advance(minutes * 60000 - 1);
+      for (const options of [{ event }, {}, { inspectOnly: true }]) {
+        await policy.run(options);
+        assert.deepEqual(policy.job(), waiting);
+      }
+      assert.equal(policy.schemaCalls(), calls);
+      policy.advance(1);
+      await policy.run({ event: { ...event, id: "duplicate" } });
+      assert.equal(policy.schemaCalls(), calls + 1);
+      assert.equal(policy.job().snapshotMissingCount, index + 2);
+      assert.equal(policy.job().snapshotWaitStartedAt, original.snapshotWaitStartedAt);
+      assert.equal(policy.job().snapshotDeadlineAt, original.snapshotDeadlineAt);
+      assert.equal(policy.job().snapshotPolicy, original.snapshotPolicy);
+    }
+    assert.equal(policy.job().snapshotMissingCount, 6);
+    assert.equal(policy.job().nextAttemptAt, original.snapshotDeadlineAt);
+    const exhausted = structuredClone(policy.job());
+    await policy.run({ event });
+    assert.deepEqual(policy.job(), exhausted);
+    policy.advance((windowMinutes - backoff.reduce((total, minutes) => total + minutes, 0)) * 60000);
+    assert.equal((await policy.run()).failure.snapshotReason, "availability_deadline");
+    assert.equal(policy.schemaCalls(), 6);
+    assert.equal(policy.counts().executions, 0);
+    const stopped = structuredClone(policy.job());
+    await policy.run({ event });
+    assert.deepEqual(policy.job(), stopped);
+
+    const late = snapshotFixture(legacy); await late.run({ event });
+    const lateFirst = structuredClone(late.job());
+    late.advance(13 * 60000);
+    await late.run();
+    assert.equal(late.job().snapshotMissingCount, 2);
+    assert.equal(late.job().nextAttemptAt, 1000 + (13 + backoff[1]) * 60000);
+    assert.equal(late.job().snapshotDeadlineAt, lateFirst.snapshotDeadlineAt);
+    const lateWaiting = structuredClone(late.job());
+    for (const options of [{ event }, {}, { inspectOnly: true }]) {
+      await late.run(options);
+      assert.deepEqual(late.job(), lateWaiting);
+    }
+    assert.equal(late.schemaCalls(), 2);
+    late.advance(windowMinutes * 60000);
+    assert.equal((await late.run()).failure.snapshotReason, "availability_deadline");
+    assert.equal(late.schemaCalls(), 2);
   }
   for (const identityReason of ["missing_response", "malformed_response", "ambiguous_envelope", "missing_identity", "conflicting_identity", "private-provider-secret"]) {
     const identity = fixture();

@@ -865,6 +865,9 @@ async function run() {
           assert.equal(result.status, "waiting_for_snapshot", mode);
           assert.equal(result.snapshotMissingCount, 1);
           const first = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
+          assert.equal(first.snapshotPolicy, "sparse_v1");
+          assert.equal(first.snapshotDeadlineAt, first.snapshotWaitStartedAt + 120 * 60000);
+          assert.equal(first.nextAttemptAt, first.snapshotWaitStartedAt + 5 * 60000);
           assert.equal(valueWrites, 0); assert.equal(sends, 0);
           assert.equal(f.records.has(`buyerfulfillment-${locationId}`), false);
           const beforeDuplicate = f.calls.length;
@@ -879,7 +882,7 @@ async function run() {
             namespace === `buyerreadiness-${locationId.toLowerCase()}` ? `buyerreadiness-${locationId}` : namespace);
           const cron = f.request("GET"); cron.headers = { authorization: `Bearer ${f.env.CRON_SECRET}` };
           if (snapshotOutcome.startsWith("cross-")) {
-            snapshotReady = true; f.advance(30 * 60000 - 1000);
+            snapshotReady = true; f.advance(120 * 60000 - 1000);
             const readsBeforeCrossing = snapshotReads;
             assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "support_review_required");
             assert.equal(crossedDeadline, true);
@@ -892,20 +895,20 @@ async function run() {
             assert.equal(f.records.has(`buyerfulfillment-${locationId}`), false);
             assert.equal(valueWrites, 0); assert.equal(sends, 0);
           } else if (["success", "later-object"].includes(snapshotOutcome)) {
-            snapshotReady = true; f.advance(60000);
+            snapshotReady = true; f.advance(5 * 60000);
             assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "complete");
             assert.equal(valueWrites, 1); assert.equal(sends, 1);
             assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "existing_access_preserved");
             assert.equal(valueWrites, 1); assert.equal(sends, 1);
           } else {
             if (snapshotOutcome === "deadline") {
-              for (const minutes of [1, 2, 4, 8, 8]) {
+              for (const minutes of [5, 10, 20, 30, 30]) {
                 f.advance(minutes * 60000);
                 assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "waiting_for_snapshot");
               }
               assert.equal(f.records.get(`buyerreadiness-${locationId}`).snapshotMissingCount, 6);
-              f.advance(7 * 60000);
-            } else f.advance(31 * 60000);
+              f.advance(25 * 60000);
+            } else f.advance(121 * 60000);
             const callsBeforeCutoff = f.calls.length;
             assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "support_review_required");
             assert.equal(f.calls.length, callsBeforeCutoff, "Deadline must stop before ANY provider request");
