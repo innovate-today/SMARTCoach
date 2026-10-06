@@ -195,6 +195,134 @@ function fixture() {
   const wrongStage = fixture();
   wrongStage.deps.inspect = async () => { throw Object.assign(new Error("not a verified purchase"), { readinessPending: "subscription" }); };
   assert.equal((await wrongStage.run({ event })).status, "support_review_required");
+  const snapshotFixture = () => {
+    const test = fixture();
+    let schemaCalls = 0;
+    test.schemaCalls = () => schemaCalls;
+    test.deps.inspect = async (_, __, reportStage) => {
+      schemaCalls++;
+      reportStage("fulfillment_preview");
+      throw Object.assign(new Error("private provider payload"), { readinessPending: "snapshot" });
+    };
+    return test;
+  };
+  const snapshot = snapshotFixture();
+  assert.equal((await snapshot.run({ event })).status, "waiting_for_snapshot");
+  const firstSnapshot = structuredClone(snapshot.job());
+  assert.equal(firstSnapshot.snapshotWaitStartedAt, 1000);
+  assert.equal(firstSnapshot.snapshotDeadlineAt, 1801000);
+  assert.equal(firstSnapshot.snapshotMissingCount, 1);
+  assert.equal(firstSnapshot.nextAttemptAt, 61000);
+  for (const options of [{ event }, {}, { inspectOnly: true }]) {
+    assert.equal((await snapshot.run(options)).status, "waiting_for_snapshot");
+    assert.deepEqual(snapshot.job(), firstSnapshot);
+  }
+  snapshot.advance(59999); await snapshot.run({ event });
+  assert.equal(snapshot.job().attempts, 1);
+  snapshot.advance(1); snapshot.deps.inspect = async () => ({ status: "ready" });
+  assert.equal((await snapshot.run()).status, "complete");
+  assert.equal(snapshot.job().attempts, 2);
+  assert.equal(snapshot.job().snapshotDeadlineAt, firstSnapshot.snapshotDeadlineAt);
+  assert.equal((await snapshot.run({ event })).status, "existing_access_preserved");
+  assert.equal(snapshot.counts().executions, 1);
+
+  const missingSnapshot = snapshotFixture();
+  await missingSnapshot.run({ event });
+  for (const [index, minutes] of [1, 2, 4, 8, 8].entries()) {
+    missingSnapshot.advance(minutes * 60000);
+    const result = await missingSnapshot.run({ event });
+    assert.equal(result.status, "waiting_for_snapshot");
+    assert.equal(result.snapshotMissingCount, index + 2);
+    assert.equal(result.snapshotDeadlineAt, 1801000);
+  }
+  assert.equal(missingSnapshot.job().attempts, 6);
+  assert.equal(missingSnapshot.job().nextAttemptAt, 1801000);
+  assert.equal(missingSnapshot.counts().executions, 0);
+  const beforeDeadline = structuredClone(missingSnapshot.job());
+  await missingSnapshot.run({ event });
+  assert.deepEqual(missingSnapshot.job(), beforeDeadline);
+  missingSnapshot.advance(7 * 60000 - 1); await missingSnapshot.run({ event });
+  assert.equal(missingSnapshot.schemaCalls(), 6);
+  const callsBeforeDeadline = missingSnapshot.job().attempts;
+  missingSnapshot.advance(1);
+  missingSnapshot.deps.inspect = async () => { throw new Error("must not call provider after deadline"); };
+  const deadline = await missingSnapshot.run();
+  assert.equal(deadline.status, "support_review_required");
+  assert.equal(deadline.attempts, callsBeforeDeadline);
+  assert.deepEqual(deadline.failure, { stage: "fulfillment_preview", kind: "blocked", snapshotReason: "availability_deadline" });
+  const terminal = structuredClone(missingSnapshot.job());
+  await missingSnapshot.run({ event }); assert.deepEqual(missingSnapshot.job(), terminal);
+  assert(!JSON.stringify(terminal).includes("private"));
+
+  const delayedWorker = snapshotFixture(); await delayedWorker.run({ event });
+  delayedWorker.advance(31 * 60000);
+  delayedWorker.deps.inspect = async () => { throw new Error("deadline must be checked locally"); };
+  assert.equal((await delayedWorker.run()).status, "support_review_required");
+  assert.equal(delayedWorker.job().attempts, 1);
+  for (const outcome of ["ready", "snapshot-missing"]) {
+    const crossing = snapshotFixture(); await crossing.run({ event });
+    crossing.advance(30 * 60000 - 1);
+    crossing.deps.inspect = async (_, __, reportStage, deadlineAt) => {
+      assert.equal(deadlineAt, crossing.job().snapshotDeadlineAt);
+      reportStage("fulfillment_preview"); crossing.advance(1);
+      if (outcome === "snapshot-missing") throw Object.assign(new Error("private"), { readinessPending: "snapshot" });
+      return { status: "ready" };
+    };
+    const result = await crossing.run();
+    assert.equal(result.status, "support_review_required");
+    assert.equal(result.failure.snapshotReason, "availability_deadline");
+    assert.equal(result.snapshotMissingCount, 1);
+    assert.equal(crossing.counts().executions, 0);
+  }
+  const crossingSave = snapshotFixture(); await crossingSave.run({ event });
+  crossingSave.advance(30 * 60000 - 1);
+  crossingSave.deps.inspect = async () => ({ status: "ready" });
+  const realCrossingSave = crossingSave.deps.save;
+  crossingSave.deps.save = async (buyer, record) => {
+    await realCrossingSave(buyer, record);
+    if (record.status === "executing") crossingSave.advance(1);
+  };
+  assert.equal((await crossingSave.run()).failure.snapshotReason, "availability_deadline");
+  assert.equal(crossingSave.counts().executions, 0);
+  const priorWaits = fixture();
+  for (let i = 0; i < 5; i++) await priorWaits.run({ event });
+  priorWaits.deps.inspect = snapshotFixture().deps.inspect;
+  assert.equal((await priorWaits.run({ event })).status, "waiting_for_snapshot");
+  assert.equal(priorWaits.job().attempts, 6);
+  priorWaits.advance(60000); priorWaits.deps.inspect = async () => ({ status: "ready" });
+  assert.equal((await priorWaits.run()).status, "complete");
+  assert.equal(priorWaits.job().attempts, 7);
+  const concurrent = snapshotFixture();
+  let releasePrevious = Promise.resolve();
+  concurrent.deps.lock = async () => {
+    const previous = releasePrevious;
+    let release;
+    releasePrevious = new Promise(resolve => { release = resolve; });
+    await previous;
+    return release;
+  };
+  const overlapping = await Promise.all([concurrent.run({ event }), concurrent.run({ event })]);
+  assert(overlapping.every(result => result.status === "waiting_for_snapshot"));
+  assert.equal(concurrent.schemaCalls(), 1);
+  assert.equal(concurrent.job().snapshotMissingCount, 1);
+  assert.equal(concurrent.counts().executions, 0);
+  for (const stage of ["connector_installation", "setup_snapshot", "purchase_catalog_read"]) {
+    const otherStage = fixture();
+    otherStage.deps.inspect = async (_, __, reportStage) => {
+      reportStage(stage); throw Object.assign(new Error("private"), { readinessPending: "snapshot" });
+    };
+    assert.equal((await otherStage.run({ event })).status, "support_review_required");
+  }
+  const executionSnapshot = fixture(); executionSnapshot.ready({ status: "ready" });
+  executionSnapshot.deps.execute = async () => { throw Object.assign(new Error("private"), { readinessPending: "snapshot" }); };
+  assert.equal((await executionSnapshot.run({ event })).status, "support_review_required");
+  assert.equal(executionSnapshot.job().snapshotDeadlineAt, undefined);
+  for (const mutation of [{ snapshotDeadlineAt: 2 }, { snapshotMissingCount: 0 },
+    { snapshotWaitStartedAt: undefined }, { snapshotMissingCount: 7 }]) {
+    const corruptSnapshot = snapshotFixture(); await corruptSnapshot.run({ event });
+    corruptSnapshot.setJob({ ...corruptSnapshot.job(), ...mutation });
+    await assert.rejects(corruptSnapshot.run(), /identity or history/);
+  }
   for (const identityReason of ["missing_response", "malformed_response", "ambiguous_envelope", "missing_identity", "conflicting_identity", "private-provider-secret"]) {
     const identity = fixture();
     identity.deps.inspect = async (_, __, reportStage) => {

@@ -666,12 +666,18 @@ async function run() {
     "automatic-policy-name-delayed-read", "automatic-policy-name-delayed-response-error", "automatic-policy-name-confirm-save-error",
     "automatic-policy-tier-pro100-monthly", "automatic-policy-tier-pro100-annual",
     "automatic-policy-tier-pro200-monthly", "automatic-policy-tier-pro200-annual"];
-  for (const mode of [...identityModes, ...automaticNameModes, "automatic-policy-subscription-wait", "automatic-policy-subscription-wrong-location", "automatic-policy-subscription-malformed", "automatic-policy-subscription-unknown-status", "automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
+  const snapshotModes = ["pro25", "pro100", "pro200"].flatMap(plan =>
+    ["available", "success", "later-object", "deadline", "delayed-worker", "cross-schema", "cross-last-schema", "cross-prerequisite"].map(result => `automatic-policy-snapshot-${plan}-${result}`))
+    .concat(["401", "403", "400", "422", "500", "network", "wrong-key", "wrong-location", "wrong-type", "missing-field", "malformed", "other-404", "execution-404"]
+      .map(result => `automatic-policy-snapshot-pro25-${result}`));
+  for (const mode of [...snapshotModes, ...identityModes, ...automaticNameModes, "automatic-policy-subscription-wait", "automatic-policy-subscription-wrong-location", "automatic-policy-subscription-malformed", "automatic-policy-subscription-unknown-status", "automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
     const controlled = mode.startsWith('controlled-');
     const automatic = mode.startsWith('automatic-');
     const policy = mode.startsWith('automatic-policy-');
     const tier = mode.startsWith("automatic-policy-tier-");
-    const policyPlan = tier ? mode.split("-")[3] : "pro25";
+    const snapshotMode = mode.startsWith("automatic-policy-snapshot-");
+    const snapshotOutcome = snapshotMode ? mode.split("-").slice(4).join("-") : "";
+    const policyPlan = tier || snapshotMode ? mode.split("-")[3] : "pro25";
     const policyCadence = tier ? mode.split("-")[4] : "monthly";
     const planDefinition = require("../lib/smartcoach-plans").PLAN_DEFINITIONS[policyPlan];
     const policyAmount = policyCadence === "annual" ? planDefinition.annualAmount : planDefinition.monthlyAmount;
@@ -697,7 +703,7 @@ async function run() {
       delete f.env.SMARTCOACH_GHL_OAUTH_WRITE_ACCOUNTS;
       delete f.env.SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS;
       delete f.env.SMARTCOACH_GHL_AUTOMATIC_FULFILLMENT_ACCOUNTS;
-      f.env.SMARTCOACH_GHL_NEW_BUYER_PLANS = tier ? "pro25,pro100,pro200" : "pro25";
+      f.env.SMARTCOACH_GHL_NEW_BUYER_PLANS = tier || snapshotMode ? "pro25,pro100,pro200" : "pro25";
       f.env.SMARTCOACH_GHL_NEW_BUYER_OAUTH_PLANS = f.env.SMARTCOACH_GHL_NEW_BUYER_PLANS;
     }
     if (controlled) f.env.SMARTCOACH_GHL_CONTROLLED_FULFILLMENT_ACCOUNTS = mode === 'controlled-wildcard' ? '*'
@@ -739,6 +745,8 @@ async function run() {
     assert(mapping.objects.record.fields.meet_name);
     let sends = 0, values = [], valueWrites = 0, installed = !["automatic-uninstalled", "automatic-policy-worker"].includes(mode), staleValueRead = ['delayed-readback', 'automatic-policy-key-readback'].includes(mode);
     let subscriptionReady = false;
+    let snapshotReady = snapshotOutcome === "available", snapshotReads = 0;
+    let crossedDeadline = false;
     let locationName = "Buyer's Account", nameWrites = 0;
     let staleNameReads = mode === "automatic-policy-name-stale-read" ? Infinity
       : ["automatic-policy-name-delayed-read", "automatic-policy-name-delayed-response-error"].includes(mode) ? 3 : 0;
@@ -751,6 +759,10 @@ async function run() {
     }
     f.setProvider((url, options) => {
       const path = new URL(url).pathname;
+      assert.equal(crossedDeadline, false, "No provider request may start after the snapshot deadline");
+      if (snapshotReady && snapshotOutcome === "cross-prerequisite" && path === `/saas/get-saas-subscription/${locationId}`) {
+        f.advance(1000); crossedDeadline = true;
+      }
       if (path === `/saas/get-saas-subscription/${locationId}` && identityModes.includes(mode) && !subscriptionReady) {
         if (mode.endsWith("empty")) return null;
         if (mode.endsWith("malformed")) return [];
@@ -787,11 +799,35 @@ async function run() {
         return { location: { id: locationId, companyId: mode === "automatic-policy-identity-wrong-live" ? "other" : "agency-one", name: locationName, email: "buyer@example.com" } };
       }
       if (path === "/locations/QxwjWekSyUf7sDOFHPB4") return { location: { id: "QxwjWekSyUf7sDOFHPB4", companyId: "agency-one" } };
-      if (path === `/locations/${locationId}/customFields`) return { customFields: ["missing-fields", "automatic-missing-fields", "automatic-policy-missing-fields"].includes(mode) ? [] : Object.values(mapping.contactFields).map(field => ({ ...field, locationId })) };
+      if (path === `/locations/${locationId}/customFields`) {
+        if (snapshotOutcome === "other-404") return { mockHttpStatus: 404 };
+        return { customFields: ["missing-fields", "automatic-missing-fields", "automatic-policy-missing-fields"].includes(mode) ? [] : Object.values(mapping.contactFields).map(field => ({ ...field, locationId })) };
+      }
       if (path.startsWith("/objects/")) {
         assert.equal(new URL(url).searchParams.get("locationId"), locationId);
         assert.equal(options.headers.Authorization, "Bearer private-fulfillment-buyer");
         const object = Object.values(mapping.objects).find(item => item.internalName === decodeURIComponent(path.split("/")[2]));
+        if (snapshotMode) {
+          snapshotReads++;
+          const target = snapshotOutcome === "later-object" ? "custom_objects.meets" : "custom_objects.performance_records";
+          if (object.internalName === target) {
+            if ((["success", "later-object", "deadline", "delayed-worker"].includes(snapshotOutcome) || snapshotOutcome.startsWith("cross-")) && !snapshotReady
+              || snapshotOutcome === "execution-404" && f.records.has(`buyerpolicy-${locationId}`)) return { mockHttpStatus: 404 };
+            if (/^\d+$/.test(snapshotOutcome)) return { mockHttpStatus: Number(snapshotOutcome) };
+            if (snapshotOutcome === "network") throw new Error("private-network-payload");
+            if (snapshotOutcome === "malformed") return {};
+            if (["wrong-key", "wrong-location", "wrong-type", "missing-field"].includes(snapshotOutcome)) return {
+              object: { key: snapshotOutcome === "wrong-key" ? "custom_objects.other" : object.internalName,
+                locationId: snapshotOutcome === "wrong-location" ? "other" : locationId },
+              fields: snapshotOutcome === "missing-field" ? [] : Object.entries(object.fields).map(([key, field]) =>
+                ({ id: field.id, locationId, fieldKey: `${object.internalName}.${key}`,
+                  dataType: snapshotOutcome === "wrong-type" ? "INVALID" : field.type })) };
+          }
+          if (snapshotReady && (snapshotOutcome === "cross-schema" && object.internalName === "custom_objects.performance_records"
+            || snapshotOutcome === "cross-last-schema" && object.internalName === "custom_objects.meets")) {
+            f.advance(1000); crossedDeadline = true;
+          }
+        }
         return { object: { key: object.internalName, locationId: mode === "wrong-schema" ? "other" : locationId }, fields: Object.entries(object.fields).filter(([key]) => !(mode === "missing-meet-primary" && object.internalName === "custom_objects.meets" && key === "meet")).map(([key, field]) => ({ id: field.id, locationId, fieldKey: `${object.internalName}.${key}`, dataType: mode === "wrong-field-type" ? "INVALID" : field.type })) };
       }
       if (path === `/locations/${locationId}/customValues`) {
@@ -823,6 +859,84 @@ async function run() {
       if (mode === "automatic-missing-mapping") f.accounts.delete(accountKey);
       const before = f.calls.length;
       let result = await f.api.dispatchProvisioningEvent(event, verification);
+      if (snapshotMode) {
+        const retryable = ["success", "later-object", "deadline", "delayed-worker"].includes(snapshotOutcome) || snapshotOutcome.startsWith("cross-");
+        if (retryable) {
+          assert.equal(result.status, "waiting_for_snapshot", mode);
+          assert.equal(result.snapshotMissingCount, 1);
+          const first = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
+          assert.equal(valueWrites, 0); assert.equal(sends, 0);
+          assert.equal(f.records.has(`buyerfulfillment-${locationId}`), false);
+          const beforeDuplicate = f.calls.length;
+          await f.api.dispatchProvisioningEvent(event, verification);
+          assert.equal(f.calls.length, beforeDuplicate);
+          assert.deepEqual(f.records.get(`buyerreadiness-${locationId}`), first);
+          f.env.CRON_SECRET = "private-cron-secret-at-least-32-characters";
+          f.env.SMARTCOACH_GHL_READINESS_WORKER_ENABLED = "true";
+          f.registry.scanBuyerReadinessJobs = async () => ({ cursor: "0", namespaces: [`buyerreadiness-${locationId.toLowerCase()}`] });
+          const realLoad = f.registry.loadAccountScopedRecord;
+          f.registry.loadAccountScopedRecord = (key, namespace) => realLoad(key,
+            namespace === `buyerreadiness-${locationId.toLowerCase()}` ? `buyerreadiness-${locationId}` : namespace);
+          const cron = f.request("GET"); cron.headers = { authorization: `Bearer ${f.env.CRON_SECRET}` };
+          if (snapshotOutcome.startsWith("cross-")) {
+            snapshotReady = true; f.advance(30 * 60000 - 1000);
+            const readsBeforeCrossing = snapshotReads;
+            assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "support_review_required");
+            assert.equal(crossedDeadline, true);
+            assert.equal(snapshotReads - readsBeforeCrossing, snapshotOutcome === "cross-schema" ? 1
+              : snapshotOutcome === "cross-last-schema" ? 3 : 0);
+            assert.equal(new URL(f.calls.at(-1).url).pathname, snapshotOutcome === "cross-schema"
+              ? "/objects/custom_objects.performance_records" : snapshotOutcome === "cross-last-schema"
+                ? "/objects/custom_objects.meets" : `/saas/get-saas-subscription/${locationId}`);
+            assert.equal(f.records.get(`buyerreadiness-${locationId}`).failure.snapshotReason, "availability_deadline");
+            assert.equal(f.records.has(`buyerfulfillment-${locationId}`), false);
+            assert.equal(valueWrites, 0); assert.equal(sends, 0);
+          } else if (["success", "later-object"].includes(snapshotOutcome)) {
+            snapshotReady = true; f.advance(60000);
+            assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "complete");
+            assert.equal(valueWrites, 1); assert.equal(sends, 1);
+            assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "existing_access_preserved");
+            assert.equal(valueWrites, 1); assert.equal(sends, 1);
+          } else {
+            if (snapshotOutcome === "deadline") {
+              for (const minutes of [1, 2, 4, 8, 8]) {
+                f.advance(minutes * 60000);
+                assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "waiting_for_snapshot");
+              }
+              assert.equal(f.records.get(`buyerreadiness-${locationId}`).snapshotMissingCount, 6);
+              f.advance(7 * 60000);
+            } else f.advance(31 * 60000);
+            const callsBeforeCutoff = f.calls.length;
+            assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "support_review_required");
+            assert.equal(f.calls.length, callsBeforeCutoff, "Deadline must stop before ANY provider request");
+            assert.equal(f.records.get(`buyerreadiness-${locationId}`).failure.snapshotReason, "availability_deadline");
+            assert.equal(valueWrites, 0); assert.equal(sends, 0);
+          }
+          assert.equal(f.records.get(`buyerreadiness-${locationId}`).snapshotDeadlineAt, first.snapshotDeadlineAt);
+        } else {
+          assert.equal(result.status, snapshotOutcome === "available" ? "complete" : "support_review_required", mode);
+          assert.equal(result.snapshotDeadlineAt, undefined);
+          if (["wrong-key", "wrong-location", "wrong-type", "missing-field", "malformed"].includes(snapshotOutcome)) {
+            assert.equal(result.failure.snapshotReason, "schema_mismatch");
+          }
+          if (snapshotOutcome === "execution-404") {
+            assert.equal(result.failure.stage, "setup_snapshot");
+            assert.equal(f.records.get(`buyerfulfillment-${locationId}`).steps.verify_buyer_setup.status, "attempted");
+          }
+          if (snapshotOutcome === "available") { assert.equal(valueWrites, 1); assert.equal(sends, 1); }
+        }
+        const stopped = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
+        const callsBeforeTerminal = f.calls.length;
+        const again = await f.api.dispatchProvisioningEvent(event, verification);
+        assert.equal(again.status, stopped.status === "complete" ? "existing_access_preserved" : "support_review_required");
+        assert.equal(f.calls.length, callsBeforeTerminal);
+        assert.deepEqual(f.records.get(`buyerreadiness-${locationId}`), stopped);
+        assert(snapshotReads > 0 || snapshotOutcome === "other-404");
+        for (const secret of ["private", "access_token", "providerStatus", "mockHttpStatus"]) {
+          assert(!JSON.stringify(stopped).includes(secret));
+        }
+        continue;
+      }
       if (provisioningDelay) {
         assert.equal(result.status, "waiting_for_provisioning"); assert.equal(result.attempts, 0);
         assert.equal(f.calls.length, before, "Initial signed creation must not inspect provider metadata");
