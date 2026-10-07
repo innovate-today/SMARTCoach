@@ -667,7 +667,7 @@ async function run() {
     "automatic-policy-tier-pro100-monthly", "automatic-policy-tier-pro100-annual",
     "automatic-policy-tier-pro200-monthly", "automatic-policy-tier-pro200-annual"];
   const snapshotModes = ["pro25", "pro100", "pro200"].flatMap(plan =>
-    ["available", "success", "later-object", "deadline", "delayed-worker", "cross-schema", "cross-last-schema", "cross-prerequisite"].map(result => `automatic-policy-snapshot-${plan}-${result}`))
+    ["available", "success", "later-object", "expiry-success", "deadline", "delayed-worker", "cross-schema", "cross-last-schema", "cross-prerequisite"].map(result => `automatic-policy-snapshot-${plan}-${result}`))
     .concat(["401", "403", "400", "422", "500", "network", "wrong-key", "wrong-location", "wrong-type", "missing-field", "malformed", "other-404", "execution-404"]
       .map(result => `automatic-policy-snapshot-pro25-${result}`));
   for (const mode of [...snapshotModes, ...identityModes, ...automaticNameModes, "automatic-policy-subscription-wait", "automatic-policy-subscription-wrong-location", "automatic-policy-subscription-malformed", "automatic-policy-subscription-unknown-status", "automatic-policy-key-readback", "automatic-policy-success", "automatic-policy-failed-send", "automatic-policy-missing-fields", "automatic-policy-unsigned-mapping", "automatic-policy-manual", "automatic-policy-alias", "automatic-policy-worker", "automatic-success", "automatic-install-success", "automatic-disabled", "automatic-unsigned", "automatic-fallback", "automatic-app", "automatic-agency", "automatic-email", "automatic-pending", "automatic-missing-mapping", "automatic-uninstalled", "automatic-failed-send", "automatic-wrong-product", "automatic-missing-fields", "delayed-readback", "success", "controlled-success", "controlled-wildcard", "controlled-other-account", "controlled-malformed", "controlled-no-confirm", "controlled-stale", "disabled", "no-admin", "wrong-origin", "wrong-buyer", "missing-scope", "missing-fields", "missing-meet-primary", "wrong-schema", "wrong-field-type", "conflicting-value", "failed-send", "missing-message"]) {
@@ -811,7 +811,7 @@ async function run() {
           snapshotReads++;
           const target = snapshotOutcome === "later-object" ? "custom_objects.meets" : "custom_objects.performance_records";
           if (object.internalName === target) {
-            if ((["success", "later-object", "deadline", "delayed-worker"].includes(snapshotOutcome) || snapshotOutcome.startsWith("cross-")) && !snapshotReady
+            if ((["success", "later-object", "expiry-success", "deadline", "delayed-worker"].includes(snapshotOutcome) || snapshotOutcome.startsWith("cross-")) && !snapshotReady
               || snapshotOutcome === "execution-404" && f.records.has(`buyerpolicy-${locationId}`)) return { mockHttpStatus: 404 };
             if (/^\d+$/.test(snapshotOutcome)) return { mockHttpStatus: Number(snapshotOutcome) };
             if (snapshotOutcome === "network") throw new Error("private-network-payload");
@@ -857,16 +857,20 @@ async function run() {
       if (mode === "automatic-email") event.email = "other@example.com";
       if (mode === "automatic-pending") f.records.get("pendingcheckout").lastMatchedLocationId = "other-location";
       if (mode === "automatic-missing-mapping") f.accounts.delete(accountKey);
+      if (snapshotOutcome === "expiry-success") f.records.set(`buyerreadiness-${locationId}`, {
+        buyerAccountKey: accountKey, locationId, signatureVerified: true, event, createdAt: 0,
+        expiresAt: 24 * 60 * 60000, attempts: 0, status: "pending", nextAttemptAt: null, snapshotPolicy: "sparse_v2"
+      });
       const before = f.calls.length;
       let result = await f.api.dispatchProvisioningEvent(event, verification);
       if (snapshotMode) {
-        const retryable = ["success", "later-object", "deadline", "delayed-worker"].includes(snapshotOutcome) || snapshotOutcome.startsWith("cross-");
+        const retryable = ["success", "later-object", "expiry-success", "deadline", "delayed-worker"].includes(snapshotOutcome) || snapshotOutcome.startsWith("cross-");
         if (retryable) {
           assert.equal(result.status, "waiting_for_snapshot", mode);
           assert.equal(result.snapshotMissingCount, 1);
           const first = structuredClone(f.records.get(`buyerreadiness-${locationId}`));
-          assert.equal(first.snapshotPolicy, "sparse_v1");
-          assert.equal(first.snapshotDeadlineAt, first.snapshotWaitStartedAt + 120 * 60000);
+          assert.equal(first.snapshotPolicy, "sparse_v2");
+          assert.equal(first.snapshotDeadlineAt, first.snapshotWaitStartedAt + 24 * 60 * 60000);
           assert.equal(first.nextAttemptAt, first.snapshotWaitStartedAt + 5 * 60000);
           assert.equal(valueWrites, 0); assert.equal(sends, 0);
           assert.equal(f.records.has(`buyerfulfillment-${locationId}`), false);
@@ -882,7 +886,7 @@ async function run() {
             namespace === `buyerreadiness-${locationId.toLowerCase()}` ? `buyerreadiness-${locationId}` : namespace);
           const cron = f.request("GET"); cron.headers = { authorization: `Bearer ${f.env.CRON_SECRET}` };
           if (snapshotOutcome.startsWith("cross-")) {
-            snapshotReady = true; f.advance(120 * 60000 - 1000);
+            snapshotReady = true; f.advance(24 * 60 * 60000 - 1000);
             const readsBeforeCrossing = snapshotReads;
             assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "support_review_required");
             assert.equal(crossedDeadline, true);
@@ -894,21 +898,26 @@ async function run() {
             assert.equal(f.records.get(`buyerreadiness-${locationId}`).failure.snapshotReason, "availability_deadline");
             assert.equal(f.records.has(`buyerfulfillment-${locationId}`), false);
             assert.equal(valueWrites, 0); assert.equal(sends, 0);
-          } else if (["success", "later-object"].includes(snapshotOutcome)) {
-            snapshotReady = true; f.advance(5 * 60000);
+          } else if (["success", "later-object", "expiry-success"].includes(snapshotOutcome)) {
+            snapshotReady = true; f.advance(snapshotOutcome === "expiry-success" ? 24 * 60 * 60000 - 5 * 60000 : 5 * 60000);
             assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "complete");
             assert.equal(valueWrites, 1); assert.equal(sends, 1);
             assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "existing_access_preserved");
             assert.equal(valueWrites, 1); assert.equal(sends, 1);
           } else {
             if (snapshotOutcome === "deadline") {
-              for (const minutes of [5, 10, 20, 30, 30]) {
+              for (const minutes of [5, 10, 20, 30, 60, ...Array(10).fill(120)]) {
                 f.advance(minutes * 60000);
                 assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "waiting_for_snapshot");
               }
-              assert.equal(f.records.get(`buyerreadiness-${locationId}`).snapshotMissingCount, 6);
-              f.advance(25 * 60000);
-            } else f.advance(121 * 60000);
+              assert.equal(f.records.get(`buyerreadiness-${locationId}`).snapshotMissingCount, 16);
+              const callsAtBudget = f.calls.length;
+              f.advance(115 * 60000 - 1);
+              assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "waiting_for_snapshot");
+              await f.api.dispatchProvisioningEvent(event, verification);
+              assert.equal(f.calls.length, callsAtBudget, "Exhausted budget must not issue another provider request");
+              f.advance(1);
+            } else f.advance(24 * 60 * 60000 + 60000);
             const callsBeforeCutoff = f.calls.length;
             assert.equal((await f.invoke("ghl-oauth-readiness-cron", cron)).body.buyerStatus, "support_review_required");
             assert.equal(f.calls.length, callsBeforeCutoff, "Deadline must stop before ANY provider request");

@@ -195,11 +195,12 @@ function fixture() {
   const wrongStage = fixture();
   wrongStage.deps.inspect = async () => { throw Object.assign(new Error("not a verified purchase"), { readinessPending: "subscription" }); };
   assert.equal((await wrongStage.run({ event })).status, "support_review_required");
-  const snapshotFixture = (legacy = true) => {
+  const snapshotFixture = (policy = "legacy") => {
     const test = fixture();
-    if (legacy) test.setJob({ buyerAccountKey: buyer.accountKey, locationId: buyer.locationId,
+    if (policy !== "sparse_v2") test.setJob({ buyerAccountKey: buyer.accountKey, locationId: buyer.locationId,
       signatureVerified: true, event, createdAt: 1000, expiresAt: 86401000,
-      attempts: 0, status: "pending", nextAttemptAt: null });
+      attempts: 0, status: "pending", nextAttemptAt: null,
+      ...(policy === "sparse_v1" ? { snapshotPolicy: policy } : {}) });
     let schemaCalls = 0;
     test.schemaCalls = () => schemaCalls;
     test.deps.inspect = async (_, __, reportStage) => {
@@ -327,16 +328,17 @@ function fixture() {
     corruptSnapshot.setJob({ ...corruptSnapshot.job(), ...mutation });
     await assert.rejects(corruptSnapshot.run(), /identity or history/);
   }
-  for (const legacy of [true, false]) {
-    const windowMinutes = legacy ? 30 : 120;
-    const backoff = legacy ? [1, 2, 4, 8, 8] : [5, 10, 20, 30, 30];
-    const policy = snapshotFixture(legacy);
+  for (const policyName of ["legacy", "sparse_v1", "sparse_v2"]) {
+    const legacy = policyName === "legacy", newPolicy = policyName === "sparse_v2";
+    const windowMinutes = legacy ? 30 : newPolicy ? 1440 : 120;
+    const backoff = legacy ? [1, 2, 4, 8, 8] : newPolicy ? [5, 10, 20, 30, 60, ...Array(10).fill(120)] : [5, 10, 20, 30, 30];
+    const policy = snapshotFixture(policyName);
     await policy.run({ event, deferFirstInspection: true });
-    assert.equal(policy.job().snapshotPolicy, legacy ? undefined : "sparse_v1");
+    assert.equal(policy.job().snapshotPolicy, legacy ? undefined : policyName);
     const queuedPolicy = structuredClone(policy.job());
     await policy.run({ event, inspectOnly: true });
     assert.deepEqual(policy.job(), queuedPolicy);
-    if (!legacy) policy.advance(60000);
+    if (newPolicy) policy.advance(60000);
     await policy.run({ event });
     const original = structuredClone(policy.job());
     assert.equal(original.snapshotDeadlineAt, original.snapshotWaitStartedAt + windowMinutes * 60000);
@@ -359,20 +361,24 @@ function fixture() {
       assert.equal(policy.job().snapshotDeadlineAt, original.snapshotDeadlineAt);
       assert.equal(policy.job().snapshotPolicy, original.snapshotPolicy);
     }
-    assert.equal(policy.job().snapshotMissingCount, 6);
+    assert.equal(policy.job().snapshotMissingCount, backoff.length + 1);
     assert.equal(policy.job().nextAttemptAt, original.snapshotDeadlineAt);
     const exhausted = structuredClone(policy.job());
     await policy.run({ event });
     assert.deepEqual(policy.job(), exhausted);
-    policy.advance((windowMinutes - backoff.reduce((total, minutes) => total + minutes, 0)) * 60000);
+    policy.advance((windowMinutes - backoff.reduce((total, minutes) => total + minutes, 0)) * 60000 - 1);
+    await policy.run({ event });
+    assert.deepEqual(policy.job(), exhausted);
+    assert.equal(policy.schemaCalls(), backoff.length + 1);
+    policy.advance(1);
     assert.equal((await policy.run()).failure.snapshotReason, "availability_deadline");
-    assert.equal(policy.schemaCalls(), 6);
+    assert.equal(policy.schemaCalls(), backoff.length + 1);
     assert.equal(policy.counts().executions, 0);
     const stopped = structuredClone(policy.job());
     await policy.run({ event });
     assert.deepEqual(policy.job(), stopped);
 
-    const late = snapshotFixture(legacy); await late.run({ event });
+    const late = snapshotFixture(policyName); await late.run({ event });
     const lateFirst = structuredClone(late.job());
     late.advance(13 * 60000);
     await late.run();
@@ -388,6 +394,65 @@ function fixture() {
     late.advance(windowMinutes * 60000);
     assert.equal((await late.run()).failure.snapshotReason, "availability_deadline");
     assert.equal(late.schemaCalls(), 2);
+  }
+  for (const policyName of ["legacy", "sparse_v1", "sparse_v2"]) {
+    const expiry = snapshotFixture(policyName);
+    // Before a snapshot miss, all policies retain the original readiness expiry.
+    await expiry.run({ event, inspectOnly: true });
+    expiry.advance(24 * 60 * 60000);
+    assert.equal((await expiry.run({ event })).status, "expired");
+    assert.equal(expiry.schemaCalls(), 0);
+  }
+  const nearExpiry = snapshotFixture("sparse_v2");
+  await nearExpiry.run({ event, inspectOnly: true });
+  assert.equal(nearExpiry.job().snapshotPolicy, "sparse_v2");
+  const originalExpiry = nearExpiry.job().expiresAt;
+  nearExpiry.advance(24 * 60 * 60000 - 1);
+  assert.equal((await nearExpiry.run({ event })).status, "waiting_for_snapshot");
+  const nearExpiryFirst = structuredClone(nearExpiry.job());
+  assert.equal(nearExpiryFirst.snapshotDeadlineAt, originalExpiry - 1 + 24 * 60 * 60000);
+  nearExpiry.advance(1);
+  for (const options of [{ event }, {}, { inspectOnly: true }]) {
+    assert.equal((await nearExpiry.run(options)).status, "waiting_for_snapshot");
+    assert.deepEqual(nearExpiry.job(), nearExpiryFirst);
+  }
+  nearExpiry.advance(5 * 60000 - 1);
+  assert.equal((await nearExpiry.run()).status, "waiting_for_snapshot");
+  assert.equal(nearExpiry.schemaCalls(), 2);
+  assert.equal(nearExpiry.job().snapshotDeadlineAt, nearExpiryFirst.snapshotDeadlineAt);
+  assert.equal(nearExpiry.job().expiresAt, originalExpiry);
+  nearExpiry.advance(10 * 60000);
+  nearExpiry.deps.inspect = async () => ({ status: "ready" });
+  assert.equal((await nearExpiry.run()).status, "complete");
+  await nearExpiry.run({ event });
+  assert.equal(nearExpiry.counts().executions, 1);
+  assert.equal(nearExpiry.job().snapshotDeadlineAt, nearExpiryFirst.snapshotDeadlineAt);
+
+  const fullWindow = snapshotFixture("sparse_v2");
+  await fullWindow.run({ event, inspectOnly: true });
+  fullWindow.advance(24 * 60 * 60000 - 1);
+  await fullWindow.run({ event });
+  const fullWindowFirst = structuredClone(fullWindow.job());
+  fullWindow.advance(24 * 60 * 60000 - 1);
+  // An inspection remains eligible even almost a day after the original expiry.
+  assert.equal((await fullWindow.run()).status, "waiting_for_snapshot");
+  assert.equal(fullWindow.schemaCalls(), 2);
+  assert.equal(fullWindow.job().snapshotDeadlineAt, fullWindowFirst.snapshotDeadlineAt);
+  fullWindow.advance(1);
+  assert.equal((await fullWindow.run()).failure.snapshotReason, "availability_deadline");
+  assert.equal(fullWindow.schemaCalls(), 2);
+  assert.equal(fullWindow.counts().executions, 0);
+
+  for (const policyName of ["legacy", "sparse_v1"]) {
+    const oldExpiry = snapshotFixture(policyName);
+    oldExpiry.advance(24 * 60 * 60000 - 1);
+    await oldExpiry.run({ event });
+    const persistedDeadline = oldExpiry.job().snapshotDeadlineAt;
+    oldExpiry.advance(1);
+    assert.equal((await oldExpiry.run()).status, "expired");
+    assert.equal(oldExpiry.schemaCalls(), 1);
+    assert.equal(oldExpiry.job().snapshotDeadlineAt, persistedDeadline);
+    assert.equal(oldExpiry.job().snapshotPolicy, policyName === "legacy" ? undefined : policyName);
   }
   for (const identityReason of ["missing_response", "malformed_response", "ambiguous_envelope", "missing_identity", "conflicting_identity", "private-provider-secret"]) {
     const identity = fixture();
