@@ -113,6 +113,153 @@ async function run() {
   await assert.rejects(endpoint.module.exports.findDuplicate({ sourceRecordId: "id", strict: true }), /Forbidden/);
   assert.equal(await endpoint.module.exports.findDuplicate({ sourceRecordId: "id" }), null);
 
+  // Provider accepts unfiltered reads but rejects the bare source field filter.
+  let searchCalls = [];
+  let pages = [];
+  endpoint.searchProvider = async options => {
+    searchCalls.push(options);
+    assert.equal(options.method, "POST");
+    assert.equal(options.path, "/objects/custom_objects.meet_results/records/search");
+    assert.equal(options.token, "cached-test-token");
+    assert.equal(options.body.locationId, "test-location");
+    assert.equal(options.body.pageLimit, 100);
+    assert.equal(options.body.filters, undefined);
+    assert.equal(options.body.query, undefined);
+    assert.equal(options.body.page, searchCalls.length);
+    const response = pages[options.body.page - 1];
+    if (response instanceof Error) throw response;
+    return response;
+  };
+  vm.runInContext("ghlFetch = searchProvider;", endpoint);
+  const lookup = sourceRecordId => endpoint.module.exports.findDuplicate({
+    token: "cached-test-token", locationId: "test-location", sourceRecordId, strict: true,
+  });
+  const searchRow = (id, sourceRecordId) => ({ id, locationId: "test-location", properties: { source_record_id: sourceRecordId } });
+  const firstPage = Array.from({ length: 100 }, (_, index) => searchRow(`record-${index}`, `unrelated-${index}`));
+  pages = [{ records: firstPage, total: 101 }, { records: [searchRow("existing", "wanted")], total: 101 }];
+  assert.equal((await lookup("wanted")).id, "existing");
+  assert.equal(searchCalls.length, 2, "Duplicate beyond the first page is detected");
+  searchCalls = [];
+  pages = [{ records: [searchRow("near-match", "wanted-extra")], total: 1 }];
+  assert.equal(await lookup("wanted"), null, "Only an exact source ID is a duplicate");
+  searchCalls = [];
+  pages = [{ records: [{ id: "qualified", properties: { "custom_objects.meet_results.source_record_id": "wanted" } }], total: 1 }];
+  assert.equal((await lookup("wanted")).id, "qualified");
+  searchCalls = [];
+  pages = [{ records: [], total: 0 }];
+  assert.equal(await lookup("new-finish"), null);
+  for (const invalid of [undefined, {}, { records: [], total: 1 }, { records: [], total: "0" },
+    { records: [searchRow("one", "other")], total: 0 },
+    { records: [{ ...searchRow("foreign", "wanted"), locationId: "other-location" }], total: 1 },
+    { records: [{ properties: { source_record_id: "wanted" } }], total: 1 }]) {
+    searchCalls = []; pages = [invalid];
+    await assert.rejects(lookup("wanted"), error => error.statusCode === 503);
+  }
+  searchCalls = []; pages = [{ records: firstPage, total: 200 }, { records: firstPage, total: 200 }];
+  await assert.rejects(lookup("wanted"), error => error.statusCode === 503);
+  searchCalls = []; pages = [{ records: firstPage, total: 101 }, Object.assign(new Error("Forbidden"), { statusCode: 403 })];
+  await assert.rejects(lookup("wanted"), /Forbidden/);
+  searchCalls = [];
+  pages = Array.from({ length: 100 }, (_, page) => ({ total: 10001,
+    records: Array.from({ length: 100 }, (_, index) => searchRow(`row-${page}-${index}`, "unrelated")) }));
+  await assert.rejects(lookup("wanted"), /incomplete/);
+  assert.equal(searchCalls.length, 100, "Bounded incomplete scans cannot authorize a write");
+  for (const statusCode of [401, 403, 422, 500]) {
+    searchCalls = [];
+    pages = [Object.assign(new Error("Provider rejected lookup"), { statusCode })];
+    await assert.rejects(lookup("wanted"), error => error.statusCode === statusCode);
+    assert.equal(searchCalls.length, 1, "Provider failures never fall back to an unsafe create");
+  }
+  searchCalls = [];
+  assert.equal(await lookup(""), null);
+  assert.equal(searchCalls.length, 0);
+  endpoint.searchProvider = async ({ body }) => {
+    assert.equal(body.pageLimit, 1);
+    assert.equal(body.filters[0].field, "source_record_id");
+    return { records: [searchRow("legacy-existing", "legacy")] };
+  };
+  vm.runInContext("ghlFetch = (...args) => searchProvider(...args);", endpoint);
+  assert.equal((await endpoint.module.exports.findDuplicate({ sourceRecordId: "legacy" })).id,
+    "legacy-existing", "Non-Partner lookup behavior remains unchanged");
+
+  // Exercise the real strict lookup inside both sequential race saves, not a
+  // mocked duplicate decision. Existing finish locks and confirmations still apply.
+  const races = fixture();
+  const savedProviderRecords = [];
+  let providerCreates = 0;
+  endpoint.searchProvider = async ({ body }) => {
+    assert.equal(body.filters, undefined);
+    return { records: savedProviderRecords, total: savedProviderRecords.length };
+  };
+  vm.runInContext("ghlFetch = (...args) => searchProvider(...args);", endpoint);
+  const saveWithLookup = async () => {
+    const duplicate = await lookup(races.result.sourceRecordId);
+    if (duplicate) throw Object.assign(new Error("Already saved"), { statusCode: 409 });
+    providerCreates++;
+    const record = searchRow(`saved-${providerCreates}`, races.result.sourceRecordId);
+    savedProviderRecords.push(record);
+    return { success: true, recordId: record.id, sourceRecordId: races.result.sourceRecordId };
+  };
+  await savePartnerMeetResult(races.deps, races.result, saveWithLookup);
+  assert.equal((await savePartnerMeetResult(races.deps, races.result, saveWithLookup)).alreadySaved, true);
+  races.finish.id = "girls-finish"; races.result.partnerFinishRecordId = "girls-finish";
+  races.finish.raceEvent = "5K"; races.result.event = "5K";
+  await savePartnerMeetResult(races.deps, races.result, saveWithLookup);
+  assert.equal(providerCreates, 2, "Different-distance races each save exactly once");
+  const blockedRace = fixture();
+  endpoint.searchProvider = async () => ({ records: [], total: 1 });
+  await assert.rejects(savePartnerMeetResult(blockedRace.deps, blockedRace.result, async () => {
+    await lookup(blockedRace.result.sourceRecordId); providerCreates++;
+  }), /incomplete/);
+  assert.equal(providerCreates, 2, "Incomplete duplicate reads cannot create a provider record");
+  await assert.rejects(savePartnerMeetResult(blockedRace.deps, blockedRace.result, saveWithLookup), /interrupted save/);
+
+  const liveRecords = [];
+  const liveRequests = [];
+  const realEndpoint = { module: { exports: {} }, require: endpoint.require,
+    fetch: async (url, options) => {
+      const body = JSON.parse(options.body);
+      liveRequests.push({ url, body });
+      assert.equal(options.headers.Authorization, "Bearer test-token");
+      assert(options.headers.Version);
+      assert.equal(options.method, "POST");
+      assert.equal(body.locationId, "test-location");
+      if (url.endsWith("/records/search")) {
+        assert.equal(body.filters, undefined);
+        return { ok: true, text: async () => JSON.stringify({ records: liveRecords, total: liveRecords.length }) };
+      }
+      assert(url.endsWith("/objects/custom_objects.meet_results/records"));
+      const record = { id: `created-${liveRecords.length}`, properties: body.properties };
+      liveRecords.push(record);
+      return { ok: true, text: async () => JSON.stringify(record) };
+    } };
+  vm.createContext(realEndpoint);
+  vm.runInContext(fs.readFileSync("api/ghl/meet-result.js", "utf8") + `
+    findOrCreateContact = async () => ({ id: "athlete-one" });
+    findObjectRecord = async () => null;
+    findAthleteBestRecord = async () => ({ record: null });
+    addMeetResultNote = async () => {};
+    upsertSeasonRecord = async () => ({});
+    upsertAthleteBest = async () => ({});
+    module.exports.normalize = normalizeMeetResult;
+    module.exports.save = saveSingleMeetResult;
+  `, realEndpoint);
+  const actualRaces = fixture();
+  for (const [index, event] of [[0, "5K"], [1, "2 Mile"]]) {
+    actualRaces.finish.id = `finish-${index}`;
+    actualRaces.finish.raceEvent = event;
+    actualRaces.result = realEndpoint.module.exports.normalize({ ...actualRaces.result,
+      partnerFinishRecordId: actualRaces.finish.id, event, meetDate: "2026-10-03", resultDisplay: "15:00.0" });
+    const saveActual = () => realEndpoint.module.exports.save({ token: "test-token", locationId: "test-location", meetResult: actualRaces.result });
+    assert.equal((await savePartnerMeetResult(actualRaces.deps, actualRaces.result, saveActual)).success, true);
+    assert.equal(liveRecords[index].properties.event, event);
+    assert.equal(liveRecords[index].properties.source_record_id, actualRaces.result.sourceRecordId);
+    assert.equal((await savePartnerMeetResult(actualRaces.deps, actualRaces.result, saveActual)).alreadySaved, true);
+    await assert.rejects(saveActual(), error => error.statusCode === 409);
+    assert.equal(liveRecords.length, index + 1, "Actual save rejects existing provider duplicates");
+  }
+  assert.equal(liveRecords.length, 2, "5K boys then 2 Mile girls each reach the real result-create path");
+
   const html = fs.readFileSync("index.html", "utf8");
   const start = html.indexOf("function buildMeetSourceRecordId(");
   const end = html.indexOf("\nfunction submitCapturedFieldMeetResult", start);

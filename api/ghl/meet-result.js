@@ -460,24 +460,39 @@ function formatSplitsForNote(splitsJson) {
 async function findDuplicateMeetResult({ token, locationId, sourceRecordId, strict = false }) {
   if (!sourceRecordId) return null;
   try {
-    const result = await ghlFetch({
-      token,
-      path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records/search`,
-      method: "POST",
-      body: {
-        locationId,
-        page: 1,
-        pageLimit: 1,
-        filters: [
-          {
-            field: "source_record_id",
-            operator: "eq",
-            value: sourceRecordId,
-          },
-        ],
-      },
-    });
-    return firstRecord(result);
+    const seen = new Set();
+    // Read complete pages: provider field filters reject this property, and a
+    // partial lookup must never authorize a new Partner Timing result write.
+    for (let page = 1; page <= 100; page++) {
+      const result = await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records/search`,
+        method: "POST",
+        body: strict ? { locationId, page, pageLimit: 100 } : {
+          locationId,
+          page: 1,
+          pageLimit: 1,
+          filters: [{ field: "source_record_id", operator: "eq", value: sourceRecordId }],
+        },
+      });
+      if (!strict) return firstRecord(result);
+      const records = recordsFromResult(result);
+      const total = result && (result.total ?? (result.data && result.data.total));
+      if (!Number.isSafeInteger(total) || total < seen.size + records.length || records.length > 100) {
+        throw httpError(503, "Meet result duplicate lookup could not be confirmed.");
+      }
+      for (const record of records) {
+        if (!record || !clean(record.id) || seen.has(record.id)
+          || (record.locationId && record.locationId !== locationId)) {
+          throw httpError(503, "Meet result duplicate lookup could not be confirmed.");
+        }
+        seen.add(record.id);
+        if (recordValue(recordProperties(record), "source_record_id") === sourceRecordId) return record;
+      }
+      if (seen.size >= total) return null;
+      if (records.length < 100) break;
+    }
+    throw httpError(503, "Meet result duplicate lookup is incomplete; no result was saved.");
   } catch (error) {
     if (strict || error.statusCode && error.statusCode >= 500) throw error;
     return null;
