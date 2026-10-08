@@ -69,7 +69,7 @@ async function run() {
   await savePartnerMeetResult(nextRace.deps, nextRace.result, nextRace.save);
   assert.equal(nextRace.writes, 2);
 
-  // Exercise the real request normalizer and account-scoped storage adapter.
+  // Production rollback bypasses shared-finish storage while keeping the normalizer.
   const endpointFixture = fixture();
   const registry = {
     registryConfigured: () => true,
@@ -78,20 +78,20 @@ async function run() {
     loadAccountScopedRecord: async (account, key) => ({ configured: true, found: endpointFixture.records.has(key), record: endpointFixture.records.get(key) }),
     saveAccountScopedRecord: async (account, key, value) => { await endpointFixture.deps.save(key, value); return { saved: true }; },
   };
+  for (const key of Object.keys(registry)) registry[key] = () => { throw new Error("Rollback must not access the shared-finish ledger"); };
   let endpointWrites = 0;
   const modules = {
     "../../lib/ghl-account": { getGhlContext: () => ({ token: "test", locationId: "test-location", accountKey: "tca-trackandcc" }), requireProPlan: () => true },
     "../../lib/smart-trak-request": { attachRegistryAccount: async () => {}, setSmartTrakSecurityHeaders: () => {} },
     "../../lib/display-name": { displayNameCase: value => value },
     "../../lib/account-registry": registry,
-    "../../lib/partner-meet-result": { savePartnerMeetResult },
+    "../../lib/partner-meet-result": { savePartnerMeetResult: () => { throw new Error("Rollback must bypass shared-finish deduplication"); } },
     "../../lib/ghl-oauth-consumer": { attachBuyerOAuthContext: async () => true },
   };
   const endpoint = { module: { exports: {} }, require: name => { assert(name in modules, name); return modules[name]; },
     injectedSave: async ({ meetResult }) => {
       endpointWrites++;
       assert.equal(meetResult.syncedBy, "Coach One");
-      assert.equal(meetResult.forceDuplicateSync, false);
       return { success: true, recordId: "endpoint-record", sourceRecordId: meetResult.sourceRecordId };
     } };
   vm.createContext(endpoint);
@@ -103,12 +103,15 @@ async function run() {
     return response;
   }
   const responses = await Promise.all([request({ sourceRecordId: "mr_8" }), request({ sourceRecordId: "mr_91" })]);
-  assert.equal(endpointWrites, 1);
+  assert.equal(endpointWrites, 2);
   assert.equal(responses[0].statusCode, 200);
-  assert.equal(responses[1].body.alreadySaved, true);
-  assert.equal((await request({ event: "5K" })).statusCode, 422);
-  assert.equal((await request({ partnerFinishRecordId: "" })).statusCode, 400);
-  assert.equal(endpointWrites, 1);
+  assert.equal(responses[1].statusCode, 200);
+  assert.equal(endpointFixture.records.size, 0, "Rollback creates no shared-finish ledger records");
+  assert.equal((await request({ event: "5K" })).statusCode, 200);
+  assert.equal((await request({ partnerFinishRecordId: "" })).statusCode, 200);
+  assert.equal(endpointWrites, 4);
+  assert.equal((await request({ event: "" })).statusCode, 400);
+  assert.equal(endpointWrites, 4, "Missing distance still fails before saving");
   vm.runInContext("ghlFetch = async () => { throw Object.assign(new Error('Forbidden'), {statusCode:403}); }; module.exports.findDuplicate = findDuplicateMeetResult;", endpoint);
   await assert.rejects(endpoint.module.exports.findDuplicate({ sourceRecordId: "id", strict: true }), /Forbidden/);
   assert.equal(await endpoint.module.exports.findDuplicate({ sourceRecordId: "id" }), null);
@@ -307,8 +310,8 @@ async function run() {
       assert.equal(options.method, "POST");
       assert.equal(body.locationId, "test-location");
       if (url.endsWith("/records/search")) {
-        assert.equal(body.filters, undefined);
-        return { ok: true, text: async () => JSON.stringify({ records: liveRecords, total: liveRecords.length }) };
+        assert.equal(body.filters[0].field, "source_record_id");
+        return { ok: false, status: 422, text: async () => JSON.stringify({ message: "Invalid field - source_record_id" }) };
       }
       assert(url.endsWith("/objects/custom_objects.meet_results/records"));
       const record = { id: `created-${liveRecords.length}`, properties: body.properties };
@@ -337,10 +340,11 @@ async function run() {
     assert.equal(liveRecords[index].properties.event, event);
     assert.equal(liveRecords[index].properties.source_record_id, actualRaces.result.sourceRecordId);
     assert.equal((await savePartnerMeetResult(actualRaces.deps, actualRaces.result, saveActual)).alreadySaved, true);
-    await assert.rejects(saveActual(), error => error.statusCode === 409);
-    assert.equal(liveRecords.length, index + 1, "Actual save rejects existing provider duplicates");
+    assert.equal(liveRecords.length, index + 1, "Historical save continues after a rejected field filter");
   }
   assert.equal(liveRecords.length, 2, "5K boys then 2 Mile girls each reach the real result-create path");
+  await realEndpoint.module.exports.save({ token: "test-token", locationId: "test-location", meetResult: actualRaces.result });
+  assert.equal(liveRecords.length, 3, "Rollback intentionally allows duplicate saves again");
 
   const html = fs.readFileSync("index.html", "utf8");
   const start = html.indexOf("function buildMeetSourceRecordId(");
@@ -352,14 +356,16 @@ async function run() {
   const runner = { contactId: "athlete-one" }, finish = { ms: 900000, partnerRecordId: "finish-one" };
   const first = context.buildMeetSourceRecordId(runner, finish, 0, false);
   context.CL.id = 91; context.event = "5K";
-  assert.equal(context.buildMeetSourceRecordId(runner, finish, 4, true), first);
+  assert.notEqual(context.buildMeetSourceRecordId(runner, finish, 4, true), first);
+  assert.match(context.buildMeetSourceRecordId(runner, finish, 4, true), /_resync_/);
+  const beforeFinishChange = context.buildMeetSourceRecordId(runner, finish, 0, false);
   finish.partnerRecordId = "other-finish";
-  assert.notEqual(context.buildMeetSourceRecordId(runner, finish, 0, false), first);
+  assert.equal(context.buildMeetSourceRecordId(runner, finish, 0, false), beforeFinishChange);
   context.partnerTimingEnabled = () => false;
   assert.match(context.buildMeetSourceRecordId(runner, finish, 0, true), /_resync_/);
   assert(html.includes("partnerTimingSessionId:partnerTimingEnabled()?ensurePartnerTiming().id:''"));
-  assert(html.includes("if(e.status===409&&!partnerTimingEnabled())"));
-  console.log("Partner Timing shared-finish idempotency and race-distance tests passed");
+  assert(!html.includes("if(e.status===409&&!partnerTimingEnabled())"));
+  console.log("Partner Timing rollback, race-distance and standalone deduplication tests passed");
 }
 
 run().catch(error => { console.error(error); process.exitCode = 1; });

@@ -72,9 +72,8 @@ module.exports = async function handler(req, res) {
     }
     const meetResult = normalizeMeetResult(payload);
     meetResult.syncedBy = clean(req.headers && req.headers["x-smartcoach-coach-name"]).replace(/[\r\n]+/g, " ").slice(0, 120);
-    const saveResult = () => saveSingleMeetResult({ token, locationId, meetResult });
-    const partner = meetResult.partnerTimingSessionId || meetResult.partnerFinishRecordId;
-    const response = partner ? await savePartnerMeetResult(partnerResultDependencies(getGhlContext(req).accountKey), meetResult, saveResult) : await saveResult();
+    // Restore the historical shared save path; finish-level deduplication is paused.
+    const response = await saveSingleMeetResult({ token, locationId, meetResult });
     res.status(200).json(response);
   } catch (error) {
     const setupMessage = meetResultSetupErrorMessage(error);
@@ -171,7 +170,7 @@ async function saveSingleMeetResult({ token, locationId, meetResult }) {
   meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
   meetResult.isPr = meetResult.isPr || autoFlags.isPr;
   const properties = buildMeetResultProperties({ contactId: contact.id, meetResult });
-  const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id, strict: !!meetResult.partnerTimingSessionId });
+  const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
   if (duplicate && !meetResult.forceDuplicateSync) {
     throw httpError(409, "This meet result appears to have already been saved.");
   }
