@@ -1,4 +1,7 @@
 const assert = require("assert");
+const fs = require("node:fs");
+const vm = require("node:vm");
+const { savePartnerMeetResult, verifyPartnerFinish } = require("../lib/partner-meet-result");
 const {
   registryConfigured,
   registryHealth,
@@ -481,6 +484,133 @@ async function testPartnerTimingUsesScopedStorage() {
       });
       assert.strictEqual(reset.session.eventName, "5K");
       assert.strictEqual(reset.session.records.length, 0);
+
+      const html = fs.readFileSync("index.html", "utf8");
+      const elements = { "ms-event": { value: "" }, "ms-event-display": {}, "ms-btn": { style: {} }, "ms-status": { style: {} },
+        "ms-wind": { value: "" }, "ms-notes": { value: "" } };
+      const runner = { id: 1, name: "Runner", contactId: "runner-one", saved: [] };
+      const ui = { CL: { type: "meet", meetName: "Blue Invite", meetDate: "2026-08-21", eventName: "Race",
+        name: "Race", season: "Fall", seasonYear: 2026, partnerTiming: { id: "label-later", stations: [], records: [] } },
+        document: { getElementById: id => elements[id] }, save() {}, rr() {}, updateMeetBestHints() {},
+        normalizeEventLabel: undefined, raceSportMode: () => "xc", meetResultSport: () => "Cross Country", selectedMeetResultType: () => "individual",
+        partnerTimingEnabled: () => true, ensurePartnerTiming: () => ui.CL.partnerTiming,
+        partnerSelectedStationIds: () => [], selectedMeetRunners: () => [runner], applyPartnerTimingRecordsToRunners() {},
+        renderMeetSaveAthletes() {}, updateMeetSaveStates() {}, hasMeetSyncedRuns: () => false, meetRaceAlreadySaved: () => false,
+        findAthleteByName: () => null, runnerMeetFlag: () => false,
+        meetRunsForSave: () => runner.saved.map((run, index) => ({ run, index })),
+        meetGroupDivisionLabel: () => "Open", fmt: () => "15:00.0", splitLabelsForRun: () => [],
+        buildMeetSourceRecordId: () => "test-source", markMeetSavedRuns() {}, markMeetRaceSaved() {},
+        confirm: () => true, tapFeedback() {}, preserveRaceSummarySnapshot() {}, renderPartnerTimingControls() {},
+        partnerTimingSyncTimer: null, syncPartnerTimingSession: () => Promise.resolve(true),
+        finishEntryQuickAction() {}, setTimeout() {}, currentSeason: () => ({ season: "Fall", year: 2026 }) };
+      vm.createContext(ui);
+      vm.runInContext(html.slice(html.indexOf("function normalizeEventLabel("), html.indexOf("function clrLaps("))
+        + html.slice(html.indexOf("function eventDistance("), html.indexOf("function runnerPlan("))
+        + html.slice(html.indexOf("function meetEventLabels("), html.indexOf("function setSyncMeetEvent("))
+        + html.slice(html.indexOf("function partnerTimingPayload("), html.indexOf("function mergePartnerTimingSession("))
+        + html.slice(html.indexOf("function resetPartnerTimingRace("), html.indexOf("function recordPartnerStationTap("))
+        + html.slice(html.indexOf("function submitCapturedMeetResults("), html.indexOf("function submitCapturedRelayMeetResult(")), ui);
+      const endpointSource = fs.readFileSync("api/ghl/meet-result.js", "utf8");
+      const normalizer = { clean: value => String(value || "").trim(), displayNameCase: value => value,
+        validDate: value => value, truthy: value => !!value,
+        httpError: (statusCode, message) => Object.assign(new Error(message), { statusCode }) };
+      vm.createContext(normalizer);
+      vm.runInContext(endpointSource.slice(endpointSource.indexOf("function normalizeMeetResult("),
+        endpointSource.indexOf("function fieldNoMarkResult(")), normalizer);
+
+      let providerWrites = 0;
+      ui.CL.runners = [runner];
+      for (const [index, entered, expected] of [[0, "2 miles", "2 Mile"], [1, "5km", "5K"]]) {
+        const startAt = index ? "2026-08-21T14:00:00.000Z" : "2026-08-21T13:00:00.000Z";
+        const finishAt = index ? "2026-08-21T14:15:00.000Z" : "2026-08-21T13:15:00.000Z";
+        if (index) ui.resetPartnerTimingRace();
+        assert.strictEqual(ui.CL.eventName, "Race", "Reset must not reuse the preceding race distance");
+        ui.CL.partnerTiming.startAt = startAt;
+        ui.CL.partnerTiming.records = [{ id: `label-finish-${index}`, kind: "finish", stationId: "finish",
+          contactId: runner.contactId, athleteName: runner.name, tapAt: finishAt }];
+        const capture = { ...ui.partnerTimingPayload(), resetRecords: ui.CL.partnerTiming.resetRecords || "" };
+        const unfinalized = await savePartnerTimingSession("Partner School", capture);
+        ui.CL.partnerTiming.resetRecords = "";
+        runner.saved = [{ ms: 900000, partnerRecordId: `label-finish-${index}` }];
+        ui.setMeetSaveEvent(entered);
+        assert.strictEqual(ui.CL.eventName, expected);
+        assert.strictEqual(ui.eventDistance(expected), index ? 5000 : 3218.69, "Existing unit conversion remains unchanged");
+        assert.throws(() => verifyPartnerFinish(unfinalized.session, { resultType: "individual",
+          partnerTimingSessionId: capture.id, partnerFinishRecordId: `label-finish-${index}`, event: expected }),
+        /Shared race event is Race/, "Reproduce the original record-first/label-later rejection");
+        const wire = JSON.parse(JSON.stringify(ui.partnerTimingPayload()));
+        assert.strictEqual(wire.eventName, expected);
+        const finalized = await savePartnerTimingSession("Partner School", wire);
+        assert.strictEqual(finalized.session.records[0].raceEvent, expected);
+        assert.strictEqual(finalized.session.records[0].raceStartAt, startAt);
+        assert.deepStrictEqual((await savePartnerTimingSession("Partner School", wire)).session.records,
+          finalized.session.records, "Repeated sync must not change captured evidence");
+        const ledger = new Map();
+        const deps = { lock: async () => async () => {},
+          loadSession: async id => (await loadPartnerTimingSessions("Partner School", { id }))[0],
+          load: async key => ledger.get(key), save: async (key, value) => ledger.set(key, value) };
+        let saving;
+        ui.saveMeetResultQueue = queue => {
+          assert.strictEqual(queue[0].payload.event, expected);
+          const payload = JSON.parse(JSON.stringify(queue[0].payload));
+          const result = normalizer.normalizeMeetResult(payload);
+          assert.strictEqual(result.event, expected);
+          saving = savePartnerMeetResult(deps, result, async () => {
+            providerWrites++;
+            return { success: true, recordId: `saved-${index}` };
+          }).then(data => [{ ok: true, data }]);
+          return saving;
+        };
+        ui.submitCapturedMeetResults(false, true);
+        await saving;
+        assert.strictEqual(providerWrites, index + 1);
+        assert.throws(() => normalizer.normalizeMeetResult({ athleteName: "Runner", meetName: "Blue Invite",
+          meetDate: "2026-08-21", event: "", resultDisplay: "15:00.0" }), /Event is required/);
+        const conflict = await savePartnerTimingSession("Partner School", { ...wire, eventName: index ? "2 Mile" : "5K" });
+        assert.strictEqual(conflict.session.eventName, expected, "A real distance must remain immutable");
+        assert.throws(() => verifyPartnerFinish(conflict.session, { resultType: "individual",
+          partnerTimingSessionId: wire.id, partnerFinishRecordId: runner.saved[0].partnerRecordId,
+          event: index ? "2 Mile" : "5K" }), /Shared race event/);
+      }
+      ui.setMeetSaveEvent("");
+      let missingSaveCalls = 0;
+      ui.saveMeetResultQueue = () => { missingSaveCalls++; return Promise.resolve([]); };
+      ui.submitCapturedMeetResults(false, true);
+      assert.strictEqual(missingSaveCalls, 0);
+      assert.strictEqual(elements["ms-status"].textContent, "Choose a distance before saving meet results.");
+      const unlabeled = await savePartnerTimingSession("Partner School", { id: "still-unlabeled", eventName: "Race",
+        meetName: "Blue Invite", meetDate: "2026-08-21", startAt: "2026-08-21T15:00:00.000Z", records: [] });
+      const missing = await savePartnerTimingSession("Partner School", { ...unlabeled.session, eventName: "" });
+      assert.strictEqual(missing.session.eventName, "Race", "Missing distance cannot finalize a race");
+      for (const eventName of ["0m", "-2 Mile", "Race plan", "not a distance"]) {
+        const invalid = await savePartnerTimingSession("Partner School", { ...unlabeled.session, eventName });
+        assert.strictEqual(invalid.session.eventName, "Race");
+      }
+      const stale = await savePartnerTimingSession("Partner School", { ...unlabeled.session,
+        eventName: "2 Mile", startAt: "2026-08-21T14:00:00.000Z" });
+      assert.strictEqual(stale.session.eventName, "Race", "A stale clock cannot label the current race");
+      const contenders = await Promise.all(["2 Mile", "5K"].map(eventName =>
+        savePartnerTimingSession("Partner School", { ...unlabeled.session, eventName })));
+      assert.strictEqual(contenders[0].session.eventName, "2 Mile");
+      assert.strictEqual(contenders[1].session.eventName, "2 Mile", "The account lock permits only the first label");
+
+      const unconfirmed = await savePartnerTimingSession("Partner School", { ...unlabeled.session, id: "unconfirmed-label" });
+      const read = global.fetch;
+      let discardWrite = true;
+      global.fetch = async (url, options) => {
+        const parts = String(url).replace("https://registry.example/", "").split("/").map(decodeURIComponent);
+        if (discardWrite && parts[0] === "set" && parts[1] === scopedKey) {
+          discardWrite = false;
+          return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+        }
+        return read(url, options);
+      };
+      try {
+        await assert.rejects(savePartnerTimingSession("Partner School", { ...unconfirmed.session, eventName: "2 Mile" }),
+          error => error.statusCode === 503 && /distance could not be confirmed/.test(error.message));
+      } finally {
+        global.fetch = read;
+      }
     });
   } finally {
     global.fetch = previousFetch;

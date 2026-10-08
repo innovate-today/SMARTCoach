@@ -7474,6 +7474,8 @@ function resetPartnerTimingRace(){
   if(!confirm('Reset Partner Timing race clock and station taps for this race?'))return;
   tapFeedback();
   preserveRaceSummarySnapshot('partner-reset');
+  CL.eventName='Race';
+  CL.name='Race';
   var partner=ensurePartnerTiming();
   partner.startAt='';
   partner.startCoach='';
