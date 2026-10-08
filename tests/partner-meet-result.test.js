@@ -116,6 +116,11 @@ async function run() {
   // Provider accepts unfiltered reads but rejects the bare source field filter.
   let searchCalls = [];
   let pages = [];
+  const lookupDiagnostics = [];
+  endpoint.console = { warn: (label, value) => {
+    assert.equal(label, "[partner-meet-duplicate-lookup]");
+    lookupDiagnostics.push(JSON.parse(value));
+  } };
   endpoint.searchProvider = async options => {
     searchCalls.push(options);
     assert.equal(options.method, "POST");
@@ -164,6 +169,40 @@ async function run() {
     records: Array.from({ length: 100 }, (_, index) => searchRow(`row-${page}-${index}`, "unrelated")) }));
   await assert.rejects(lookup("wanted"), /incomplete/);
   assert.equal(searchCalls.length, 100, "Bounded incomplete scans cannot authorize a write");
+  const diagnosticCases = [
+    ["invalid_total", { records: [], total: "PRIVATE_PROVIDER_VALUE" }],
+    ["count_exceeds_total", { records: [searchRow("PRIVATE_RECORD_ID", "PRIVATE_SOURCE_ID")], total: 0 }],
+    ["oversized_page", { records: Array.from({ length: 101 }, (_, i) => searchRow(`row-${i}`, "other")), total: 101 }],
+    ["missing_record_id", { records: [{ _id: "PRIVATE_ALTERNATE_ID", properties: { source_record_id: "PRIVATE_SOURCE_ID" } }], total: 1 }],
+    ["location_mismatch", { records: [{ ...searchRow("PRIVATE_RECORD_ID", "other"), locationId: "PRIVATE_LOCATION_ID" }], total: 1 }],
+    ["short_page_before_total", { records: [], total: 1 }],
+    ["repeated_record_id", { records: [searchRow("PRIVATE_RECORD_ID", "other"), searchRow("PRIVATE_RECORD_ID", "other")], total: 2 }],
+  ];
+  for (const [reason, response] of diagnosticCases) {
+    lookupDiagnostics.length = 0; searchCalls = []; pages = [response];
+    await assert.rejects(lookup("PRIVATE_SOURCE_ID_WANTED"), error => error.statusCode === 503);
+    assert.equal(lookupDiagnostics.length, 1);
+    assert.equal(lookupDiagnostics[0].reason, reason);
+    assert.equal(lookupDiagnostics[0].page, 1);
+    assert.equal(lookupDiagnostics[0].recordCount, response.records.length);
+    assert(!JSON.stringify(lookupDiagnostics).includes("PRIVATE_"));
+    assert(!JSON.stringify(lookupDiagnostics).includes("cached-test-token"));
+    assert(Object.values(lookupDiagnostics[0]).every(value => value === null
+      || typeof value === "number" || typeof value === "boolean"
+      || value === reason || value === typeof response.total));
+  }
+  assert.equal(lookupDiagnostics[0].reason, "repeated_record_id");
+  lookupDiagnostics.length = 0; searchCalls = [];
+  pages = Array.from({ length: 7 }, (_, page) => ({ total: 650,
+    records: Array.from({ length: 100 }, (_, i) => searchRow(`page-${page}-${i}`, "other")) }));
+  await assert.rejects(lookup("wanted"), error => error.statusCode === 503);
+  assert.equal(lookupDiagnostics[0].reason, "count_exceeds_total");
+  assert.equal(lookupDiagnostics[0].page, 7);
+  assert.equal(lookupDiagnostics[0].seenCount, 600);
+  searchCalls = []; pages = [{ records: [], total: "PRIVATE_PROVIDER_VALUE" }];
+  endpoint.console.warn = () => { throw new Error("Logging unavailable"); };
+  await assert.rejects(lookup("wanted"), error => error.statusCode === 503);
+  endpoint.console.warn = (label, value) => lookupDiagnostics.push(JSON.parse(value));
   for (const statusCode of [401, 403, 422, 500]) {
     searchCalls = [];
     pages = [Object.assign(new Error("Provider rejected lookup"), { statusCode })];

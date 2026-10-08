@@ -478,24 +478,55 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId, stri
       if (!strict) return firstRecord(result);
       const records = recordsFromResult(result);
       const total = result && (result.total ?? (result.data && result.data.total));
+      const diagnostic = {
+        page, recordCount: records.length, seenCount: seen.size,
+        total: Number.isSafeInteger(total) ? total : null,
+        totalType: typeof total,
+        rootRecords: Array.isArray(result && result.records),
+        rootItems: Array.isArray(result && result.items),
+        nestedRecords: Array.isArray(result && result.data && result.data.records),
+        nestedItems: Array.isArray(result && result.data && result.data.items),
+      };
       if (!Number.isSafeInteger(total) || total < seen.size + records.length || records.length > 100) {
+        logPartnerDuplicateLookupFailure(!Number.isSafeInteger(total) ? "invalid_total"
+          : total < seen.size + records.length ? "count_exceeds_total" : "oversized_page", diagnostic);
         throw httpError(503, "Meet result duplicate lookup could not be confirmed.");
       }
       for (const record of records) {
         if (!record || !clean(record.id) || seen.has(record.id)
           || (record.locationId && record.locationId !== locationId)) {
+          logPartnerDuplicateLookupFailure(!record || !clean(record.id) ? "missing_record_id"
+            : seen.has(record.id) ? "repeated_record_id" : "location_mismatch", {
+            ...diagnostic, seenCount: seen.size,
+            hasId: !!(record && clean(record.id)),
+            hasAlternateId: !!(record && (clean(record._id) || clean(record.recordId))),
+          });
           throw httpError(503, "Meet result duplicate lookup could not be confirmed.");
         }
         seen.add(record.id);
         if (recordValue(recordProperties(record), "source_record_id") === sourceRecordId) return record;
       }
       if (seen.size >= total) return null;
-      if (records.length < 100) break;
+      if (records.length < 100) {
+        logPartnerDuplicateLookupFailure("short_page_before_total", diagnostic);
+        break;
+      }
+      if (page === 100) logPartnerDuplicateLookupFailure("page_budget_exhausted", diagnostic);
     }
     throw httpError(503, "Meet result duplicate lookup is incomplete; no result was saved.");
   } catch (error) {
     if (strict || error.statusCode && error.statusCode >= 500) throw error;
     return null;
+  }
+}
+
+function logPartnerDuplicateLookupFailure(reason, diagnostic) {
+  // Only fixed reason codes, counts, types and shape flags. Never log records,
+  // identifiers, request context, provider bodies or credentials.
+  try {
+    console.warn("[partner-meet-duplicate-lookup]", JSON.stringify({ reason, ...diagnostic }));
+  } catch (_) {
+    // Logging must not change the existing fail-closed save behavior.
   }
 }
 
