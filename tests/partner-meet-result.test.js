@@ -199,6 +199,49 @@ async function run() {
   assert.equal(lookupDiagnostics[0].reason, "count_exceeds_total");
   assert.equal(lookupDiagnostics[0].page, 7);
   assert.equal(lookupDiagnostics[0].seenCount, 600);
+  // Production returned a repeated ID at offset page 14 after 1,300 rows.
+  // Use the documented last-record cursor instead of further offset paging.
+  const inventory = Array.from({ length: 2086 }, (_, i) => ({
+    ...searchRow(`inventory-${i}`, `source-${i}`), searchAfter: [i, `inventory-${i}`],
+  }));
+  let cursorRequests = 0;
+  endpoint.searchProvider = async ({ body }) => {
+    cursorRequests++;
+    assert.equal(body.page, 1, "Cursor requests never add an offset");
+    const start = body.searchAfter ? body.searchAfter[0] + 1 : 0;
+    if (body.searchAfter) assert.equal(body.searchAfter[1], `inventory-${start - 1}`);
+    assert.equal(body.filters, undefined);
+    return { records: inventory.slice(start, start + 100), total: inventory.length };
+  };
+  vm.runInContext("ghlFetch = (...args) => searchProvider(...args);", endpoint);
+  lookupDiagnostics.length = 0;
+  assert.equal(await lookup("new-finish"), null);
+  assert.equal(cursorRequests, 21);
+  assert.equal(lookupDiagnostics.length, 0);
+  cursorRequests = 0;
+  assert.equal((await lookup("source-2085")).id, "inventory-2085", "Last-page duplicate is still detected");
+  assert.equal(cursorRequests, 21);
+  for (const cursor of [[], [null], [NaN], "PRIVATE_CURSOR", {}]) {
+    searchCalls = []; pages = [{ records: firstPage.map(row => ({ ...row, searchAfter: cursor })), total: 101 }];
+    endpoint.searchProvider = async ({ body }) => { searchCalls.push(body); return pages[0]; };
+    await assert.rejects(lookup("wanted"), error => error.statusCode === 503);
+    assert.equal(searchCalls.length, 1);
+    assert(!JSON.stringify(lookupDiagnostics).includes("PRIVATE_CURSOR"));
+  }
+  let continuation = 0;
+  endpoint.searchProvider = async () => ({ total: 301, records: firstPage.map((row, i) => ({
+    ...row, id: `cursor-${continuation}-${i}`, searchAfter: [99, "same-cursor"],
+  })) });
+  const cursorProvider = endpoint.searchProvider;
+  endpoint.searchProvider = async options => { const result = await cursorProvider(options); continuation++; return result; };
+  await assert.rejects(lookup("wanted"), error => error.statusCode === 503);
+  assert.equal(continuation, 2, "Nonadvancing cursor cannot continue or authorize a create");
+  endpoint.searchProvider = async options => {
+    searchCalls.push(options);
+    const response = pages[options.body.page - 1];
+    if (response instanceof Error) throw response;
+    return response;
+  };
   searchCalls = []; pages = [{ records: [], total: "PRIVATE_PROVIDER_VALUE" }];
   endpoint.console.warn = () => { throw new Error("Logging unavailable"); };
   await assert.rejects(lookup("wanted"), error => error.statusCode === 503);

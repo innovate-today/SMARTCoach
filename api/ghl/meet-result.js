@@ -461,6 +461,8 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId, stri
   if (!sourceRecordId) return null;
   try {
     const seen = new Set();
+    let searchAfter;
+    const cursors = new Set();
     // Read complete pages: provider field filters reject this property, and a
     // partial lookup must never authorize a new Partner Timing result write.
     for (let page = 1; page <= 100; page++) {
@@ -468,7 +470,8 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId, stri
         token,
         path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records/search`,
         method: "POST",
-        body: strict ? { locationId, page, pageLimit: 100 } : {
+        body: strict ? { locationId, page: searchAfter ? 1 : page, pageLimit: 100,
+          ...(searchAfter ? { searchAfter } : {}) } : {
           locationId,
           page: 1,
           pageLimit: 1,
@@ -486,6 +489,7 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId, stri
         rootItems: Array.isArray(result && result.items),
         nestedRecords: Array.isArray(result && result.data && result.data.records),
         nestedItems: Array.isArray(result && result.data && result.data.items),
+        cursorUsed: !!searchAfter,
       };
       if (!Number.isSafeInteger(total) || total < seen.size + records.length || records.length > 100) {
         logPartnerDuplicateLookupFailure(!Number.isSafeInteger(total) ? "invalid_total"
@@ -510,6 +514,22 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId, stri
       if (records.length < 100) {
         logPartnerDuplicateLookupFailure("short_page_before_total", diagnostic);
         break;
+      }
+      // Use the provider's last-record cursor to avoid unstable offset pages.
+      const nextCursor = records[records.length - 1].searchAfter;
+      if (nextCursor !== undefined) {
+        if (!Array.isArray(nextCursor) || !nextCursor.length
+          || !nextCursor.every(value => typeof value === "string" && value.length > 0
+            || typeof value === "number" && Number.isFinite(value))
+          || cursors.has(JSON.stringify(nextCursor))) {
+          logPartnerDuplicateLookupFailure("invalid_or_repeated_cursor", diagnostic);
+          throw httpError(503, "Meet result duplicate lookup could not be confirmed.");
+        }
+        cursors.add(JSON.stringify(nextCursor));
+        searchAfter = nextCursor.slice();
+      } else if (searchAfter) {
+        logPartnerDuplicateLookupFailure("missing_continuation_cursor", diagnostic);
+        throw httpError(503, "Meet result duplicate lookup could not be confirmed.");
       }
       if (page === 100) logPartnerDuplicateLookupFailure("page_budget_exhausted", diagnostic);
     }
