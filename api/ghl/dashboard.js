@@ -1449,13 +1449,15 @@ function buildRecentMeetResults({ athletes = [], meetRecords = [], meetRecordInd
 }
 
 function buildResultsBoardRows({ athletes, meetRecords, bestRecords, meetRecordIndex }) {
+  const voidedResults = (Array.isArray(meetRecords) ? meetRecords : [])
+    .filter(isVoidedMeetResult).map(normalizeMeetResult);
   if (meetRecordIndex) {
-    return annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords, meetRecordIndex }), bestRecords);
+    return annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords, meetRecordIndex }), bestRecords, voidedResults);
   }
-  return annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords }), bestRecords);
+  return annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords }), bestRecords, voidedResults);
 }
 
-function annotateResultsBoardBestFlags(rows, bestRecords) {
+function annotateResultsBoardBestFlags(rows, bestRecords, voidedResults = []) {
   const bests = (Array.isArray(bestRecords) ? bestRecords : []).map(normalizeBest).filter((best) => best.event);
   const rowBests = new Map();
   const seasonBests = new Map();
@@ -1478,6 +1480,19 @@ function annotateResultsBoardBestFlags(rows, bestRecords) {
     const next = { ...row, isPr: false, isSeasonBest: false, bestDisplay: "", bestMs: 0 };
     bests.forEach((best) => {
       if (!resultsBoardBestMatchesRow(best, row)) return;
+      // Saved bests are not rebuilt by Void Entry. Reject only a best whose
+      // source is confirmed voided, preserving unrelated historical bests.
+      const voidedBest = voidedResults.some((result) => {
+        if (best.contactId && result.contactId && best.contactId !== result.contactId) return false;
+        if (!resultsBoardBestMatchesRow(best, result)) return false;
+        if (best.personalBestSourceRecordId && result.sourceRecordId) {
+          return best.personalBestSourceRecordId === result.sourceRecordId;
+        }
+        return !!(best.personalBestDate && best.personalBestMeet)
+          && resultsBoardBestResultMatches(result, best.personalBestDisplay, best.personalBestMs,
+            best.personalBestDate, best.personalBestMeet);
+      });
+      if (voidedBest) return;
       const correctedBest = correctedRowsBySource.get(resultsBoardBestSourceKey(row, best.personalBestSourceRecordId));
       if (correctedBest) {
         next.bestDisplay = clean(correctedBest.resultDisplay);

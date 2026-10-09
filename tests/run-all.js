@@ -1,6 +1,7 @@
 const fs = require("fs");
 const { spawnSync } = require("child_process");
 require("./calendar-volume-account-switch.test");
+require("./results-board-voided-bests.test");
 for (const name of ["new-buyer-policy", "buyer-readiness-worker", "buyer-readiness-recovery", "buyer-key-recovery", "buyer-school-name", "partner-meet-result"]) {
   const result = spawnSync(process.execPath, [`tests/${name}.test.js`], { stdio: "inherit" });
   if (result.status !== 0) throw new Error(`${name} tests failed.`);
@@ -1665,7 +1666,7 @@ function checkResultsBoardFeature() {
     "function requiredDashboardObjectRecords(options)",
     "requiredDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: 12000 })",
     "safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY, timeoutMs: 2500 })",
-    "annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords }), bestRecords)",
+    "annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords }), bestRecords, voidedResults)",
     "searchObjectRecords({ ...options, signal: controller && controller.signal, required: true })",
     "allMeets: meetInput === \"__all__\"",
     "function resultsBoardRowMatches(row, filters)",
@@ -1717,7 +1718,7 @@ function checkResultsBoardFeature() {
     "isSeasonBest: yesValue(prop(props, \"is_season_best\"))",
     "contactId: prop(props, \"athlete_contact\")",
     "athleteName: displayNameCase(prop(props, \"athlete_name_snapshot\"))",
-    "function annotateResultsBoardBestFlags(rows, bestRecords)",
+    "function annotateResultsBoardBestFlags(rows, bestRecords, voidedResults = [])",
     "const seasonBests = new Map();",
     "const correctedRowsBySource = new Map();",
     "if (sourceKey && row.corrected) correctedRowsBySource.set(sourceKey, row);",
